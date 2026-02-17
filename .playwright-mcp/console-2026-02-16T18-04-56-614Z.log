@@ -1,0 +1,325 @@
+[    2962ms] Error: Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <SegmentViewNode type="page" pagePath="/Downloads...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} searchParams={{}} params={{}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="min-h-scre...">
+            <Navbar>
+            <main>
+              <RevenueDashboard>
+                <div className={"jsx-3123..."}>
+                  <JSXStyle>
+                  <div className="jsx-31236e...">
+                    <div className="jsx-31236e...">
+                      <div>
+                      <div className="jsx-31236e...">
+                        <div className="jsx-31236e...">
+                          <div>
+                          <RevenueHero revenue={304793.93859450513} delta={15.511518362865544} ...>
+                            <div className="mb-8">
+                              <div>
+                              <div className="mb-3">
+                                <div className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white">
++                                 $304,794
+-                                 $322,140
+                              ...
+                          ...
+                          ...
+                        ...
+
+    at throwOnHydrationMismatch (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:2892:56)
+    at prepareToHydrateHostInstance (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:2946:23)
+    at completeWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:6330:60)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:886:74)
+    at completeUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8363:23)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8300:28)
+    at workLoopConcurrentByScheduler (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8294:58)
+    at renderRootConcurrent (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8276:71)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:7908:176)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8882:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:2601:64)
+[    2920ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3001/favicon.ico:0
+[  387697ms] [ERROR] ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx:226:1
+Parsing ecmascript source code failed
+  224 |     </div>
+  225 |   );
+> 226 | }
+      | ^
+  227 |
+
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+
+Import traces:
+  Client Component Browser:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component] @ http://localhost:3001/_next/static/chunks/a0b51_next_dist_361495f9._.js:2359
+[ 1085547ms] ReferenceError: isMobile is not defined
+    at RevenueChart (http://localhost:3001/_next/static/chunks/Downloads_TextToOrderDashboard_b66cdcab._.js?id=%255Bproject%255D%252FDownloads%252FTextToOrderDashboard%252Fcomponents%252FRevenueChart.tsx+%255Bapp-client%255D+%2528ecmascript%2529:111:26)
+    at Object.react_stack_bottom_frame (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:13072:24)
+    at renderWithHooks (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:4091:24)
+    at updateFunctionComponent (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:5523:21)
+    at beginWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:6111:24)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:886:74)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8298:97)
+    at workLoopSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8190:40)
+    at renderRootSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8173:13)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:7932:56)
+    at performSyncWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8890:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8809:316)
+    at flushSyncWork$1 (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8048:86)
+    at Object.scheduleRefresh (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:294:13)
+    at http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:391:33
+    at Set.forEach (<anonymous>)
+    at Object.performReactRefresh (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:384:38)
+    at applyUpdate (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:878:31)
+    at http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:886:13
+[ 1095904ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3001/_next/static/chunks/a0b51_next_dist_client_d39f6619._.js:6282
+[ 1096007ms] ReferenceError: isMobile is not defined
+    at RevenueChart (http://localhost:3001/_next/static/chunks/Downloads_TextToOrderDashboard_b66cdcab._.js?id=%255Bproject%255D%252FDownloads%252FTextToOrderDashboard%252Fcomponents%252FRevenueChart.tsx+%255Bapp-client%255D+%2528ecmascript%2529:111:26)
+    at Object.react_stack_bottom_frame (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:13072:24)
+    at renderWithHooks (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:4091:24)
+    at updateFunctionComponent (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:5523:21)
+    at beginWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:6111:24)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:886:74)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8298:97)
+    at workLoopSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8190:40)
+    at renderRootSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8173:13)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:7932:56)
+    at performSyncWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8890:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8809:316)
+    at flushSyncWork$1 (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8048:86)
+    at Object.scheduleRefresh (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:294:13)
+    at http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:391:33
+    at Set.forEach (<anonymous>)
+    at Object.performReactRefresh (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:384:38)
+    at applyUpdate (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:878:31)
+    at http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:886:13
+[ 1096254ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3001/:0
+[ 1096552ms] ReferenceError: isMobile is not defined
+    at RevenueChart (http://localhost:3001/_next/static/chunks/Downloads_TextToOrderDashboard_b66cdcab._.js:502:26)
+    at Object.react_stack_bottom_frame (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:13072:24)
+    at renderWithHooks (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:4091:24)
+    at updateFunctionComponent (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:5523:21)
+    at beginWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:6111:24)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:886:74)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8298:97)
+    at workLoopSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8190:40)
+    at renderRootSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8173:13)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:7932:56)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8882:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:2601:64)
+[ 1112807ms] [ERROR] ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx:227:6
+Parsing ecmascript source code failed
+  225 |         </div>
+  226 |       </div>
+> 227 |     </div>
+      |      ^^^^^
+  228 |   );
+  229 | }
+  230 |
+
+Unterminated regexp literal
+
+Import traces:
+  Client Component Browser:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component] @ http://localhost:3001/_next/static/chunks/a0b51_next_dist_361495f9._.js:2359
+[ 1122514ms] [ERROR] ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx:221:6
+Parsing ecmascript source code failed
+  219 |         </div>
+  220 |       </div>
+> 221 |     </div>
+      |      ^^^^^
+  222 |   );
+  223 | }
+  224 |
+
+Unterminated regexp literal
+
+Import traces:
+  Client Component Browser:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component] @ http://localhost:3001/_next/static/chunks/a0b51_next_dist_361495f9._.js:2359
+[ 1128790ms] [ERROR] ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx:215:6
+Parsing ecmascript source code failed
+  213 |         </div>
+  214 |       </div>
+> 215 |     </div>
+      |      ^^^^^
+  216 |   );
+  217 | }
+  218 |
+
+Unterminated regexp literal
+
+Import traces:
+  Client Component Browser:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component Browser]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./Downloads/TextToOrderDashboard/components/RevenueChart.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/components/RevenueDashboard.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Client Component SSR]
+    ./Downloads/TextToOrderDashboard/app/page.tsx [Server Component] @ http://localhost:3001/_next/static/chunks/a0b51_next_dist_361495f9._.js:2359
+[ 1162992ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3001/_next/static/chunks/a0b51_next_dist_client_d39f6619._.js:6282
+[ 1163747ms] Error: Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <SegmentViewNode type="page" pagePath="/Downloads...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} searchParams={{}} params={{}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="min-h-scre...">
+            <Navbar>
+            <main>
+              <RevenueDashboard>
+                <div className={"jsx-3123..."}>
+                  <JSXStyle>
+                  <div className="jsx-31236e...">
+                    <div className="jsx-31236e...">
+                      <div>
+                      <div className="jsx-31236e...">
+                        <div className="jsx-31236e...">
+                          <div>
+                          <RevenueHero revenue={293882.530903325} delta={8.474403913148663} ...>
+                            <div className="mb-8">
+                              <div>
+                              <div className="mb-3">
+                                <div className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white">
++                                 $293,883
+-                                 $295,494
+                              ...
+                          ...
+                          ...
+                        ...
+
+    at throwOnHydrationMismatch (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:2892:56)
+    at prepareToHydrateHostInstance (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:2946:23)
+    at completeWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:6330:60)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:886:74)
+    at completeUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8363:23)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8300:28)
+    at workLoopConcurrentByScheduler (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8294:58)
+    at renderRootConcurrent (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8276:71)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:7908:176)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8882:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:2601:64)
+[ 2047227ms] ReferenceError: getDeltaBg is not defined
+    at RevenueHero (http://localhost:3001/_next/static/chunks/Downloads_TextToOrderDashboard_b66cdcab._.js?id=%255Bproject%255D%252FDownloads%252FTextToOrderDashboard%252Fcomponents%252FRevenueHero.tsx+%255Bapp-client%255D+%2528ecmascript%2529:101:114)
+    at Object.react_stack_bottom_frame (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:13072:24)
+    at renderWithHooks (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:4091:24)
+    at updateFunctionComponent (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:5523:21)
+    at beginWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:6111:24)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:886:74)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8298:97)
+    at workLoopSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8190:40)
+    at renderRootSync (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8173:13)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:7932:56)
+    at performSyncWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8890:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8809:316)
+    at flushSyncWork$1 (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8048:86)
+    at Object.scheduleRefresh (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:294:13)
+    at http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:391:33
+    at Set.forEach (<anonymous>)
+    at Object.performReactRefresh (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:384:38)
+    at applyUpdate (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:878:31)
+    at http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:886:13
+[ 2056197ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3001/_next/static/chunks/a0b51_next_dist_client_d39f6619._.js:6282
+[ 2057075ms] Error: Hydration failed because the server rendered text didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <SegmentViewNode type="page" pagePath="/Downloads...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} searchParams={{}} params={{}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="min-h-scre...">
+            <Navbar>
+            <main>
+              <RevenueDashboard>
+                <div className={"jsx-3123..."}>
+                  <JSXStyle>
+                  <div className="jsx-31236e...">
+                    <div className="jsx-31236e...">
+                      <div className="jsx-31236e...">
+                        <div className="jsx-31236e...">
+                          <RevenueHero revenue={301101.84597670566} delta={12.356371659461605} ...>
+                            <div className="mb-8">
+                              <div>
+                              <div className="mb-3">
+                                <div className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white">
++                                 $301,102
+-                                 $297,344
+                          ...
+                          ...
+                        ...
+
+    at throwOnHydrationMismatch (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:2892:56)
+    at prepareToHydrateHostInstance (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:2946:23)
+    at completeWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:6330:60)
+    at runWithFiberInDEV (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:886:74)
+    at completeUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8363:23)
+    at performUnitOfWork (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8300:28)
+    at workLoopConcurrentByScheduler (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8294:58)
+    at renderRootConcurrent (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8276:71)
+    at performWorkOnRoot (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:7908:176)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_react-dom_cad83af9._.js:8882:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3001/_next/static/chunks/a0b51_next_dist_compiled_865d9f01._.js:2601:64)
