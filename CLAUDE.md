@@ -70,6 +70,7 @@ The dashboard will automatically fetch data from the backend on load and when fi
 - **Language**: TypeScript 5
 - **Styling**: Tailwind CSS
 - **Charts**: Recharts for data visualization
+- **Animations**: Framer Motion (AnimatePresence, motion.div, spring animations)
 - **Backend API**: FastAPI (TextToOrderCoffee backend)
 - **Database**: Supabase (PostgreSQL) - accessed via backend API only
 - **Testing**: Playwright
@@ -105,12 +106,12 @@ All components are exported through `components/index.ts`. Key components:
 
 - **RevenueDashboard**: Main orchestrator component that fetches real data from backend API, manages time filters, view modes, and loading states
 - **RevenueHero**: Large revenue/orders display with delta indicator and animated number counter (uses real metadata from API)
-- **RevenueChart**: Interactive Recharts area chart with scrubbing functionality (displays real time-series data)
+- **RevenueChart**: Interactive Recharts area chart with scrubbing functionality (displays real time-series data). **Important**: do NOT round `revenue` values in `chartData` — preserve decimals for accurate tooltip display.
 - **TimeFilter**: Pill-style time range selector (1H, 24H, 1W, 1M) - triggers API refetch on change
 - **BestSellers**: Top 5 menu items with trend indicators (real data from order_items aggregation)
 - **Sidebar**: Desktop navigation with restaurant branding
-- **FloatingChatbot**: AI chatbot widget (rendered in root layout)
-- **ItemAnalytics**: Detailed analytics for individual menu items
+- **FloatingChatbot**: AI chatbot widget (rendered in root layout). Has a dismiss button that collapses it into a floating bubble in the bottom-right corner using Framer Motion spring animations. Uses `inset-x-0 flex justify-center` (not `-translate-x-1/2`) to avoid transform conflicts with framer-motion.
+- **ItemAnalytics**: Detailed analytics for individual menu items — fetches real time-series data from `/api/analytics/item-analytics` by `item_name`
 
 ### Design System
 
@@ -149,6 +150,9 @@ Core types in `types/index.ts`:
 - `RevenueData`: Time-series revenue points
 - `MenuItemStats`: Item popularity and trends
 - `TimeFilter`: Time range options
+- `MenuItem`: Full Clover menu item (id, name, price, price_cents, category, category_id, available, orders, revenue, modifier_groups)
+- `MenuItemModifier`, `MenuItemModifierGroup`: Modifier structure from Clover
+- `MenuCategory`, `MenuItemsResponse`: For the `/items` page API response
 
 ### Testing
 
@@ -181,6 +185,17 @@ const API_BASE_URL = 'http://localhost:8000';
    - Returns: Top selling items with order counts, revenue, and trend percentages
    - Auto-filters test data
 
+3. **Menu Items**: `GET /api/analytics/menu-items`
+   - Query params: `restaurant_id`, `category_id` (optional), `time_range` (default 1m), `sandbox` (bool)
+   - Returns: Full Clover menu merged with real sales stats (orders, revenue) per item
+   - Merges Clover API data (menu structure) with Supabase `order_items` aggregation by item name
+   - Used by `app/items/page.tsx` — real items replace the old hardcoded fake list
+
+4. **Item Analytics**: `GET /api/analytics/item-analytics`
+   - Query params: `restaurant_id`, `item_name`, `time_range` (default 24h)
+   - Returns: Time-series revenue/orders for a specific menu item (same shape as revenue analytics)
+   - Used by `components/ItemAnalytics.tsx` — replaces old fake sine-wave data
+
 **Data Flow:**
 1. Component mounts → `useEffect` fetches initial data via `fetchRevenueData()` and `fetchBestSellers()`
 2. User changes filter → `handleFilterChange()` calls API with new time range
@@ -191,6 +206,22 @@ const API_BASE_URL = 'http://localhost:8000';
 - Automatically excludes phone numbers starting with `+1555` (test prefix)
 - Excludes specific test numbers: `+12033007233`, `+14698186844`, `+16827129222`
 - Ensures analytics only show real customer data
+
+### Currency Precision
+All monetary values must display with 2 decimal places (`minimumFractionDigits: 2`). This applies to:
+- `lib/utils.ts` → `formatCurrency()`
+- `components/RevenueHero.tsx` → counter formatter
+- `components/BestSellers.tsx` → revenue display
+- `components/RevenueChart.tsx` → tooltip formatter and YAxis tickFormatter
+
+**YAxis formatter**: values ≥ 1000 display as `$Xk`, values < 1000 display as `$X.XX` (not `$0k`).
+
+**Do NOT round revenue in chart data**: `chartData` must use `revenue: d.revenue` (not `Math.round(d.revenue)`) to preserve cent-level precision in tooltips.
+
+### Pages
+
+- **`app/items/page.tsx`**: Fetches real Clover menu items from `/api/analytics/menu-items`. Has category dropdown filter, 7D/30D time range toggle, loading skeleton, and error state with retry. Uses `available` field (not `isOrderable`).
+- **`app/items/[id]/page.tsx`**: Fetches all items from API, finds by Clover item ID. Shows category badge, price, 30-day orders/revenue stats. Does NOT show modifier groups.
 
 ### Component State Management
 - Most components use local useState for UI state
