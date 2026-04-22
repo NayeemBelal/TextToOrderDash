@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Navbar, Sidebar } from '@/components';
 
 const RESTAURANT_ID = 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
 
 type CampaignStep = 'select-item' | 'details' | 'discount' | 'targeting' | 'review' | 'configure';
 
