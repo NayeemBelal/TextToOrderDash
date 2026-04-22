@@ -1,9 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Navbar, Sidebar } from '@/components';
 
-type CampaignStep = 'select-item' | 'details' | 'discount' | 'targeting' | 'review';
+const RESTAURANT_ID = 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
+const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
+
+type CampaignStep = 'select-item' | 'details' | 'discount' | 'targeting' | 'review' | 'configure';
+
+interface MarketingMenuItem {
+  clover_id: string;
+  name: string;
+  price: number;
+  category: string | null;
+  description: string | null;
+  available: boolean;
+}
+
+interface CustomerPreview {
+  count: number;
+  customer_ids: string[];
+}
 
 interface Campaign {
   id: string;
@@ -18,7 +35,6 @@ interface Campaign {
   createdAt: Date;
 }
 
-// Mock data for existing campaigns
 const mockCampaigns: Campaign[] = [
   {
     id: '1',
@@ -46,28 +62,90 @@ const mockCampaigns: Campaign[] = [
   },
 ];
 
+const ITEMS_PER_PAGE = 5;
+
 export default function MarketingPage() {
   const [showCreateFlow, setShowCreateFlow] = useState(false);
   const [currentStep, setCurrentStep] = useState<CampaignStep>('select-item');
-  const [selectedItem, setSelectedItem] = useState('');
+
+  // Item selection
+  const [fetchedItems, setFetchedItems] = useState<MarketingMenuItem[]>([]);
+  const [itemsPage, setItemsPage] = useState(1);
+  const [itemsTotalPages, setItemsTotalPages] = useState(1);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemSearch, setItemSearch] = useState('');
+  const [selectedItemCloverId, setSelectedItemCloverId] = useState('');
+  const [selectedItemName, setSelectedItemName] = useState('');
+  const [selectedItemDescription, setSelectedItemDescription] = useState<string | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Campaign details
   const [description, setDescription] = useState('');
+  const [itemIngredients, setItemIngredients] = useState('');
   const [hasDiscount, setHasDiscount] = useState(false);
   const [discountValue, setDiscountValue] = useState('');
   const [targeting, setTargeting] = useState<'all' | 'targeted'>('all');
 
-  const handleSignOut = () => {
-    console.log('Sign out clicked');
+  // Configure step
+  const [configureTargeting, setConfigureTargeting] = useState<'all' | 'targeted'>('all');
+  const [campaignMessage, setCampaignMessage] = useState('');
+  const [messageLoading, setMessageLoading] = useState(false);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [cachedAllCustomers, setCachedAllCustomers] = useState<CustomerPreview | null>(null);
+  const [cachedTargetedCustomers, setCachedTargetedCustomers] = useState<CustomerPreview | null>(null);
+
+  const handleSignOut = () => console.log('Sign out clicked');
+
+  // ---------- Item fetching ----------
+
+  const fetchItems = useCallback(async (page: number, search: string) => {
+    setItemsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        restaurant_id: RESTAURANT_ID,
+        page: page.toString(),
+        limit: ITEMS_PER_PAGE.toString(),
+      });
+      if (search.trim()) params.set('search', search.trim());
+
+      const res = await fetch(`${API_BASE_URL}/api/marketing/items?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch items');
+      const data = await res.json();
+      setFetchedItems(data.items);
+      setItemsTotalPages(data.total_pages);
+    } catch (err) {
+      console.error('Error fetching items:', err);
+      setFetchedItems([]);
+    } finally {
+      setItemsLoading(false);
+    }
+  }, []);
+
+  // Fetch items when step becomes active
+  useEffect(() => {
+    if (currentStep === 'select-item' && showCreateFlow) {
+      fetchItems(itemsPage, itemSearch);
+    }
+  }, [currentStep, showCreateFlow, itemsPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounce search
+  const handleSearchChange = (value: string) => {
+    setItemSearch(value);
+    setItemsPage(1);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchItems(1, value);
+    }, 350);
   };
 
-  const menuItems = [
-    'Classic Cheeseburger',
-    'Bacon Deluxe Burger',
-    'Crispy French Fries',
-    'BBQ Bacon Burger',
-    'Chocolate Milkshake',
-  ];
+  const handlePageChange = (newPage: number) => {
+    setItemsPage(newPage);
+    fetchItems(newPage, itemSearch);
+  };
 
-  const steps: { id: CampaignStep; label: string }[] = [
+  // ---------- Step navigation ----------
+
+  const wizardSteps: { id: CampaignStep; label: string }[] = [
     { id: 'select-item', label: 'Select Item' },
     { id: 'details', label: 'Details' },
     { id: 'discount', label: 'Discount' },
@@ -75,34 +153,140 @@ export default function MarketingPage() {
     { id: 'review', label: 'Review' },
   ];
 
-  const currentStepIndex = steps.findIndex(s => s.id === currentStep);
+  const currentStepIndex = wizardSteps.findIndex(s => s.id === currentStep);
 
   const handleNext = () => {
     const nextIndex = currentStepIndex + 1;
-    if (nextIndex < steps.length) {
-      setCurrentStep(steps[nextIndex].id);
+    if (nextIndex < wizardSteps.length) {
+      setCurrentStep(wizardSteps[nextIndex].id);
     }
   };
 
   const handleBack = () => {
-    const prevIndex = currentStepIndex - 1;
-    if (prevIndex >= 0) {
-      setCurrentStep(steps[prevIndex].id);
+    if (currentStep === 'configure') {
+      setCurrentStep('review');
+      return;
     }
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex >= 0) setCurrentStep(wizardSteps[prevIndex].id);
   };
 
-  const handleLaunchCampaign = () => {
-    // TODO: Implement campaign launch
-    console.log('Launching campaign...');
-    setShowCreateFlow(false);
-    // Reset form
+  const resetFlow = () => {
     setCurrentStep('select-item');
-    setSelectedItem('');
+    setSelectedItemCloverId('');
+    setSelectedItemName('');
+    setSelectedItemDescription(null);
+    setItemSearch('');
+    setItemsPage(1);
     setDescription('');
+    setItemIngredients('');
     setHasDiscount(false);
     setDiscountValue('');
     setTargeting('all');
+    setCampaignMessage('');
+    setCachedAllCustomers(null);
+    setCachedTargetedCustomers(null);
+    setConfigureTargeting('all');
   };
+
+  // ---------- Configure campaign ----------
+
+  const buildPreviewBody = (t: 'all' | 'targeted') => ({
+    restaurant_id: RESTAURANT_ID,
+    targeting: t,
+    item_name: selectedItemName,
+    item_clover_id: selectedItemCloverId,
+    item_description: selectedItemDescription || undefined,
+    item_ingredients: itemIngredients || undefined,
+    campaign_description: description,
+    discount_percentage: hasDiscount && discountValue ? parseFloat(discountValue) : undefined,
+  });
+
+  const buildMessageBody = () => ({
+    restaurant_id: RESTAURANT_ID,
+    item_name: selectedItemName,
+    item_description: selectedItemDescription || undefined,
+    item_ingredients: itemIngredients || undefined,
+    campaign_description: description,
+    discount_percentage: hasDiscount && discountValue ? parseFloat(discountValue) : undefined,
+  });
+
+  const handleConfigureCampaign = () => {
+    setCurrentStep('configure');
+    setConfigureTargeting(targeting);
+    setCachedAllCustomers(null);
+    setCachedTargetedCustomers(null);
+    setCampaignMessage('');
+    setMessageLoading(true);
+    setCustomersLoading(true);
+
+    // Capture values from the closure before any async work
+    const capturedTargeting = targeting;
+    const previewBody = buildPreviewBody(targeting);
+    const messageBody = buildMessageBody();
+
+    fetch(`${API_BASE_URL}/api/marketing/preview-campaign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(previewBody),
+    })
+      .then(r => r.json())
+      .then((data: CustomerPreview) => {
+        if (capturedTargeting === 'all') {
+          setCachedAllCustomers(data);
+        } else {
+          setCachedTargetedCustomers(data);
+        }
+      })
+      .catch(err => console.error('Error fetching customer preview:', err))
+      .finally(() => setCustomersLoading(false));
+
+    fetch(`${API_BASE_URL}/api/marketing/generate-message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(messageBody),
+    })
+      .then(r => r.json())
+      .then((data: { message: string }) => setCampaignMessage(data.message))
+      .catch(err => console.error('Error generating message:', err))
+      .finally(() => setMessageLoading(false));
+  };
+
+  // Switch targeting on the configure screen — use cache if available, else fetch
+  const handleConfigureTargetingSwitch = (newTargeting: 'all' | 'targeted') => {
+    setConfigureTargeting(newTargeting);
+
+    const cached = newTargeting === 'all' ? cachedAllCustomers : cachedTargetedCustomers;
+    if (cached) return;
+
+    setCustomersLoading(true);
+    const body = buildPreviewBody(newTargeting);
+
+    fetch(`${API_BASE_URL}/api/marketing/preview-campaign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+      .then(r => r.json())
+      .then((data: CustomerPreview) => {
+        if (newTargeting === 'all') {
+          setCachedAllCustomers(data);
+        } else {
+          setCachedTargetedCustomers(data);
+        }
+      })
+      .catch(err => console.error('Error fetching customer preview:', err))
+      .finally(() => setCustomersLoading(false));
+  };
+
+  // ---------- Derived state ----------
+
+  const currentCustomers =
+    configureTargeting === 'all' ? cachedAllCustomers : cachedTargetedCustomers;
+
+  const isConfigureLoading = messageLoading || customersLoading;
+
+  // ---------- Render ----------
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
@@ -111,8 +295,8 @@ export default function MarketingPage() {
         <Navbar onSignOut={handleSignOut} />
         <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 pb-32">
           {!showCreateFlow ? (
+            /* ── Campaigns list ── */
             <>
-              {/* Header */}
               <div className="mb-8 flex items-center justify-between">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -123,24 +307,20 @@ export default function MarketingPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowCreateFlow(true)}
+                  onClick={() => { resetFlow(); setShowCreateFlow(true); }}
                   className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:opacity-90 transition-all shadow-sm"
                 >
                   Create Campaign
                 </button>
               </div>
 
-              {/* Campaigns Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {mockCampaigns.map((campaign, index) => (
                   <div
                     key={campaign.id}
                     className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 hover:shadow-lg transition-all duration-300"
-                    style={{
-                      animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
-                    }}
+                    style={{ animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both` }}
                   >
-                    {/* Campaign Header */}
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -150,49 +330,38 @@ export default function MarketingPage() {
                           {campaign.description}
                         </p>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          campaign.status === 'active'
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                            : campaign.status === 'completed'
-                            ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
-                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                        }`}
-                      >
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        campaign.status === 'active'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                          : campaign.status === 'completed'
+                          ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400'
+                          : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                      }`}>
                         {campaign.status}
                       </span>
                     </div>
 
-                    {/* Discount Badge */}
                     {campaign.discount && (
                       <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium mb-4">
                         {campaign.discount}% off
                       </div>
                     )}
 
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Sent</p>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
-                          {campaign.sent}
-                        </p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">{campaign.sent}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Orders</p>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
-                          {campaign.orders}
-                        </p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">{campaign.orders}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Read Rate</p>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">
-                          {campaign.readRate}%
-                        </p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white mt-1">{campaign.readRate}%</p>
                       </div>
                     </div>
 
-                    {/* Targeting Info */}
                     <div className="mt-4 flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -203,125 +372,362 @@ export default function MarketingPage() {
                 ))}
               </div>
             </>
+          ) : currentStep === 'configure' ? (
+            /* ── Configure / preview screen ── */
+            <div className="max-w-3xl mx-auto" style={{ animation: 'fadeInScale 0.3s ease-out' }}>
+              {/* Header */}
+              <div className="mb-8 flex items-center justify-between">
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Back
+                </button>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Campaign Preview</h2>
+                <button
+                  onClick={() => { resetFlow(); setShowCreateFlow(false); }}
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Audience card */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 mb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Audience</h3>
+                  {/* Targeting toggle */}
+                  <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                    <button
+                      onClick={() => handleConfigureTargetingSwitch('all')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        configureTargeting === 'all'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      All customers
+                    </button>
+                    <button
+                      onClick={() => handleConfigureTargetingSwitch('targeted')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                        configureTargeting === 'targeted'
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      Targeted
+                    </button>
+                  </div>
+                </div>
+
+                {customersLoading ? (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                    <div className="h-4 w-40 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  </div>
+                ) : currentCustomers ? (
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {currentCustomers.count.toLocaleString()}
+                    </span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {currentCustomers.count === 1 ? 'customer' : 'customers'} will receive this message
+                    </span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No customer data available</p>
+                )}
+
+                {configureTargeting === 'targeted' && !customersLoading && currentCustomers && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    AI-selected based on customer preferences matching this item
+                  </p>
+                )}
+              </div>
+
+              {/* Message card */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">Campaign Message</h3>
+                  {!messageLoading && campaignMessage && (
+                    <span className={`text-xs font-mono ${
+                      campaignMessage.length > 160
+                        ? 'text-red-500 dark:text-red-400'
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}>
+                      {campaignMessage.length}/160
+                    </span>
+                  )}
+                </div>
+
+                {messageLoading ? (
+                  <div className="space-y-2">
+                    <div className="h-4 w-full rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                    <div className="h-4 w-4/5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                    <div className="h-4 w-3/5 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+                  </div>
+                ) : (
+                  <textarea
+                    value={campaignMessage}
+                    onChange={e => setCampaignMessage(e.target.value)}
+                    rows={4}
+                    placeholder="Generating message..."
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700 transition-all resize-none text-sm"
+                  />
+                )}
+                {!messageLoading && campaignMessage.length > 160 && (
+                  <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">
+                    Message exceeds 160 characters and may be split across multiple SMS
+                  </p>
+                )}
+              </div>
+
+              {/* Review summary */}
+              <div className="bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Campaign Summary</h3>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Item</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{selectedItemName}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Discount</p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {hasDiscount && discountValue ? `${discountValue}% off` : 'None'}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Description</p>
+                    <p className="text-gray-900 dark:text-white">{description}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Launch button */}
+              <div className="relative group">
+                <button
+                  disabled
+                  className="w-full py-4 bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded-xl font-semibold cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isConfigureLoading && (
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  )}
+                  {isConfigureLoading ? 'Preparing campaign...' : 'Launch Campaign'}
+                </button>
+                {!isConfigureLoading && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                    Sending coming soon
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
-            /* Create Campaign Flow */
+            /* ── Create campaign wizard ── */
             <div className="max-w-3xl mx-auto">
-              {/* Progress Steps */}
+              {/* Wizard header */}
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
                   <button
-                    onClick={() => setShowCreateFlow(false)}
+                    onClick={() => { resetFlow(); setShowCreateFlow(false); }}
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Create Campaign
-                  </h2>
-                  <div className="w-5" /> {/* Spacer */}
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Create Campaign</h2>
+                  <div className="w-5" />
                 </div>
 
-                {/* Step Indicators */}
+                {/* Step indicators */}
                 <div className="flex items-center justify-between">
-                  {steps.map((step, index) => (
+                  {wizardSteps.map((step, index) => (
                     <div key={step.id} className="flex items-center flex-1">
                       <div className="flex flex-col items-center flex-1">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
-                            index <= currentStepIndex
-                              ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
-                              : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
-                          }`}
-                        >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300 ${
+                          index <= currentStepIndex
+                            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900'
+                            : 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                        }`}>
                           {index + 1}
                         </div>
                         <span className="text-xs mt-2 text-gray-600 dark:text-gray-400 hidden sm:block">
                           {step.label}
                         </span>
                       </div>
-                      {index < steps.length - 1 && (
-                        <div
-                          className={`h-0.5 flex-1 mx-2 transition-all duration-300 ${
-                            index < currentStepIndex
-                              ? 'bg-gray-900 dark:bg-white'
-                              : 'bg-gray-200 dark:bg-gray-800'
-                          }`}
-                        />
+                      {index < wizardSteps.length - 1 && (
+                        <div className={`h-0.5 flex-1 mx-2 transition-all duration-300 ${
+                          index < currentStepIndex
+                            ? 'bg-gray-900 dark:bg-white'
+                            : 'bg-gray-200 dark:bg-gray-800'
+                        }`} />
                       )}
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Step Content */}
+              {/* Step content */}
               <div
                 className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 min-h-[400px]"
-                style={{
-                  animation: 'fadeInScale 0.3s ease-out',
-                }}
+                style={{ animation: 'fadeInScale 0.3s ease-out' }}
               >
+                {/* ── Step 1: Select Item ── */}
                 {currentStep === 'select-item' && (
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                         Select an item to promote
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Choose which menu item you want to create a campaign for
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 gap-3">
-                      {menuItems.map((item, index) => (
-                        <button
-                          key={item}
-                          onClick={() => setSelectedItem(item)}
-                          className={`p-4 rounded-xl border-2 text-left transition-all duration-200 ${
-                            selectedItem === item
-                              ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-800'
-                              : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
-                          }`}
-                          style={{
-                            animation: `fadeInRight 0.3s ease-out ${index * 0.05}s both`,
-                          }}
-                        >
-                          <span className="text-gray-900 dark:text-white font-medium">{item}</span>
-                        </button>
-                      ))}
+
+                    {/* Search */}
+                    <div className="relative">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        value={itemSearch}
+                        onChange={e => handleSearchChange(e.target.value)}
+                        placeholder="Search menu items..."
+                        className="w-full pl-9 pr-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700 text-sm transition-all"
+                      />
                     </div>
+
+                    {/* Items list */}
+                    <div className="space-y-2">
+                      {itemsLoading ? (
+                        Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => (
+                          <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
+                        ))
+                      ) : fetchedItems.length === 0 ? (
+                        <div className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+                          {itemSearch ? `No items matching "${itemSearch}"` : 'No items found'}
+                        </div>
+                      ) : (
+                        fetchedItems.map((item, index) => (
+                          <button
+                            key={item.clover_id}
+                            onClick={() => {
+                              setSelectedItemCloverId(item.clover_id);
+                              setSelectedItemName(item.name);
+                              setSelectedItemDescription(item.description);
+                            }}
+                            className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-200 ${
+                              selectedItemCloverId === item.clover_id
+                                ? 'border-gray-900 dark:border-white bg-gray-50 dark:bg-gray-800'
+                                : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'
+                            }`}
+                            style={{ animation: `fadeInRight 0.3s ease-out ${index * 0.05}s both` }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <span className="text-gray-900 dark:text-white font-medium block truncate">
+                                  {item.name}
+                                </span>
+                                {item.category && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">{item.category}</span>
+                                )}
+                              </div>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-3 shrink-0">
+                                ${item.price.toFixed(2)}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Pagination */}
+                    {!itemsLoading && itemsTotalPages > 1 && (
+                      <div className="flex items-center justify-center gap-3 pt-1">
+                        <button
+                          onClick={() => handlePageChange(itemsPage - 1)}
+                          disabled={itemsPage <= 1}
+                          className="p-1.5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                          aria-label="Previous page"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                          </svg>
+                        </button>
+                        <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
+                          {itemsPage} / {itemsTotalPages}
+                        </span>
+                        <button
+                          onClick={() => handlePageChange(itemsPage + 1)}
+                          disabled={itemsPage >= itemsTotalPages}
+                          className="p-1.5 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                          aria-label="Next page"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
+                {/* ── Step 2: Details ── */}
                 {currentStep === 'details' && (
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                         Campaign details
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Add a description to make your campaign more appealing
+                        Describe what this campaign is about and list the item&apos;s key ingredients
                       </p>
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Description
+                        Campaign description <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={4}
-                        placeholder="e.g., Our juiciest burger with fresh ingredients and special sauce"
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700 transition-all resize-none"
+                        onChange={e => setDescription(e.target.value)}
+                        rows={3}
+                        placeholder="e.g., Promoting our fan-favourite burger for the weekend crowd — fresh, juicy, and loaded"
+                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700 transition-all resize-none text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Ingredients / notes
+                        <span className="ml-1.5 text-xs font-normal text-gray-400">(optional — helps AI targeting & message generation)</span>
+                      </label>
+                      <textarea
+                        value={itemIngredients}
+                        onChange={e => setItemIngredients(e.target.value)}
+                        rows={3}
+                        placeholder="e.g., Beef patty, cheddar, lettuce, tomato, special sauce, brioche bun — contains gluten, dairy"
+                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700 transition-all resize-none text-sm"
                       />
                     </div>
                   </div>
                 )}
 
+                {/* ── Step 3: Discount ── */}
                 {currentStep === 'discount' && (
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                         Discount settings
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -333,20 +739,14 @@ export default function MarketingPage() {
                         <input
                           type="checkbox"
                           checked={hasDiscount}
-                          onChange={(e) => setHasDiscount(e.target.checked)}
+                          onChange={e => setHasDiscount(e.target.checked)}
                           className="w-5 h-5 rounded border-gray-300 dark:border-gray-700"
                         />
-                        <span className="text-gray-900 dark:text-white font-medium">
-                          Include a discount
-                        </span>
+                        <span className="text-gray-900 dark:text-white font-medium">Include a discount</span>
                       </label>
 
                       {hasDiscount && (
-                        <div
-                          style={{
-                            animation: 'fadeInScale 0.3s ease-out',
-                          }}
-                        >
+                        <div style={{ animation: 'fadeInScale 0.3s ease-out' }}>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Discount percentage
                           </label>
@@ -354,15 +754,13 @@ export default function MarketingPage() {
                             <input
                               type="number"
                               value={discountValue}
-                              onChange={(e) => setDiscountValue(e.target.value)}
+                              onChange={e => setDiscountValue(e.target.value)}
                               placeholder="15"
                               min="0"
                               max="100"
-                              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700 transition-all"
+                              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 dark:focus:ring-gray-700 transition-all"
                             />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
-                              %
-                            </span>
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">%</span>
                           </div>
                         </div>
                       )}
@@ -370,10 +768,11 @@ export default function MarketingPage() {
                   </div>
                 )}
 
+                {/* ── Step 4: Targeting ── */}
                 {currentStep === 'targeting' && (
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                         Target audience
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -390,15 +789,13 @@ export default function MarketingPage() {
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="mt-1">
-                            <svg className="w-5 h-5 text-gray-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                          </div>
+                          <svg className="w-5 h-5 mt-0.5 text-gray-900 dark:text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">All customers</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              Send to everyone in your customer base
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                              Send to everyone who has opted in
                             </p>
                           </div>
                         </div>
@@ -413,15 +810,13 @@ export default function MarketingPage() {
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="mt-1">
-                            <svg className="w-5 h-5 text-gray-900 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                            </svg>
-                          </div>
+                          <svg className="w-5 h-5 mt-0.5 text-gray-900 dark:text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                          </svg>
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white">Targeted audience</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                              AI will select customers likely to enjoy this item
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                              AI selects customers whose preferences match this item
                             </p>
                           </div>
                         </div>
@@ -430,25 +825,32 @@ export default function MarketingPage() {
                   </div>
                 )}
 
+                {/* ── Step 5: Review ── */}
                 {currentStep === 'review' && (
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                         Review campaign
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Make sure everything looks good before launching
+                        Make sure everything looks good before generating your campaign
                       </p>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Item</p>
-                        <p className="font-medium text-gray-900 dark:text-white">{selectedItem}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{selectedItemName}</p>
                       </div>
                       <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Description</p>
-                        <p className="text-gray-900 dark:text-white">{description || 'No description'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Campaign description</p>
+                        <p className="text-gray-900 dark:text-white text-sm">{description}</p>
                       </div>
+                      {itemIngredients && (
+                        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ingredients / notes</p>
+                          <p className="text-gray-900 dark:text-white text-sm">{itemIngredients}</p>
+                        </div>
+                      )}
                       <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Discount</p>
                         <p className="font-medium text-gray-900 dark:text-white">
@@ -457,14 +859,16 @@ export default function MarketingPage() {
                       </div>
                       <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Targeting</p>
-                        <p className="font-medium text-gray-900 dark:text-white capitalize">{targeting} customers</p>
+                        <p className="font-medium text-gray-900 dark:text-white capitalize">
+                          {targeting === 'all' ? 'All customers' : 'AI-targeted audience'}
+                        </p>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Navigation Buttons */}
+              {/* Wizard navigation */}
               <div className="flex items-center justify-between mt-6">
                 <button
                   onClick={handleBack}
@@ -474,12 +878,12 @@ export default function MarketingPage() {
                   Back
                 </button>
 
-                {currentStepIndex < steps.length - 1 ? (
+                {currentStep !== 'review' ? (
                   <button
                     onClick={handleNext}
                     disabled={
-                      (currentStep === 'select-item' && !selectedItem) ||
-                      (currentStep === 'details' && !description)
+                      (currentStep === 'select-item' && !selectedItemCloverId) ||
+                      (currentStep === 'details' && !description.trim())
                     }
                     className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
@@ -487,10 +891,10 @@ export default function MarketingPage() {
                   </button>
                 ) : (
                   <button
-                    onClick={handleLaunchCampaign}
+                    onClick={handleConfigureCampaign}
                     className="px-6 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium hover:opacity-90 transition-all shadow-sm"
                   >
-                    Launch Campaign
+                    Configure Campaign
                   </button>
                 )}
               </div>
@@ -499,39 +903,18 @@ export default function MarketingPage() {
         </main>
       </div>
 
-      {/* CSS Animations */}
       <style jsx global>{`
         @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes fadeInScale {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
         }
-
         @keyframes fadeInRight {
-          from {
-            opacity: 0;
-            transform: translateX(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
+          from { opacity: 0; transform: translateX(-10px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>
