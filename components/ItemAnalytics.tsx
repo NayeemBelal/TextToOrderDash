@@ -4,10 +4,16 @@ import { useState, useEffect } from 'react';
 import { TimeFilter } from './TimeFilter';
 import { RevenueChart } from './RevenueChart';
 import { ChartShimmer } from './ChartShimmer';
-import type { TimeFilterValue, RevenueDataPoint, ViewMode } from './RevenueDashboard';
+export type TimeFilterValue = '1h' | '24h' | '1w' | '1m';
+export type ViewMode = 'revenue' | 'orders';
+export interface RevenueDataPoint {
+  timestamp: Date;
+  revenue: number;
+  orders: number;
+}
 
 const RESTAURANT_ID = 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
 
 interface ItemAnalyticsProps {
   itemId: string;

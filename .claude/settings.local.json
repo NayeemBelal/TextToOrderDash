@@ -10,7 +10,16 @@
       "mcp__supabase__list_tables",
       "mcp__supabase__list_extensions",
       "mcp__supabase__list_migrations",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(grep -E \"\\\\.\\(tsx|ts|json\\)$\")",
+      "Bash(grep -r \"export const\" /Users/nayeembelal/Downloads/TextToOrderDashboard --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\")",
+      "Bash(grep *)",
+      "Bash(xargs ls *)",
+      "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/waiter_recommending_from_menu.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
+      "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/readingnews.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
+      "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/baristatexting.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
+      "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/waiter_serving_a_drink_really_fast.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
+      "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/twotalkingontable.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)"
     ]
   }
 }

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { FloatingChatbot } from "@/components";
+import { ConditionalWrapper } from "@/components/ConditionalWrapper";
 
 export const metadata: Metadata = {
-  title: "TextToOrder Dashboard",
-  description: "Restaurant command center for AI-powered SMS ordering",
+  title: "Belan AI — Dashboard",
+  description: "Restaurant voice AI management dashboard",
 };
 
 export default function RootLayout({
@@ -15,8 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
-        <FloatingChatbot restaurantName="Burger Palace" />
+        <ConditionalWrapper>{children}</ConditionalWrapper>
       </body>
     </html>
   );

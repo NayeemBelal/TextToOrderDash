@@ -1,6 +1,6 @@
 'use client';
 
-import { TimeFilterValue } from './RevenueDashboard';
+import { TimeFilterValue } from './ItemAnalytics';
 
 interface TimeFilterProps {
   activeFilter: TimeFilterValue;
