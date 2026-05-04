@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,11 +19,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: wire up real auth
-      await new Promise((r) => setTimeout(r, 800));
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
       router.push('/');
-    } catch {
-      setError('Invalid email or password. Please try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Invalid email or password. Please try again.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

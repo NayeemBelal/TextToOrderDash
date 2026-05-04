@@ -405,7 +405,7 @@ function SandboxSection() {
         </motion.div>
 
         {/* Desktop: tab buttons */}
-        <motion.div variants={fadeIn} className="hidden md:flex gap-0 mb-8 xl:mb-10 border-2 border-black">
+        <motion.div variants={fadeIn} className="hidden md:inline-flex gap-0 mb-8 xl:mb-10 border-2 border-black">
           {(["demo", "sales", "marketing"] as const).map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className="px-6 xl:px-8 py-3 xl:py-4 text-sm xl:text-base font-bold tracking-widest transition-colors"
@@ -783,8 +783,11 @@ export default function LandingPage() {
           </nav>
           <div className="ml-auto flex items-center gap-2 md:gap-3">
             <Link href="/login" className="hidden md:block text-xs xl:text-sm font-bold text-black tracking-widest hover:underline">LOG IN</Link>
-            <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
-              <Link href="/" className="bg-black text-white text-xs font-bold px-3 md:px-5 xl:px-7 py-2 md:py-2.5 xl:py-3 tracking-widest border-2 border-black block whitespace-nowrap">
+            <motion.div className="hidden md:block" whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
+              <Link href="/register" className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest" style={{ background: "#a4e5f8" }}>SIGN UP</Link>
+            </motion.div>
+            <motion.div whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
+              <Link href="https://calendar.app.google/uCwfd2qfNtjJMSca9" target="_blank" rel="noopener noreferrer" className="bg-black text-white text-xs font-bold px-3 md:px-5 xl:px-7 py-2 md:py-2.5 xl:py-3 tracking-widest border-2 border-black block whitespace-nowrap">
                 BOOK A DEMO →
               </Link>
             </motion.div>
@@ -808,7 +811,7 @@ export default function LandingPage() {
                 <a href="#sandbox" onClick={() => setMobileOpen(false)}>TRY IT</a>
                 <a href="#pricing" onClick={() => setMobileOpen(false)}>PRICING</a>
                 <Link href="/login">LOG IN</Link>
-                <Link href="/" className="bg-black text-white px-4 py-2 text-center">BOOK A DEMO →</Link>
+                <a href="https://calendar.app.google/uCwfd2qfNtjJMSca9" target="_blank" rel="noopener noreferrer" className="bg-black text-white px-4 py-2 text-center">BOOK A DEMO →</a>
               </div>
             </motion.div>
           )}
@@ -896,19 +899,20 @@ export default function LandingPage() {
 
           {/* Buttons — stacked on mobile, side by side on sm+ */}
           <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto justify-center">
-            <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 500, damping: 18 }}>
-              <Link href="/"
+            <motion.div whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }} whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}>
+              <Link href="/register"
                 className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap">
                 GET STARTED →
               </Link>
             </motion.div>
-            <motion.a href="#how-it-works"
-              className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
-              whileHover={{ backgroundColor: "#000", color: "#fff", y: -2 }}
-              whileTap={{ scale: 0.97 }} transition={{ duration: 0.15 }}>
-              SEE HOW IT WORKS
-            </motion.a>
+            <motion.div whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }} whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}>
+              <motion.a href="#how-it-works"
+                className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap">
+                SEE HOW IT WORKS
+              </motion.a>
+            </motion.div>
           </motion.div>
 
         </motion.div>
@@ -1082,9 +1086,9 @@ export default function LandingPage() {
               </motion.div>
 
               <div className="flex items-center gap-4 flex-wrap">
-                <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 18 }} className="inline-block">
-                  <Link href="/"
+                <motion.div whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }} whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }} className="inline-block">
+                  <Link href="/register"
                     className="inline-block bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-8 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide">
                     GET STARTED →
                   </Link>
@@ -1124,15 +1128,15 @@ export default function LandingPage() {
           Set up in 30 minutes. Works with your existing POS. No app required.
         </motion.p>
         <motion.div variants={staggerFast} className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center items-center">
-          <motion.div variants={fadeIn} whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 500, damping: 18 }}>
-            <Link href="/"
+          <motion.div variants={fadeIn} whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }} whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}>
+            <a href="https://calendar.app.google/uCwfd2qfNtjJMSca9" target="_blank" rel="noopener noreferrer"
               className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-8 sm:px-10 xl:px-14 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block whitespace-nowrap">
               BOOK A DEMO →
-            </Link>
+            </a>
           </motion.div>
-          <motion.div variants={fadeIn} whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 500, damping: 18 }}>
+          <motion.div variants={fadeIn} whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }} whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}>
             <Link href="/login"
               className="bg-white text-black font-bold text-xs sm:text-sm xl:text-base px-8 sm:px-10 xl:px-14 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block whitespace-nowrap">
               LOG IN TO DASHBOARD
@@ -1150,10 +1154,8 @@ export default function LandingPage() {
             <span className="font-black text-black text-xs xl:text-sm tracking-widest">BELAN AI</span>
           </div>
           <div className="flex gap-4 sm:gap-6 text-xs xl:text-sm font-bold tracking-widest text-black/50">
-            {["PRIVACY", "TERMS", "DOCS"].map((l) => (
-              <a key={l} href="#" className="hover:text-black transition-colors">{l}</a>
-            ))}
             <Link href="/login" className="hover:text-black transition-colors">LOG IN</Link>
+            <Link href="/register" className="hover:text-black transition-colors">SIGN UP</Link>
           </div>
           <p className="text-xs xl:text-sm font-bold tracking-widest text-black/40">© 2026 BELAN AI</p>
         </div>

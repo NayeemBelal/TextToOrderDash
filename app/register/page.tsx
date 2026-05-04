@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function RegisterPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -35,11 +37,21 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      // TODO: wire up real auth
-      await new Promise((r) => setTimeout(r, 900));
-      router.push('/');
-    } catch {
-      setError('Something went wrong. Please try again.');
+      const { error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            restaurant_name: form.restaurantName,
+            restaurant_id: null,
+          },
+        },
+      });
+      if (authError) throw authError;
+      setSuccess(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +83,28 @@ export default function RegisterPage() {
 
       {/* Card */}
       <div className="w-full max-w-sm bg-white rounded-2xl p-8">
+        {success ? (
+          <div className="flex flex-col items-center text-center gap-4 py-4">
+            <div className="w-14 h-14 rounded-full bg-capy-brown-accent/10 flex items-center justify-center">
+              <svg className="w-7 h-7 text-capy-brown-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-capy-text text-lg font-semibold mb-1">You&apos;re on the list!</h2>
+              <p className="text-capy-muted text-sm leading-relaxed">
+                Give us <span className="font-medium text-capy-text">one day</span> to finish setting up your account. We&apos;ll reach out once everything is ready.
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/login')}
+              className="mt-2 h-10 w-full rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors"
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+          <>
         <h1 className="text-capy-text text-xl font-semibold mb-1">Create your account</h1>
         <p className="text-capy-muted text-sm mb-6">Get started with your restaurant dashboard</p>
 
@@ -226,6 +260,8 @@ export default function RegisterPage() {
             Sign in
           </Link>
         </p>
+          </>
+        )}
       </div>
 
       </div>
