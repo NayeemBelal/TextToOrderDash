@@ -177,7 +177,7 @@ function ProductCards() {
       </motion.div>
 
       {/* remaining 4 cards in a 2×2 grid (cols 2-3) */}
-      {rest.map(({ color, icon: _icon, name, tagline, desc, bullets, img }) => {
+      {rest.map(({ color, name, tagline, desc, bullets, img }) => {
         const isHovered = hovered === name;
         return (
           <motion.div
@@ -225,162 +225,304 @@ function buildConversation(greeting: string, items: MenuItem[]) {
   ];
 }
 
-function SandboxSection() {
-  const [activeTab, setActiveTab] = useState<"voice" | "sms">("voice");
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    { id: 1, name: "Latte", price: "4.50" },
-    { id: 2, name: "Croissant", price: "3.75" },
-  ]);
-  const [greeting, setGreeting] = useState("Hi! Welcome to our restaurant. What can I get you today?");
-  const [newName, setNewName] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [showAddRow, setShowAddRow] = useState(false);
-  const nextId = useRef(3);
+const SALES_RESPONSES: { match: RegExp; reply: string }[] = [
+  { match: /classic smash|smashburger/i, reply: "You sold 47 Classic Smashburgers last Thursday — up 12% from the week before. It was your #1 item that day." },
+  { match: /double stack/i, reply: "34 Double Stacks sold last Thursday. It's consistently your #2 seller on weekday evenings." },
+  { match: /chicken/i, reply: "The Crispy Chicken Sandwich moved 28 units last Thursday, mostly between 12–2pm during the lunch rush." },
+  { match: /fries|loaded/i, reply: "Loaded Fries were ordered with 68% of all burgers last Thursday — your best-performing upsell." },
+  { match: /shake|vanilla/i, reply: "Vanilla Shakes sold 19 units. Shake sales spike on Fridays — consider a weekend promo." },
+  { match: /revenue|sales|how much|total/i, reply: "Total revenue last Thursday was $1,847. Dinner (5–9pm) drove 61% of that — your strongest window." },
+  { match: /best.?sell|top|popular/i, reply: "Your top 3 last Thursday: Classic Smashburger (47), Double Stack (34), Crispy Chicken (28). The burger combo is your bread and butter." },
+  { match: /slow|quiet|dead|worst/i, reply: "Your slowest window is 2–4pm on weekdays — averaging only 4 orders/hour. A happy hour promo could move the needle." },
+  { match: /busy|rush|peak|when/i, reply: "Peak hours are 12–1pm and 6–8pm. Friday dinner is your busiest single window of the week." },
+  { match: /last week|this week|weekly/i, reply: "Last week's total: $11,240 across 892 orders. That's up 8% from the previous week. Strong momentum." },
+];
 
-  const addItem = () => {
-    if (!newName.trim()) return;
-    setMenuItems((prev) => [...prev, { id: nextId.current++, name: newName.trim(), price: newPrice || "0.00" }]);
-    setNewName("");
-    setNewPrice("");
-    setShowAddRow(false);
+function getSalesReply(input: string): string {
+  const match = SALES_RESPONSES.find((r) => r.match.test(input));
+  return match?.reply ?? "Great question. Based on your data: orders are trending up 9% week-over-week, with burgers driving 74% of revenue. Want me to dig into a specific item or time window?";
+}
+
+function SandboxSection() {
+  const [activeTab, setActiveTab] = useState<"demo" | "sales" | "marketing">("demo");
+  const [chatInput, setChatInput] = useState("");
+  const [chatHistory, setChatHistory] = useState<{ role: "user" | "ai"; text: string }[]>([
+    { role: "ai", text: "Hey! I'm your Sales AI. Ask me anything about Stack & Smash Burgers — revenue, top sellers, slow periods, you name it." },
+  ]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // marketing state
+  const PROMOS = [
+    { id: "smash", label: "Classic Smashburger — $2 off", target: "Customers who ordered it before", count: 142, segment: "Repeat burger buyers" },
+    { id: "chicken", label: "Crispy Chicken — Buy 1 Get 1", target: "Customers who never tried chicken", count: 89, segment: "Burger-only customers" },
+    { id: "shake", label: "Free Shake with any combo", target: "High-spend customers ($30+)", count: 67, segment: "Top spenders" },
+    { id: "happyhour", label: "Happy Hour: Fries for $2", target: "Customers active 2–5pm", count: 54, segment: "Afternoon regulars" },
+    { id: "lapsed", label: "We miss you — 20% off", target: "Customers inactive 30+ days", count: 203, segment: "Lapsed customers" },
+  ];
+  const [selectedPromo, setSelectedPromo] = useState(PROMOS[0].id);
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const promo = PROMOS.find((p) => p.id === selectedPromo)!;
+  const smsPreview = `Hey! ${promo.label.split("—")[0].trim()} is on at Stack & Smash Burgers. ${promo.label.includes("off") ? `Use code BELAN at checkout.` : promo.label.includes("Get 1") ? "Show this text when you order." : "Tonight only."} Reply STOP to opt out.`;
+
+  const handleSend = () => {
+    setSending(true);
+    setTimeout(() => { setSending(false); setSent(true); }, 1800);
   };
-  const removeItem = (id: number) => setMenuItems((prev) => prev.filter((m) => m.id !== id));
-  const convo = buildConversation(greeting, menuItems);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  const sendMessage = () => {
+    if (!chatInput.trim()) return;
+    const userMsg = chatInput.trim();
+    const reply = getSalesReply(userMsg);
+    setChatHistory((prev) => [...prev, { role: "user", text: userMsg }, { role: "ai", text: reply }]);
+    setChatInput("");
+    setTimeout(() => {
+      if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }, 100);
+  };
 
   return (
     <RevealSection id="sandbox" className="py-20 px-8 md:px-16" style={{ position: "relative", zIndex: 1 }}>
       <div className="max-w-6xl mx-auto">
-        {/* header */}
         <motion.div variants={fadeUp} className="mb-10">
           <div className="inline-block border-2 border-black px-4 py-1.5 mb-4 text-sm font-bold"
             style={{ background: "#e01d5a", color: "white", transform: "rotate(-1deg)" }}>
-            TRY IT YOURSELF
+            LIVE DEMO
           </div>
           <h2 className="text-5xl font-black text-black leading-tight">
-            Build your demo.<br />
-            <span style={{ color: "#ecb32e" }}>See it work in seconds.</span>
+            Hear it for yourself.<br />
+            <span style={{ color: "#ecb32e" }}>Call or text — right now.</span>
           </h2>
         </motion.div>
 
         {/* tab switcher */}
         <motion.div variants={fadeIn} className="flex gap-0 mb-8 inline-flex border-2 border-black">
-          {(["voice", "sms"] as const).map((tab) => (
+          {(["demo", "sales", "marketing"] as const).map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className="px-6 py-3 text-sm font-bold tracking-widest transition-colors"
               style={{ background: activeTab === tab ? "#000" : "rgba(255,255,255,0.85)", color: activeTab === tab ? "#fff" : "#000" }}>
-              {tab === "voice" ? "📞 VOICE AI" : "💬 TEXT TO ORDER"}
+              {tab === "demo" ? "VOICE & TEXT" : tab === "sales" ? "SALES AI" : "MARKETING"}
             </button>
           ))}
         </motion.div>
 
         <AnimatePresence mode="wait">
-          <motion.div key={activeTab}
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3, ease }}
+        {activeTab === "demo" ? (
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/capybaraPics/dishwashertalkingonphone.svg" alt=""
+            className="hidden lg:block absolute -right-24 bottom-0 h-72 w-auto object-contain pointer-events-none"
+            style={{ zIndex: 2 }} />
+
+          <motion.div key="demo" variants={fadeIn} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3, ease }}
             className="grid md:grid-cols-5 gap-0 border-2 border-black"
             style={{ background: "rgba(255,255,255,0.75)" }}>
 
-            {/* LEFT: config */}
-            <div className="md:col-span-2 p-6 border-r-2 border-black">
-              {/* capybara */}
-              <div className="flex justify-center mb-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={activeTab === "voice" ? "/capybaraPics/pizzatalkingonphone.svg" : "/capybaraPics/insuittexting.svg"}
-                  alt="" className="h-28 w-auto object-contain" />
+            {/* LEFT: mock restaurant info */}
+            <div className="md:col-span-2 p-6 border-r-2 border-black flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-1">Demo restaurant</p>
+                <h3 className="text-2xl font-black text-black leading-tight">Stack & Smash Burgers</h3>
               </div>
 
-              {/* menu items */}
-              <div className="mb-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold uppercase tracking-widest">📋 Your Menu</span>
-                  {menuItems.length < 5 && (
-                    <button onClick={() => setShowAddRow(true)}
-                      className="text-xs font-bold px-2 py-1 border border-black hover:bg-black hover:text-white transition-colors"
-                      style={{ background: "#a1dfc5" }}>+ ADD</button>
-                  )}
-                </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Menu highlights</p>
                 <div className="flex flex-col gap-1">
-                  {menuItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between px-3 py-1.5 border border-black text-sm"
+                  {[
+                    { name: "Classic Smashburger", price: "10.99" },
+                    { name: "Double Stack", price: "13.99" },
+                    { name: "Crispy Chicken Sandwich", price: "11.49" },
+                    { name: "Loaded Fries", price: "5.99" },
+                    { name: "Vanilla Shake", price: "4.99" },
+                  ].map((item) => (
+                    <div key={item.name} className="flex items-center justify-between px-3 py-1.5 border border-black text-sm"
                       style={{ background: "rgba(255,255,255,0.9)" }}>
-                      <span className="font-medium">{item.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-xs">${item.price}</span>
-                        <button onClick={() => removeItem(item.id)} className="text-xs text-black/40 hover:text-red-600 font-bold">✕</button>
-                      </div>
+                      <span className="font-bold">{item.name}</span>
+                      <span className="font-black text-xs">${item.price}</span>
                     </div>
                   ))}
-                  {showAddRow && (
-                    <div className="flex gap-1 mt-1">
-                      <input value={newName} onChange={(e) => setNewName(e.target.value)}
-                        placeholder="Item name" onKeyDown={(e) => e.key === "Enter" && addItem()}
-                        className="flex-1 border border-black px-2 py-1 text-xs font-medium outline-none" />
-                      <input value={newPrice} onChange={(e) => setNewPrice(e.target.value)}
-                        placeholder="$0.00" className="w-16 border border-black px-2 py-1 text-xs font-medium outline-none" />
-                      <button onClick={addItem} className="bg-black text-white px-2 py-1 text-xs font-bold">✓</button>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* greeting */}
               <div>
-                <span className="text-xs font-bold uppercase tracking-widest block mb-2">🤖 AI Greeting</span>
-                <textarea value={greeting} onChange={(e) => setGreeting(e.target.value)} rows={3}
-                  className="w-full border-2 border-black p-2 text-sm font-medium outline-none resize-none"
-                  style={{ background: "rgba(255,255,255,0.9)" }} />
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Try asking or ordering</p>
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    "\"I'd like a Double Stack and Loaded Fries\"",
+                    "\"What comes on the Crispy Chicken?\"",
+                    "\"Do you have any combos?\"",
+                    "\"What time do you close?\"",
+                  ].map((q) => (
+                    <div key={q} className="text-xs font-bold text-black/60 px-3 py-1.5 border border-black/20"
+                      style={{ background: "#f5dda1" }}>
+                      {q}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p className="text-xs text-black/50 font-medium mt-2">Your changes preview instantly →</p>
             </div>
 
-            {/* RIGHT: conversation preview */}
-            <div className="md:col-span-3 p-6">
-              {activeTab === "voice" ? (
+            {/* RIGHT: phone number CTA */}
+            <div className="md:col-span-3 p-6 flex items-center justify-center">
+              <div className="flex flex-col items-center text-center gap-6 py-4">
                 <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Live Call</span>
-                    <span className="text-xs text-black/40 font-medium ml-auto">Belan Voice AI</span>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {convo.map((msg, i) => (
-                      <motion.div key={`${greeting}-${menuItems.length}-${i}`}
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.08, duration: 0.35 }}
-                        className={`flex ${msg.role === "customer" ? "justify-end" : "justify-start"}`}>
-                        <div className="max-w-[75%] px-4 py-2.5 text-sm font-medium border-2 border-black"
-                          style={{ background: msg.role === "ai" ? "#a4e5f8" : "#000", color: msg.role === "ai" ? "#000" : "#fff" }}>
-                          {msg.role === "ai" && <span className="text-xs font-bold block mb-0.5 opacity-60">BELAN AI</span>}
-                          {msg.text}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-3">Call or text this number</p>
+                  <a href="tel:+18005550123"
+                    className="block text-5xl font-black text-black tracking-tight leading-none border-b-4 border-black pb-1 hover:text-[#0066cc] transition-colors"
+                    style={{ fontFamily: "Tektur, sans-serif" }}>
+                    (800) 555-0123
+                  </a>
+                  <p className="text-sm font-bold text-black/50 mt-4 max-w-sm">
+                    Call to place a voice order or send a text — the same AI handles both on the same number.
+                  </p>
                 </div>
-              ) : (
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-3 h-3 rounded-full bg-blue-500 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-widest">SMS Thread</span>
-                    <span className="text-xs text-black/40 font-medium ml-auto">iMessage · Belan</span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {convo.map((msg, i) => (
-                      <motion.div key={`${greeting}-${menuItems.length}-${i}`}
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.08, duration: 0.35 }}
-                        className={`flex ${msg.role === "customer" ? "justify-end" : "justify-start"}`}>
-                        <div className="max-w-[75%] px-4 py-2.5 text-sm font-medium rounded-2xl"
-                          style={{ background: msg.role === "ai" ? "#e9e9eb" : "#007aff", color: msg.role === "ai" ? "#000" : "#fff" }}>
-                          {msg.text}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-xs font-bold text-black/50 uppercase tracking-widest">Live now · Available 24/7</span>
                 </div>
-              )}
+              </div>
             </div>
+
           </motion.div>
+        </div>
+        ) : activeTab === "sales" ? (
+        <motion.div key="sales" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3, ease }}
+          className="border-2 border-black" style={{ background: "rgba(255,255,255,0.75)" }}>
+          <div className="grid md:grid-cols-5">
+            {/* LEFT: suggested questions */}
+            <div className="md:col-span-2 p-6 border-r-2 border-black flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-1">Your restaurant</p>
+                <h3 className="text-2xl font-black text-black">Stack & Smash Burgers</h3>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-3">Try asking</p>
+                <div className="flex flex-col gap-2">
+                  {[
+                    "How many Classic Smashburgers did I sell last Thursday?",
+                    "What was my revenue last week?",
+                    "What are my best selling items?",
+                    "When is my slowest time of day?",
+                    "How are Loaded Fries performing as an upsell?",
+                  ].map((q) => (
+                    <button key={q} onClick={() => { setChatInput(q); }}
+                      className="text-left text-xs font-bold text-black/70 px-3 py-2 border border-black/20 hover:border-black hover:bg-[#f5dda1] transition-colors"
+                      style={{ background: "rgba(255,255,255,0.8)" }}>
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: chat */}
+            <div className="md:col-span-3 flex flex-col" style={{ height: "420px" }}>
+              <div className="flex items-center gap-2 px-5 py-3 border-b-2 border-black">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs font-bold uppercase tracking-widest">Sales AI · Stack & Smash</span>
+              </div>
+              <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+                {chatHistory.map((msg, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className="max-w-[80%] px-4 py-2.5 text-sm font-bold border-2 border-black"
+                      style={{ background: msg.role === "ai" ? "#ecb32e" : "#000", color: msg.role === "ai" ? "#000" : "#fff" }}>
+                      {msg.role === "ai" && <span className="text-xs font-black block mb-1 opacity-60">SALES AI</span>}
+                      {msg.text}
+                    </div>
+                  </motion.div>
+                ))}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="border-t-2 border-black flex">
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  placeholder="Ask about your sales data..."
+                  className="flex-1 px-4 py-3 text-sm font-bold outline-none bg-transparent"
+                />
+                <button type="button" onClick={sendMessage}
+                  className="px-5 py-3 text-sm font-black bg-black text-white border-l-2 border-black hover:bg-[#ecb32e] hover:text-black transition-colors">
+                  ASK
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+        ) : (
+        <motion.div key="marketing" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3, ease }}
+          className="border-2 border-black" style={{ background: "rgba(255,255,255,0.75)" }}>
+          <div className="grid md:grid-cols-5">
+
+            {/* LEFT: promo selector */}
+            <div className="md:col-span-2 p-6 border-r-2 border-black flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-1">Campaign builder</p>
+                <h3 className="text-2xl font-black text-black">Pick what to promote.</h3>
+                <p className="text-xs font-bold text-black/50 mt-1">Belan AI picks the right customers automatically.</p>
+              </div>
+              <div className="flex flex-col gap-2">
+                {PROMOS.map((p) => (
+                  <button type="button" key={p.id} onClick={() => { setSelectedPromo(p.id); setSent(false); }}
+                    className="text-left px-3 py-2.5 border-2 transition-colors"
+                    style={{
+                      borderColor: selectedPromo === p.id ? "#000" : "rgba(0,0,0,0.15)",
+                      background: selectedPromo === p.id ? "#c4b5fd" : "rgba(255,255,255,0.8)",
+                    }}>
+                    <div className="font-black text-sm text-black">{p.label}</div>
+                    <div className="text-xs font-bold text-black/50 mt-0.5">{p.segment} · {p.count} customers</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT: preview + send */}
+            <div className="md:col-span-3 p-6 flex flex-col gap-5">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-3">AI-selected audience</p>
+                <div className="flex items-center gap-3 p-4 border-2 border-black" style={{ background: "#f5dda1" }}>
+                  <div>
+                    <div className="font-black text-3xl text-black">{promo.count}</div>
+                    <div className="text-xs font-bold text-black/60 uppercase tracking-widest">customers matched</div>
+                  </div>
+                  <div className="ml-auto text-right">
+                    <div className="font-black text-sm text-black">{promo.segment}</div>
+                    <div className="text-xs font-bold text-black/50 mt-0.5">{promo.target}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-3">SMS preview</p>
+                <div className="p-4 border-2 border-black text-sm font-bold text-black leading-relaxed" style={{ background: "rgba(255,255,255,0.9)" }}>
+                  {smsPreview}
+                </div>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {!sent ? (
+                  <motion.button type="button" key="send" onClick={handleSend}
+                    className="w-full py-4 font-black text-sm tracking-widest border-2 border-black transition-colors"
+                    style={{ background: sending ? "#d1d5db" : "#000", color: "#fff" }}
+                    whileHover={!sending ? { background: "#2fb67d" } : {}}
+                    disabled={sending}>
+                    {sending ? "SENDING..." : `SEND TO ${promo.count} CUSTOMERS`}
+                  </motion.button>
+                ) : (
+                  <motion.div key="done" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    className="w-full py-4 font-black text-sm tracking-widest border-2 border-black text-center"
+                    style={{ background: "#2fb67d", color: "#fff" }}>
+                    {promo.count} MESSAGES SENT
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+          </div>
+        </motion.div>
+        )}
         </AnimatePresence>
       </div>
     </RevealSection>
@@ -623,7 +765,7 @@ export default function LandingPage() {
                 className="p-6 border-2 border-black -ml-[2px] relative"
                 style={{ background: "rgba(255,255,255,0.8)", borderLeft: `6px solid ${color}` }}
                 whileHover={{ y: -4, boxShadow: "4px 4px 0px #000", transition: { type: "spring", stiffness: 400, damping: 20 } }}>
-                <div className="text-5xl font-black mb-3 leading-none" style={{ color, fontFamily: "Tektur, sans-serif" }}>"</div>
+                <div className="text-5xl font-black mb-3 leading-none" style={{ color, fontFamily: "Tektur, sans-serif" }}>&ldquo;</div>
                 <p className="text-sm font-medium text-black/80 leading-relaxed mb-4">{quote}</p>
                 <div className="font-black text-sm text-black">{name}</div>
                 <div className="text-xs text-black/50 font-medium">— Owner</div>
