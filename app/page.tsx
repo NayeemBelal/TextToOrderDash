@@ -123,35 +123,67 @@ function RotatingCapybara() {
 const PRODUCTS = [
   {
     color: "#a4e5f8", name: "Voice AI", tagline: "Never miss a call",
-    desc: "The host that handles the phone so you can handle the floor.",
-    bullets: ["Knows guest allergies & global taste profiles", "Upsells based on popularity and order history", "Answers FAQs, builds carts, takes payment"],
+    desc: "Your AI host — answers every call, takes the order, upsells like a pro.",
+    bullets: [
+      "Always answers — never miss a call, even at dinner rush",
+      "Knows allergies — flags risky ingredients before guests order",
+      "Smart upsells — suggests sides and drinks like your best server",
+      "Handles checkout — answers questions and takes secure payment",
+    ],
     img: "talkingonphone.svg",
   },
   {
-    color: "#c6a591", name: "Text AI", tagline: "Order by SMS",
-    desc: "No app. No login. Just a text to order.",
-    bullets: ["Remembers preferences across the whole network", "Full menu browsing and mods via SMS/iMessage", "Secure payment link sent straight to their phone"],
+    color: "#c6a591", name: "Text AI", tagline: "Order by text",
+    desc: "No app, no login — guests just text to order.",
+    bullets: [
+      "Works on any phone — iMessage and regular texts",
+      "Remembers regulars — knows their usual without asking",
+      "Pay by text — secure checkout link goes to their phone",
+    ],
     img: "baristatexting.svg",
   },
   {
     color: "#a1dfc5", name: "Dashboard", tagline: "See & configure everything",
-    desc: "Your mission control for digital commerce.",
-    bullets: ["Live revenue, orders, and call history", "Configure AI voice and upsell logic", "Instant menu and pricing updates"],
+    desc: "One screen to run it all.",
+    bullets: [
+      "See it live — orders, calls, and revenue in real time",
+      "Change anything — voice, upsells, and specials in a click",
+      "Menu in seconds — update prices or 86 items instantly",
+    ],
     img: "scooterguytalkingonphone.svg",
   },
   {
-    color: "#c4b5fd", name: "Marketing", tagline: "Fill slow nights",
-    desc: "Smarter blasts to the right customers.",
-    bullets: ["Targets 'Spicy Food' or 'Vegan' fans automatically", "One-click personalized SMS campaigns", "Track orders generated per blast"],
-    img: "runningupstairs.svg", imgSize: "h-28 xl:h-36 2xl:h-44",
+    color: "#c4b5fd", name: "Marketing AI", tagline: "Fill slow nights",
+    desc: "Pick a dish to push. We find the right guests and text them — one click.",
+    bullets: [
+      "Picks the right list — best buyers for whatever you want to sell",
+      "Reads every guest — taste profiles, favorites, and allergies",
+      "Custom text per guest — sent in a single click",
+    ],
+    img: "runningupstairs.svg", imgSize: "h-20 xl:h-28 2xl:h-32",
   },
   {
     color: "#fbc8d4", name: "Sales AI", tagline: "Ask your data",
     desc: "Chat with your numbers in plain English.",
-    bullets: ["Ask anything — trends, peak hours, top sellers", "Instant answers on complex revenue questions", "AI-driven advice on menu tweaks for better margins"],
+    bullets: [
+      "Ask anything — “How many Fatty Patties had extra cheese the last 4 Thursdays?”",
+      "No spreadsheets — instant answers, no digging",
+      "Pricing tips — spots small tweaks that lift your margin",
+    ],
     img: "waitertakingselfie.svg",
   },
 ];
+
+function Bullet({ text }: { text: string }) {
+  const idx = text.indexOf(" — ");
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      <span className="font-black">{text.slice(0, idx)}</span>
+      <span className="font-bold">{text.slice(idx)}</span>
+    </>
+  );
+}
 
 function ProductCards() {
   const voice = PRODUCTS[0];
@@ -170,8 +202,8 @@ function ProductCards() {
               <p className="text-sm font-bold text-black/70 leading-relaxed mb-3">{desc}</p>
               <ul className="flex flex-col gap-1.5">
                 {bullets.map((b) => (
-                  <li key={b} className="flex items-center gap-2 text-xs font-bold text-black">
-                    <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" />{b}
+                  <li key={b} className="flex items-start gap-2 text-xs font-bold text-black">
+                    <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0 mt-1.5" /><span><Bullet text={b} /></span>
                   </li>
                 ))}
               </ul>
@@ -199,8 +231,8 @@ function ProductCards() {
             <p className="text-sm xl:text-base font-bold text-black/70 leading-relaxed">{voice.desc}</p>
             <ul className="flex flex-col gap-2 mt-1">
               {voice.bullets.map((b) => (
-                <li key={b} className="flex items-center gap-2 text-sm xl:text-base font-bold text-black">
-                  <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0" />{b}
+                <li key={b} className="flex items-start gap-2 text-sm xl:text-base font-bold text-black leading-snug">
+                  <span className="w-1.5 h-1.5 rounded-full bg-black flex-shrink-0 mt-2" /><span><Bullet text={b} /></span>
                 </li>
               ))}
             </ul>
@@ -223,17 +255,17 @@ function ProductCards() {
               onHoverEnd={() => setHovered(null)}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={`/capybaraPics/${encodeURIComponent(img)}`} alt=""
-                className={`absolute bottom-0 right-0 w-auto object-contain pointer-events-none opacity-90 ${imgSize ?? "h-36 xl:h-44 2xl:h-52"}`}
+                className={`absolute bottom-0 right-0 w-auto object-contain pointer-events-none opacity-90 ${imgSize ?? "h-28 xl:h-36 2xl:h-44"}`}
                 style={{ zIndex: 0 }} />
               <div style={{ position: "relative", zIndex: 1 }}>
                 <div className="font-black text-lg xl:text-xl 2xl:text-2xl text-black leading-tight">{name}</div>
                 <div className="text-xs xl:text-sm font-bold text-black/40 uppercase tracking-widest mt-0.5">{tagline}</div>
               </div>
-              <p className="text-sm xl:text-base font-bold text-black/60 leading-relaxed" style={{ position: "relative", zIndex: 1 }}>{desc}</p>
-              <ul className="flex flex-col gap-1.5" style={{ position: "relative", zIndex: 1 }}>
+              <p className="text-sm xl:text-base font-bold text-black/70 leading-relaxed pr-24 xl:pr-32" style={{ position: "relative", zIndex: 1 }}>{desc}</p>
+              <ul className="flex flex-col gap-1.5 pr-20 xl:pr-28" style={{ position: "relative", zIndex: 1 }}>
                 {bullets.map((b) => (
-                  <li key={b} className="flex items-center gap-2 text-xs xl:text-sm font-bold text-black/70">
-                    <span className="w-1 h-1 rounded-full bg-black/40 flex-shrink-0" />{b}
+                  <li key={b} className="flex items-start gap-2 text-sm xl:text-[0.95rem] font-bold text-black/80 leading-snug">
+                    <span className="w-1.5 h-1.5 rounded-full bg-black/60 flex-shrink-0 mt-1.5" /><span><Bullet text={b} /></span>
                   </li>
                 ))}
               </ul>
