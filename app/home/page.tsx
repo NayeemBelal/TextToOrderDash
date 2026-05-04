@@ -123,32 +123,32 @@ function RotatingCapybara() {
 const PRODUCTS = [
   {
     color: "#a4e5f8", name: "Voice AI", tagline: "Never miss a call",
-    desc: "AI answers, takes orders, upsells.",
-    bullets: ["Unlimited concurrent calls", "Custom greetings & upsells", "FAQ handling built-in"],
+    desc: "The host that handles the phone so you can handle the floor.",
+    bullets: ["Knows guest allergies & global taste profiles", "Upsells based on popularity and order history", "Answers FAQs, builds carts, takes payment"],
     img: "talkingonphone.svg",
   },
   {
     color: "#c6a591", name: "Text AI", tagline: "Order by SMS",
-    desc: "No app. No login. Just text.",
-    bullets: ["Same number as voice", "Unlimited messages", "Auto payment link via SMS"],
+    desc: "No app. No login. Just a text to order.",
+    bullets: ["Remembers preferences across the whole network", "Full menu browsing and mods via SMS/iMessage", "Secure payment link sent straight to their phone"],
     img: "baristatexting.svg",
   },
   {
-    color: "#a1dfc5", name: "Dashboard", tagline: "See everything",
-    desc: "Revenue and orders, live.",
-    bullets: ["Live revenue tracking", "Top sellers & trends", "Call & order history"],
+    color: "#a1dfc5", name: "Dashboard", tagline: "See & configure everything",
+    desc: "Your mission control for digital commerce.",
+    bullets: ["Live revenue, orders, and call history", "Configure AI voice and upsell logic", "Instant menu and pricing updates"],
     img: "scooterguytalkingonphone.svg",
   },
   {
     color: "#c4b5fd", name: "Marketing", tagline: "Fill slow nights",
-    desc: "SMS blasts to past customers.",
-    bullets: ["One-click SMS blasts", "Target past customers", "Track campaign results"],
+    desc: "Smarter blasts to the right customers.",
+    bullets: ["Targets 'Spicy Food' or 'Vegan' fans automatically", "One-click personalized SMS campaigns", "Track orders generated per blast"],
     img: "runningupstairs.svg", imgSize: "h-28 xl:h-36 2xl:h-44",
   },
   {
     color: "#fbc8d4", name: "Sales AI", tagline: "Ask your data",
-    desc: "Chat with your own numbers.",
-    bullets: ["Natural language queries", "Revenue insights on demand", "Menu optimization tips"],
+    desc: "Chat with your numbers in plain English.",
+    bullets: ["Ask anything — trends, peak hours, top sellers", "Instant answers on complex revenue questions", "AI-driven advice on menu tweaks for better margins"],
     img: "waitertakingselfie.svg",
   },
 ];
@@ -883,18 +883,18 @@ export default function LandingPage() {
           {/* Subtitle — 2 lines on mobile */}
           <motion.p variants={fadeUp}
             className="text-lg sm:text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl font-black text-black leading-snug mb-2 sm:mb-3 max-w-xs sm:max-w-xl md:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl">
-            I handle{" "}
+            The front-of-house that{" "}
             <span className="px-1.5 sm:px-2 py-0.5 border-2 border-black" style={{ background: "#a4e5f8" }}>
-              📞 every phone call
+              📞 never misses a sale
             </span>{" "}
-            so your team can focus on what actually matters{" "}
+            — or a call{" "}
             <span style={{ color: "#ecb32e" }}>🍕</span>
           </motion.p>
 
           {/* Description — 2-3 lines on mobile */}
           <motion.p variants={fadeUp}
             className="text-sm sm:text-base md:text-lg xl:text-xl 2xl:text-2xl text-black/60 font-medium mb-6 sm:mb-8 max-w-xs sm:max-w-sm md:max-w-xl xl:max-w-2xl leading-relaxed">
-            Belan AI answers calls, takes SMS orders, and sends them straight to your POS. No app. No account. No friction.
+            Belan AI picks up every call, upsells every order, and recommends based on each customer&apos;s taste profile — then fires the order straight to your POS.
           </motion.p>
 
           {/* Buttons — stacked on mobile, side by side on sm+ */}
@@ -940,7 +940,7 @@ export default function LandingPage() {
               <motion.div variants={stagger} className="flex flex-col gap-3 sm:gap-4 xl:gap-6">
                 {[
                   { num: "01", color: "#a4e5f8", title: "Customer calls. Belan answers.", desc: "Every call picked up on the first ring — no hold music, no missed orders, no staff needed.", mobileImg: "baristatalkingonphone.svg" },
-                  { num: "02", color: "#f5dda1", title: "AI takes the order naturally.", desc: "Belan knows your menu and talks like a person. Customers just say what they want.", mobileImg: "waiter_recommending_from_menu.svg" },
+                  { num: "02", color: "#f5dda1", title: "AI takes the order naturally.", desc: "Belan checks each customer's taste profile and allergy history, recommends what they'll love, and applies your upsell rules on every single order.", mobileImg: "waiter_recommending_from_menu.svg" },
                   { num: "03", color: "#2fb67d", title: "Pay by text. Print in the kitchen.", desc: "Belan texts a payment link, then fires the order straight to your POS the moment they pay.", white: true, mobileImg: "runningwithpizza.svg" },
                 ].map(({ num, color, title, desc, white, mobileImg }) => (
                   <motion.div key={num} variants={fadeUp}
@@ -1022,9 +1022,9 @@ export default function LandingPage() {
 
           <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-0">
             {[
-              { name: "Lime N Dime", quote: "We were drowning during dinner rush. Now our phones answer themselves and orders go straight to Clover.", color: "#a4e5f8" },
-              { name: "Epic Pizza", quote: "Customers love texting their order. Fewer mistakes, faster kitchen, and zero hold music.", color: "#f5dda1" },
-              { name: "Shaghf", quote: "Setup took 20 minutes. Belan connected to our POS and started taking orders the same day.", color: "#a1dfc5" },
+              { name: "Lime N Dime", quote: "Dinner rush used to mean constant ringing phones and stressed staff. Now Belan handles the phones and our team stays on the grill. It paid for itself in the first week.", color: "#a4e5f8" },
+              { name: "Epic Pizza", quote: "The global taste profile is a game changer. When someone visiting from out of town calls, Belan already knows their preferences from other restaurants in the network — every visitor feels like a local regular.", color: "#f5dda1" },
+              { name: "Shaghf", quote: "Setup took 20 minutes. We connected Clover, chose a voice, and started taking orders. The Sales AI even flagged that we were underpricing our lattes.", color: "#a1dfc5" },
             ].map(({ name, quote, color }) => (
               <motion.div key={name} variants={fadeUp}
                 className="p-5 sm:p-6 xl:p-8 2xl:p-10 border-2 border-black md:-ml-[2px] relative"
