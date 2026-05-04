@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { ConditionalNav } from '@/components/voice/ConditionalNav';
 
-const FULL_PAGE_ROUTES = ['/home', '/login', '/register'];
+const FULL_PAGE_ROUTES = ['/', '/login', '/register'];
 
 export function ConditionalWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
