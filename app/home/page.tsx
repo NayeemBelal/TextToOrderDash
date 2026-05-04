@@ -433,10 +433,10 @@ function SandboxSection() {
                   <div className="p-5 border-b-2 border-black flex flex-col items-center text-center gap-4">
                     <div>
                       <p className="text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Call or text this number</p>
-                      <a href="tel:+18005550123"
+                      <a href="tel:+18554852690"
                         className="block text-4xl font-black text-black tracking-tight leading-none border-b-4 border-black pb-1 hover:text-[#0066cc] transition-colors"
                         style={{ fontFamily: "Tektur, sans-serif" }}>
-                        (800) 555-0123
+                        (855) 485-2690
                       </a>
                       <p className="text-xs font-bold text-black/50 mt-3">Same AI handles calls and texts — one number.</p>
                     </div>
@@ -508,10 +508,10 @@ function SandboxSection() {
                     <div className="flex flex-col items-center text-center gap-6 py-4">
                       <div>
                         <p className="text-xs xl:text-sm font-bold uppercase tracking-widest text-black/40 mb-3">Call or text this number</p>
-                        <a href="tel:+18005550123"
+                        <a href="tel:+18554852690"
                           className="block text-5xl xl:text-6xl 2xl:text-7xl font-black text-black tracking-tight leading-none border-b-4 border-black pb-1 hover:text-[#0066cc] transition-colors"
                           style={{ fontFamily: "Tektur, sans-serif" }}>
-                          (800) 555-0123
+                          (855) 485-2690
                         </a>
                         <p className="text-sm xl:text-base font-bold text-black/50 mt-4 max-w-sm xl:max-w-md">
                           Call to place a voice order or send a text — the same AI handles both on the same number.
