@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
-      router.push('/');
+      router.push('/home');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid email or password. Please try again.';
       setError(msg);
