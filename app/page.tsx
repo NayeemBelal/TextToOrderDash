@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { motion, AnimatePresence, useInView } from "framer-motion";
+import { useAuth } from "@/lib/auth-context";
 
 /* ── animation ── */
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -1345,6 +1346,7 @@ function SandboxSection() {
 /* ── page ── */
 export default function LandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <div
@@ -1401,25 +1403,43 @@ export default function LandingPage() {
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2 md:gap-3">
-            <Link
-              href="/login"
-              className="hidden md:block text-xs xl:text-sm font-bold text-black tracking-widest hover:underline"
-            >
-              LOG IN
-            </Link>
-            <motion.div
-              className="hidden md:block"
-              whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            >
-              <Link
-                href="/register"
-                className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest"
-                style={{ background: "#a4e5f8" }}
+            {user ? (
+              <motion.div
+                className="hidden md:block"
+                whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
-                SIGN UP
-              </Link>
-            </motion.div>
+                <Link
+                  href="/home"
+                  className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest"
+                  style={{ background: "#a4e5f8" }}
+                >
+                  GO TO DASHBOARD →
+                </Link>
+              </motion.div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden md:block text-xs xl:text-sm font-bold text-black tracking-widest hover:underline"
+                >
+                  LOG IN
+                </Link>
+                <motion.div
+                  className="hidden md:block"
+                  whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  <Link
+                    href="/register"
+                    className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest"
+                    style={{ background: "#a4e5f8" }}
+                  >
+                    SIGN UP
+                  </Link>
+                </motion.div>
+              </>
+            )}
             <motion.div
               whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
               whileTap={{ scale: 0.97 }}
@@ -1484,7 +1504,11 @@ export default function LandingPage() {
                 <a href="#pricing" onClick={() => setMobileOpen(false)}>
                   PRICING
                 </a>
-                <Link href="/login">LOG IN</Link>
+                {user ? (
+                  <Link href="/home">GO TO DASHBOARD →</Link>
+                ) : (
+                  <Link href="/login">LOG IN</Link>
+                )}
                 <a
                   href="https://calendar.app.google/uCwfd2qfNtjJMSca9"
                   target="_blank"
@@ -1688,24 +1712,26 @@ export default function LandingPage() {
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
             >
               <Link
-                href="/register"
+                href={user ? "/home" : "/register"}
                 className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
               >
-                GET STARTED →
+                {user ? "GO TO DASHBOARD →" : "GET STARTED →"}
               </Link>
             </motion.div>
-            <motion.div
-              whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            >
-              <motion.a
-                href="#how-it-works"
-                className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
+            {!user && (
+              <motion.div
+                whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
-                SEE HOW IT WORKS
-              </motion.a>
-            </motion.div>
+                <motion.a
+                  href="#how-it-works"
+                  className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
+                >
+                  SEE HOW IT WORKS
+                </motion.a>
+              </motion.div>
+            )}
           </motion.div>
         </motion.div>
       </section>
@@ -2099,10 +2125,10 @@ export default function LandingPage() {
                   className="inline-block"
                 >
                   <Link
-                    href="/register"
+                    href={user ? "/home" : "/register"}
                     className="inline-block bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-8 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide"
                   >
-                    GET STARTED →
+                    {user ? "GO TO DASHBOARD →" : "GET STARTED →"}
                   </Link>
                 </motion.div>
                 <span className="text-xs xl:text-sm text-black/40 font-medium">
@@ -2191,10 +2217,10 @@ export default function LandingPage() {
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
             <Link
-              href="/login"
+              href={user ? "/home" : "/login"}
               className="bg-white text-black font-bold text-xs sm:text-sm xl:text-base px-8 sm:px-10 xl:px-14 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block whitespace-nowrap"
             >
-              LOG IN TO DASHBOARD
+              {user ? "GO TO DASHBOARD →" : "LOG IN TO DASHBOARD"}
             </Link>
           </motion.div>
         </motion.div>
@@ -2218,15 +2244,20 @@ export default function LandingPage() {
             </span>
           </div>
           <div className="flex gap-4 sm:gap-6 text-xs xl:text-sm font-bold tracking-widest text-black/50">
-            <Link href="/login" className="hover:text-black transition-colors">
-              LOG IN
-            </Link>
-            <Link
-              href="/register"
-              className="hover:text-black transition-colors"
-            >
-              SIGN UP
-            </Link>
+            {user ? (
+              <Link href="/home" className="hover:text-black transition-colors">
+                DASHBOARD
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="hover:text-black transition-colors">
+                  LOG IN
+                </Link>
+                <Link href="/register" className="hover:text-black transition-colors">
+                  SIGN UP
+                </Link>
+              </>
+            )}
           </div>
           <p className="text-xs xl:text-sm font-bold tracking-widest text-black/40">
             © 2026 BELAN AI

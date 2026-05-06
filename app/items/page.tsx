@@ -4,15 +4,15 @@ import { Navbar, Sidebar } from '@/components';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { MenuItem, MenuCategory } from '@/types';
-
-const RESTAURANT_ID = 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
-const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
+import { API_BASE_URL } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 type SortKey = 'name' | 'price' | 'orders' | 'revenue';
 type SortDirection = 'asc' | 'desc';
 
 export default function ItemsPage() {
   const router = useRouter();
+  const { restaurantId } = useAuth();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,11 +24,12 @@ export default function ItemsPage() {
   const [timeRange, setTimeRange] = useState<'1w' | '1m'>('1m');
 
   const fetchMenuItems = async () => {
+    if (!restaurantId) return;
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
-        restaurant_id: RESTAURANT_ID,
+        restaurant_id: restaurantId,
         time_range: timeRange,
       });
       const response = await fetch(`${API_BASE_URL}/api/analytics/menu-items?${params}`);
@@ -45,7 +46,7 @@ export default function ItemsPage() {
 
   useEffect(() => {
     fetchMenuItems();
-  }, [timeRange]);
+  }, [timeRange, restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleAvailable = async (itemId: string) => {
     // Optimistic update

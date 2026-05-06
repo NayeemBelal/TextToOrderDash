@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { apiFetch, RESTAURANT_ID, type UpsellRule } from "@/lib/api";
+import { apiFetch, type UpsellRule } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 interface MenuItemDropdownProps {
   value: string;
@@ -101,6 +102,7 @@ function MenuItemDropdown({ value, onChange, menuItems, placeholder = "Select an
 }
 
 export function UpsellRuleEditor() {
+  const { restaurantId } = useAuth();
   const [rules, setRules] = useState<UpsellRule[]>([]);
   const [menuItems, setMenuItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,15 +115,16 @@ export function UpsellRuleEditor() {
   const [toggleError, setToggleError] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (!restaurantId) return;
     Promise.all([
-      apiFetch<{ upsells: UpsellRule[] }>(`/api/upsells?restaurant_id=${RESTAURANT_ID}`),
-      apiFetch<{ items: { name: string }[] }>(`/api/configure/menu-items?restaurant_id=${RESTAURANT_ID}`).catch(() => ({ items: [] })),
+      apiFetch<{ upsells: UpsellRule[] }>(`/api/upsells?restaurant_id=${restaurantId}`),
+      apiFetch<{ items: { name: string }[] }>(`/api/configure/menu-items?restaurant_id=${restaurantId}`).catch(() => ({ items: [] })),
     ]).then(([upsellData, menuData]) => {
       setRules(upsellData.upsells);
       setMenuItems((menuData.items ?? []).map((i: { name: string }) => i.name));
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  }, [restaurantId]);
 
   const openAdd = () => {
     setEditingRule(null);
@@ -144,14 +147,14 @@ export function UpsellRuleEditor() {
     try {
       if (editingRule) {
         const updated = await apiFetch<UpsellRule>(
-          `/api/upsells/${editingRule.id}?restaurant_id=${RESTAURANT_ID}`,
+          `/api/upsells/${editingRule.id}?restaurant_id=${restaurantId}`,
           { method: 'PATCH', body: JSON.stringify({ triggerItemName: draft.triggerItemName, suggestedItemName: draft.suggestedItemName, message: draft.message }) }
         );
         setRules((prev) => prev.map((r) => (r.id === editingRule.id ? updated : r)));
       } else {
         const created = await apiFetch<UpsellRule>(`/api/upsells`, {
           method: 'POST',
-          body: JSON.stringify({ restaurant_id: RESTAURANT_ID, ...draft }),
+          body: JSON.stringify({ restaurant_id: restaurantId, ...draft }),
         });
         setRules((prev) => [...prev, created]);
       }
@@ -167,7 +170,7 @@ export function UpsellRuleEditor() {
     const prev = rules;
     setRules((r) => r.filter((x) => x.id !== id));
     try {
-      await apiFetch(`/api/upsells/${id}?restaurant_id=${RESTAURANT_ID}`, { method: 'DELETE' });
+      await apiFetch(`/api/upsells/${id}?restaurant_id=${restaurantId}`, { method: 'DELETE' });
     } catch {
       setRules(prev);
     }
@@ -177,7 +180,7 @@ export function UpsellRuleEditor() {
     const next = !rule.active;
     setRules((prev) => prev.map((r) => (r.id === rule.id ? { ...r, active: next } : r)));
     try {
-      await apiFetch(`/api/upsells/${rule.id}?restaurant_id=${RESTAURANT_ID}`, {
+      await apiFetch(`/api/upsells/${rule.id}?restaurant_id=${restaurantId}`, {
         method: 'PATCH',
         body: JSON.stringify({ active: next }),
       });

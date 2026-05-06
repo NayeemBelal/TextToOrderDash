@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, RESTAURANT_ID, type FAQ } from '@/lib/api';
+import { apiFetch, type FAQ } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 export function FAQEditor() {
+  const { restaurantId } = useAuth();
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -15,10 +17,11 @@ export function FAQEditor() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<{ faqs: FAQ[] }>(`/api/faqs?restaurant_id=${RESTAURANT_ID}`)
+    if (!restaurantId) return;
+    apiFetch<{ faqs: FAQ[] }>(`/api/faqs?restaurant_id=${restaurantId}`)
       .then((d) => { setFaqs(d.faqs); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [restaurantId]);
 
   const filtered = faqs.filter(
     (f) =>
@@ -47,14 +50,14 @@ export function FAQEditor() {
     try {
       if (editingFaq) {
         const updated = await apiFetch<FAQ>(
-          `/api/faqs/${editingFaq.id}?restaurant_id=${RESTAURANT_ID}`,
+          `/api/faqs/${editingFaq.id}?restaurant_id=${restaurantId}`,
           { method: 'PATCH', body: JSON.stringify({ question: draft.question, answer: draft.answer, category: draft.category }) }
         );
         setFaqs((prev) => prev.map((f) => (f.id === editingFaq.id ? updated : f)));
       } else {
         const created = await apiFetch<FAQ>(`/api/faqs`, {
           method: 'POST',
-          body: JSON.stringify({ restaurant_id: RESTAURANT_ID, ...draft }),
+          body: JSON.stringify({ restaurant_id: restaurantId, ...draft }),
         });
         setFaqs((prev) => [...prev, created]);
       }
@@ -71,7 +74,7 @@ export function FAQEditor() {
     setFaqs((f) => f.filter((x) => x.id !== id));
     setDeletingId(id);
     try {
-      await apiFetch(`/api/faqs/${id}?restaurant_id=${RESTAURANT_ID}`, { method: 'DELETE' });
+      await apiFetch(`/api/faqs/${id}?restaurant_id=${restaurantId}`, { method: 'DELETE' });
     } catch {
       setFaqs(prev);
     } finally {

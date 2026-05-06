@@ -9,7 +9,8 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { apiFetch, RESTAURANT_ID, API_BASE_URL, type VoiceStats } from "@/lib/api";
+import { apiFetch, API_BASE_URL, type VoiceStats } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 type DateRange = "24h" | "1w" | "1m";
 
@@ -172,7 +173,7 @@ function DateRangeDropdown({
 }
 
 // Top selling items with drilldown mini-chart
-function TopSellingItems({ dateRange }: { dateRange: DateRange }) {
+function TopSellingItems({ dateRange, restaurantId }: { dateRange: DateRange; restaurantId: string }) {
   const [items, setItems] = useState<BestSellerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selected, setSelected] = useState<BestSellerItem | null>(null);
@@ -181,7 +182,7 @@ function TopSellingItems({ dateRange }: { dateRange: DateRange }) {
     setIsLoading(true);
     const apiRange = dateRange === "24h" ? "1w" : dateRange;
     fetch(
-      `${API_BASE_URL}/api/analytics/best-sellers?restaurant_id=${RESTAURANT_ID}&time_range=${apiRange}&limit=5`,
+      `${API_BASE_URL}/api/analytics/best-sellers?restaurant_id=${restaurantId}&time_range=${apiRange}&limit=5`,
     )
       .then((r) => r.json())
       .then((data) => {
@@ -191,7 +192,7 @@ function TopSellingItems({ dateRange }: { dateRange: DateRange }) {
       })
       .catch(() => setItems([]))
       .finally(() => setIsLoading(false));
-  }, [dateRange]);
+  }, [dateRange, restaurantId]);
 
   const chartData = selected
     ? seedItemHistory(Math.round(selected.orders / 7))
@@ -313,22 +314,24 @@ function TopSellingItems({ dateRange }: { dateRange: DateRange }) {
 }
 
 export function VoiceAnalyticsTab() {
+  const { restaurantId } = useAuth();
   const [dateRange, setDateRange] = useState<DateRange>("1w");
   const [stats, setStats] = useState<VoiceStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState(false);
 
   useEffect(() => {
+    if (!restaurantId) return;
     let mounted = true;
     setStatsLoading(true);
     setStatsError(false);
     apiFetch<{ stats: VoiceStats }>(
-      `/api/analytics/voice-stats?restaurant_id=${RESTAURANT_ID}&time_range=${dateRange}`
+      `/api/analytics/voice-stats?restaurant_id=${restaurantId}&time_range=${dateRange}`
     )
       .then((data) => { if (mounted) { setStats(data.stats); setStatsLoading(false); } })
       .catch(() => { if (mounted) { setStatsError(true); setStatsLoading(false); } });
     return () => { mounted = false; };
-  }, [dateRange]);
+  }, [dateRange, restaurantId]);
 
   const callMinutesLabel = stats
     ? stats.callMinutes >= 60
@@ -345,7 +348,7 @@ export function VoiceAnalyticsTab() {
 
       {/* Top row: Top selling items */}
       <div className="flex-shrink-0" style={{ height: 360 }}>
-        <TopSellingItems dateRange={dateRange} />
+        <TopSellingItems dateRange={dateRange} restaurantId={restaurantId ?? ''} />
       </div>
 
       {/* Stat tiles: 3×3 grid */}
@@ -353,7 +356,7 @@ export function VoiceAnalyticsTab() {
         <div className="flex items-center justify-center gap-3 py-6 bg-white rounded-2xl border border-capy-border min-h-[80px]">
           <p className="text-sm text-capy-muted">Couldn&apos;t load analytics.</p>
           <button
-            onClick={() => { setStatsError(false); setStatsLoading(true); apiFetch<{ stats: VoiceStats }>(`/api/analytics/voice-stats?restaurant_id=${RESTAURANT_ID}&time_range=${dateRange}`).then((d) => { setStats(d.stats); setStatsLoading(false); }).catch(() => { setStatsError(true); setStatsLoading(false); }); }}
+            onClick={() => { setStatsError(false); setStatsLoading(true); apiFetch<{ stats: VoiceStats }>(`/api/analytics/voice-stats?restaurant_id=${restaurantId}&time_range=${dateRange}`).then((d) => { setStats(d.stats); setStatsLoading(false); }).catch(() => { setStatsError(true); setStatsLoading(false); }); }}
             className="text-xs font-semibold text-capy-green-dark underline"
           >
             Retry

@@ -3,20 +3,22 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 const TABS = [
-  { label: "Home", href: "/" },
+  { label: "Home", href: "/home" },
   { label: "Configure", href: "/configure" },
 ];
 
 export function VoiceTopNav() {
   const pathname = usePathname();
+  const { signOut } = useAuth();
   const [hoverState, setHoverState] = useState<
     Record<string, "hovering" | "leaving" | null>
   >({});
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === "/home") return pathname === "/home";
     if (href === "/configure") {
       return pathname === "/configure" || pathname.startsWith("/configure/");
     }
@@ -63,14 +65,23 @@ export function VoiceTopNav() {
           </nav>
         </div>
 
-        {/* Right — logo */}
-        <div className="flex-1 flex items-center justify-end py-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/BelanLogo.png"
-            alt="Belan AI"
-            className="w-16 h-16 rounded-full object-cover"
-          />
+        {/* Right — sign out + logo */}
+        <div className="flex-1 flex items-center justify-end gap-4 py-3">
+          <button
+            onClick={signOut}
+            className="text-sm text-capy-muted hover:text-capy-text transition-colors"
+            style={{ fontFamily: "Tektur, sans-serif", fontWeight: 500 }}
+          >
+            Sign out
+          </button>
+          <Link href="/">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/BelanLogo.png"
+              alt="Belan AI"
+              className="w-16 h-16 rounded-full object-cover"
+            />
+          </Link>
         </div>
       </div>
     </header>

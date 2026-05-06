@@ -5,12 +5,12 @@ import { Navbar, Sidebar } from '@/components';
 import { ItemAnalytics } from '@/components/ItemAnalytics';
 import { useRouter, useParams } from 'next/navigation';
 import { MenuItem } from '@/types';
-
-const RESTAURANT_ID = 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
-const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
+import { API_BASE_URL } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 export default function ItemDetailPage() {
   const router = useRouter();
+  const { restaurantId } = useAuth();
   const params = useParams();
   const itemId = params?.id as string;
 
@@ -19,9 +19,10 @@ export default function ItemDetailPage() {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    if (!restaurantId) return;
     const fetchItem = async () => {
       try {
-        const params = new URLSearchParams({ restaurant_id: RESTAURANT_ID, time_range: '1m' });
+        const params = new URLSearchParams({ restaurant_id: restaurantId, time_range: '1m' });
         const response = await fetch(`${API_BASE_URL}/api/analytics/menu-items?${params}`);
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
@@ -38,7 +39,7 @@ export default function ItemDetailPage() {
       }
     };
     fetchItem();
-  }, [itemId]);
+  }, [itemId, restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleAvailable = () => {
     if (item) setItem({ ...item, available: !item.available });

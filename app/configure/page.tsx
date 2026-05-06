@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch, RESTAURANT_ID, type RestaurantConfig } from '@/lib/api';
+import { apiFetch, type RestaurantConfig } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { AIGreetingCard } from '@/components/voice/AIGreetingCard';
 import { BrandSnapshotCard } from '@/components/voice/BrandSnapshotCard';
 import { FAQEditor } from '@/components/voice/FAQEditor';
@@ -51,19 +52,21 @@ function SubNav({ activeTab, setActiveTab }: { activeTab: TabKey; setActiveTab: 
 }
 
 export default function ConfigurePage() {
+  const { restaurantId } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>('configure');
   const [config, setConfig] = useState<RestaurantConfig | null>(null);
 
   const fetchConfig = useCallback(() => {
-    apiFetch<RestaurantConfig>(`/api/restaurant?restaurant_id=${RESTAURANT_ID}`)
+    if (!restaurantId) return;
+    apiFetch<RestaurantConfig>(`/api/restaurant?restaurant_id=${restaurantId}`)
       .then(setConfig)
       .catch(() => {});
-  }, []);
+  }, [restaurantId]);
 
   useEffect(() => { fetchConfig(); }, [fetchConfig]);
 
   const handleBrandSave = async (data: { name?: string; description?: string; address?: string; website?: string }) => {
-    await apiFetch(`/api/restaurant/brand?restaurant_id=${RESTAURANT_ID}`, {
+    await apiFetch(`/api/restaurant/brand?restaurant_id=${restaurantId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -71,7 +74,7 @@ export default function ConfigurePage() {
   };
 
   const handleGreetingSave = async (data: { aiGreeting?: string; aiVoiceId?: string }) => {
-    await apiFetch(`/api/restaurant/greeting?restaurant_id=${RESTAURANT_ID}`, {
+    await apiFetch(`/api/restaurant/greeting?restaurant_id=${restaurantId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -79,7 +82,7 @@ export default function ConfigurePage() {
   };
 
   const handleForwardingSave = async (data: { forwardingNumber: string }) => {
-    await apiFetch(`/api/restaurant/forwarding?restaurant_id=${RESTAURANT_ID}`, {
+    await apiFetch(`/api/restaurant/forwarding?restaurant_id=${restaurantId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
@@ -87,7 +90,7 @@ export default function ConfigurePage() {
   };
 
   const handleSmsToggle = async (enabled: boolean) => {
-    await apiFetch(`/api/restaurant/sms-toggle?restaurant_id=${RESTAURANT_ID}`, {
+    await apiFetch(`/api/restaurant/sms-toggle?restaurant_id=${restaurantId}`, {
       method: 'PATCH',
       body: JSON.stringify({ smsOrderingEnabled: enabled }),
     });

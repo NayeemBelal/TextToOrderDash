@@ -70,12 +70,14 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-capy-bg flex flex-col font-tektur">
       {/* Nav bar */}
       <header className="bg-white flex-shrink-0 h-16 flex items-center px-6 justify-end">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/BelanLogo.png"
-          alt="Belan AI"
-          className="w-16 h-16 rounded-full object-cover"
-        />
+        <Link href="/">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/BelanLogo.png"
+            alt="Belan AI"
+            className="w-16 h-16 rounded-full object-cover"
+          />
+        </Link>
       </header>
 
       {/* Centered content */}

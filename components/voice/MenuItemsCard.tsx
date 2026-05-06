@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { apiFetch, RESTAURANT_ID } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 interface MenuItem {
   itemId: string;
@@ -25,6 +26,7 @@ function Toggle({ on, onToggle, disabled }: { on: boolean; onToggle: () => void;
 }
 
 export function MenuItemsCard() {
+  const { restaurantId } = useAuth();
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -32,11 +34,12 @@ export function MenuItemsCard() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    apiFetch<{ items: MenuItem[] }>(`/api/menu-items?restaurant_id=${RESTAURANT_ID}`)
+    if (!restaurantId) return;
+    apiFetch<{ items: MenuItem[] }>(`/api/menu-items?restaurant_id=${restaurantId}`)
       .then((data) => setItems(data.items))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [restaurantId]);
 
   const handleToggle = async (itemId: string, current: boolean) => {
     setItems((prev) => prev.map((i) => i.itemId === itemId ? { ...i, available: !current } : i));
@@ -44,7 +47,7 @@ export function MenuItemsCard() {
     setErrors((e) => { const next = { ...e }; delete next[itemId]; return next; });
 
     try {
-      await apiFetch(`/api/menu-items/${itemId}/availability?restaurant_id=${RESTAURANT_ID}`, {
+      await apiFetch(`/api/menu-items/${itemId}/availability?restaurant_id=${restaurantId}`, {
         method: 'PUT',
         body: JSON.stringify({ available: !current }),
       });

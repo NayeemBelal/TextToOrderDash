@@ -12,6 +12,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const REMEMBER_KEY = 'sb_remember_until';
+  const SESSION_KEY = 'sb_session_active';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +25,13 @@ export default function LoginPage() {
     try {
       const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError) throw authError;
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_KEY, String(Date.now() + 30 * 24 * 60 * 60 * 1000));
+        sessionStorage.removeItem(SESSION_KEY);
+      } else {
+        sessionStorage.setItem(SESSION_KEY, '1');
+        localStorage.removeItem(REMEMBER_KEY);
+      }
       router.push('/home');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid email or password. Please try again.';
@@ -34,12 +45,14 @@ export default function LoginPage() {
     <div className="min-h-screen bg-capy-bg flex flex-col font-tektur">
       {/* Nav bar */}
       <header className="bg-white flex-shrink-0 h-16 flex items-center px-6 justify-end">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/BelanLogo.png"
-          alt="Belan AI"
-          className="w-16 h-16 rounded-full object-cover"
-        />
+        <Link href="/">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/BelanLogo.png"
+            alt="Belan AI"
+            className="w-16 h-16 rounded-full object-cover"
+          />
+        </Link>
       </header>
 
       {/* Centered content */}
@@ -116,10 +129,24 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <label className="flex items-center gap-2.5 cursor-pointer select-none">
+            <div
+              onClick={() => setRememberMe((v) => !v)}
+              className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${rememberMe ? 'bg-capy-brown-accent border-capy-brown-accent' : 'border-capy-border bg-white hover:border-capy-brown-accent'}`}
+            >
+              {rememberMe && (
+                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <span className="text-sm text-capy-muted">Remember me for 30 days</span>
+          </label>
+
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-1 h-10 w-full rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="h-10 w-full rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>

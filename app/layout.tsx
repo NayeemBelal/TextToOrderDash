@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ConditionalWrapper } from "@/components/ConditionalWrapper";
+import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
   title: "Belan",
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <ConditionalWrapper>{children}</ConditionalWrapper>
+        <AuthProvider>
+          <ConditionalWrapper>{children}</ConditionalWrapper>
+        </AuthProvider>
       </body>
     </html>
   );

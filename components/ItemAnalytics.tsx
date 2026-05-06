@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { TimeFilter } from './TimeFilter';
 import { RevenueChart } from './RevenueChart';
 import { ChartShimmer } from './ChartShimmer';
+import { API_BASE_URL } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 export type TimeFilterValue = '1h' | '24h' | '1w' | '1m';
 export type ViewMode = 'revenue' | 'orders';
 export interface RevenueDataPoint {
@@ -11,9 +13,6 @@ export interface RevenueDataPoint {
   revenue: number;
   orders: number;
 }
-
-const RESTAURANT_ID = 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
-const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
 
 interface ItemAnalyticsProps {
   itemId: string;
@@ -33,6 +32,7 @@ interface AnalyticsMetadata {
 }
 
 export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) {
+  const { restaurantId } = useAuth();
   const [activeFilter, setActiveFilter] = useState<TimeFilterValue>('24h');
   const [viewMode, setViewMode] = useState<ViewMode>('revenue');
   const [itemData, setItemData] = useState<RevenueDataPoint[]>([]);
@@ -41,10 +41,11 @@ export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) 
   const [interactiveValue, setInteractiveValue] = useState<number | null>(null);
 
   const fetchData = async (filter: TimeFilterValue) => {
+    if (!restaurantId) return;
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
-        restaurant_id: RESTAURANT_ID,
+        restaurant_id: restaurantId,
         item_name: itemName,
         time_range: filter,
       });

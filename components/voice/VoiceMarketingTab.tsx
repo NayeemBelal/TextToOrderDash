@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { apiFetch, RESTAURANT_ID, type Caller } from "@/lib/api";
+import { apiFetch, type Caller } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 type Step = "recipients" | "message" | "send";
 
@@ -72,6 +73,7 @@ function StepIndicator({ current }: { current: Step }) {
 
 
 export function VoiceMarketingTab() {
+  const { restaurantId } = useAuth();
   const [step, setStep] = useState<Step>("recipients");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -79,10 +81,11 @@ export function VoiceMarketingTab() {
   const [callers, setCallers] = useState<Caller[]>([]);
 
   useEffect(() => {
-    apiFetch<{ callers: Caller[] }>(`/api/callers?restaurant_id=${RESTAURANT_ID}`)
+    if (!restaurantId) return;
+    apiFetch<{ callers: Caller[] }>(`/api/callers?restaurant_id=${restaurantId}`)
       .then((d) => setCallers(d.callers))
       .catch(() => {});
-  }, []);
+  }, [restaurantId]);
 
   const filteredCallers = useMemo(
     () => search ? callers.filter((c) => c.phoneNumber.includes(search)) : callers,

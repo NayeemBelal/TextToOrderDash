@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, RESTAURANT_ID, type Call } from '@/lib/api';
+import { apiFetch, type Call } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { CallCard } from './CallCard';
 
 interface CallFeedProps {
@@ -10,6 +11,7 @@ interface CallFeedProps {
 }
 
 export function CallFeed({ compact = false, filter = '' }: CallFeedProps) {
+  const { restaurantId } = useAuth();
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -17,12 +19,13 @@ export function CallFeed({ compact = false, filter = '' }: CallFeedProps) {
   const [failCount, setFailCount] = useState(0);
 
   useEffect(() => {
+    if (!restaurantId) return;
     let mounted = true;
 
     const fetchCalls = async () => {
       try {
         const data = await apiFetch<{ calls: Call[] }>(
-          `/api/calls?restaurant_id=${RESTAURANT_ID}&limit=20`
+          `/api/calls?restaurant_id=${restaurantId}&limit=20`
         );
         if (mounted) {
           setCalls(data.calls);
@@ -48,7 +51,7 @@ export function CallFeed({ compact = false, filter = '' }: CallFeedProps) {
     const id = setInterval(fetchCalls, 30_000);
     return () => { mounted = false; clearInterval(id); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [restaurantId]);
 
   const displayed = filter
     ? calls.filter((c) => c.phoneNumber.includes(filter))

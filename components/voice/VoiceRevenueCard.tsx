@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RevenueChart } from '@/components/RevenueChart';
 import { type TimeFilterValue, type RevenueDataPoint } from '@/components/ItemAnalytics';
-
-const RESTAURANT_ID = 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
-const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
+import { API_BASE_URL } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 type ViewMode = 'revenue' | 'orders';
 
@@ -21,6 +20,7 @@ function formatRevenue(value: number) {
 }
 
 export function VoiceRevenueCard() {
+  const { restaurantId } = useAuth();
   const [activeFilter, setActiveFilter] = useState<TimeFilterValue>('24h');
   const [viewMode, setViewMode] = useState<ViewMode>('revenue');
   const [viewHover, setViewHover] = useState<Record<string, 'hovering' | 'leaving' | null>>({});
@@ -29,10 +29,11 @@ export function VoiceRevenueCard() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async (filter: TimeFilterValue) => {
+    if (!restaurantId) return;
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/analytics/revenue?restaurant_id=${RESTAURANT_ID}&time_range=${filter}&timezone=UTC`
+        `${API_BASE_URL}/api/analytics/revenue?restaurant_id=${restaurantId}&time_range=${filter}&timezone=UTC`
       );
       const data = await res.json();
       setRevenueData(data.data.map((p: any) => ({ timestamp: new Date(p.timestamp), revenue: p.revenue, orders: p.orders })));
@@ -44,7 +45,7 @@ export function VoiceRevenueCard() {
     }
   };
 
-  useEffect(() => { fetchData(activeFilter); }, []);
+  useEffect(() => { fetchData(activeFilter); }, [restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFilterChange = (filter: TimeFilterValue) => {
     setActiveFilter(filter);
