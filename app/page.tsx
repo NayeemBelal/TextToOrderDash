@@ -2162,15 +2162,6 @@ export default function LandingPage() {
             />
           </div>
 
-          <motion.p
-            variants={fadeIn}
-            className="text-xs sm:text-sm xl:text-base mt-4 sm:mt-6 font-medium text-black/60 text-center"
-          >
-            Have 10+ locations?{" "}
-            <a href="#" className="font-bold text-black underline">
-              Talk to us about custom pricing.
-            </a>
-          </motion.p>
         </div>
       </RevealSection>
 
