@@ -5,10 +5,12 @@ import { VoiceRevenueCard } from "@/components/voice/VoiceRevenueCard";
 import { IncomingCallsCard } from "@/components/voice/IncomingCallsCard";
 import { VoiceAnalyticsTab } from "@/components/voice/VoiceAnalyticsTab";
 import { VoiceMarketingTab } from "@/components/voice/VoiceMarketingTab";
+import { SalesAITab } from "@/components/voice/SalesAITab";
 
 const SUB_TABS = [
   { key: 'manage', label: 'Manage' },
   { key: 'analytics', label: 'Analytics' },
+  { key: 'sales-ai', label: 'Sales AI' },
   { key: 'marketing', label: 'Marketing' },
 ] as const;
 
@@ -67,6 +69,12 @@ export default function HomePage() {
       {activeTab === 'analytics' && (
         <div className="flex-1 min-h-0 overflow-y-auto">
           <VoiceAnalyticsTab />
+        </div>
+      )}
+
+      {activeTab === 'sales-ai' && (
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <SalesAITab />
         </div>
       )}
 
