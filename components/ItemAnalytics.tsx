@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { TimeFilter } from './TimeFilter';
-import { RevenueChart } from './RevenueChart';
-import { ChartShimmer } from './ChartShimmer';
-import { API_BASE_URL } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
-export type TimeFilterValue = '1h' | '24h' | '1w' | '1m';
-export type ViewMode = 'revenue' | 'orders';
+import { useState, useEffect } from "react";
+import { TimeFilter } from "./TimeFilter";
+import { RevenueChart } from "./RevenueChart";
+import { ChartShimmer } from "./ChartShimmer";
+import { API_BASE_URL } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+export type TimeFilterValue = "1h" | "24h" | "1w" | "1m";
+export type ViewMode = "revenue" | "orders";
 export interface RevenueDataPoint {
   timestamp: Date;
   revenue: number;
@@ -31,10 +31,13 @@ interface AnalyticsMetadata {
   interval: string;
 }
 
-export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) {
+export function ItemAnalytics({
+  itemName,
+  className = "",
+}: ItemAnalyticsProps) {
   const { restaurantId } = useAuth();
-  const [activeFilter, setActiveFilter] = useState<TimeFilterValue>('24h');
-  const [viewMode, setViewMode] = useState<ViewMode>('revenue');
+  const [activeFilter, setActiveFilter] = useState<TimeFilterValue>("24h");
+  const [viewMode, setViewMode] = useState<ViewMode>("revenue");
   const [itemData, setItemData] = useState<RevenueDataPoint[]>([]);
   const [metadata, setMetadata] = useState<AnalyticsMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,20 +52,24 @@ export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) 
         item_name: itemName,
         time_range: filter,
       });
-      const response = await fetch(`${API_BASE_URL}/api/analytics/item-analytics?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch');
+      const response = await fetch(
+        `${API_BASE_URL}/api/analytics/item-analytics?${params}`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch");
       const json = await response.json();
 
       setItemData(
-        json.data.map((point: { timestamp: string; revenue: number; orders: number }) => ({
-          timestamp: new Date(point.timestamp),
-          revenue: point.revenue,
-          orders: point.orders,
-        }))
+        json.data.map(
+          (point: { timestamp: string; revenue: number; orders: number }) => ({
+            timestamp: new Date(point.timestamp),
+            revenue: point.revenue,
+            orders: point.orders,
+          }),
+        ),
       );
       setMetadata(json.metadata);
     } catch (err) {
-      console.error('ItemAnalytics fetch error:', err);
+      console.error("ItemAnalytics fetch error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -77,21 +84,24 @@ export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) 
     setInteractiveValue(null);
   };
 
-  const totalValue = viewMode === 'revenue'
-    ? (metadata?.total_revenue ?? 0)
-    : (metadata?.total_orders ?? 0);
+  const totalValue =
+    viewMode === "revenue"
+      ? (metadata?.total_revenue ?? 0)
+      : (metadata?.total_orders ?? 0);
 
-  const currentValue = interactiveValue !== null ? interactiveValue : totalValue;
+  const currentValue =
+    interactiveValue !== null ? interactiveValue : totalValue;
 
-  const delta = viewMode === 'revenue'
-    ? (metadata?.revenue_delta_pct ?? 0)
-    : (metadata?.orders_delta_pct ?? 0);
+  const delta =
+    viewMode === "revenue"
+      ? (metadata?.revenue_delta_pct ?? 0)
+      : (metadata?.orders_delta_pct ?? 0);
 
   const formatValue = (value: number): string => {
-    if (viewMode === 'orders') return Math.round(value).toLocaleString('en-US');
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    if (viewMode === "orders") return Math.round(value).toLocaleString("en-US");
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);
@@ -109,19 +119,24 @@ export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) 
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {viewMode === 'revenue' ? `${itemName} Revenue` : `${itemName} Orders`}
+                    {viewMode === "revenue"
+                      ? `${itemName} Revenue`
+                      : `${itemName} Orders`}
                   </div>
 
                   {/* View Mode Toggle */}
                   <div className="inline-flex rounded-full border border-gray-200 dark:border-gray-800 p-0.5 bg-gray-50 dark:bg-gray-900">
-                    {(['revenue', 'orders'] as ViewMode[]).map(mode => (
+                    {(["revenue", "orders"] as ViewMode[]).map((mode) => (
                       <button
                         key={mode}
-                        onClick={() => { setViewMode(mode); setInteractiveValue(null); }}
+                        onClick={() => {
+                          setViewMode(mode);
+                          setInteractiveValue(null);
+                        }}
                         className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
                           viewMode === mode
-                            ? 'bg-white dark:bg-gray-950 text-gray-900 dark:text-white shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                            ? "bg-white dark:bg-gray-950 text-gray-900 dark:text-white shadow-sm"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                         }`}
                       >
                         {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -135,15 +150,17 @@ export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) 
                 </div>
 
                 <div className="mt-2 flex items-center gap-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
-                    delta >= 0
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  }`}>
-                    {delta >= 0 ? '↑' : '↓'} {Math.abs(delta).toFixed(1)}%
+                  <span
+                    className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
+                      delta >= 0
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                    }`}
+                  >
+                    {delta >= 0 ? "↑" : "↓"} {Math.abs(delta).toFixed(1)}%
                   </span>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {metadata?.comparison_label ?? ''}
+                    {metadata?.comparison_label ?? ""}
                   </span>
                 </div>
               </div>
@@ -160,16 +177,20 @@ export function ItemAnalytics({ itemName, className = '' }: ItemAnalyticsProps) 
 
           {/* Time Filter */}
           <div className="mt-4">
-            <TimeFilter activeFilter={activeFilter} onFilterChange={handleFilterChange} />
+            <TimeFilter
+              activeFilter={activeFilter}
+              onFilterChange={handleFilterChange}
+            />
           </div>
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 rounded-b-lg transition-colors">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Last updated: just now</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Last updated: just now
+          </p>
         </div>
       </div>
-
     </div>
   );
 }
