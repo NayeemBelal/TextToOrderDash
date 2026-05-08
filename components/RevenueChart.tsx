@@ -12,16 +12,18 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { TimeFilterValue, RevenueDataPoint, ViewMode } from './RevenueDashboard';
+import { TimeFilterValue, RevenueDataPoint, ViewMode } from './ItemAnalytics';
 
 interface RevenueChartProps {
   data: RevenueDataPoint[];
   activeFilter: TimeFilterValue;
   viewMode?: ViewMode;
   onValueChange?: (value: number | null) => void;
+  color?: string;
+  bare?: boolean;
 }
 
-export function RevenueChart({ data, activeFilter, viewMode = 'revenue', onValueChange }: RevenueChartProps) {
+export function RevenueChart({ data, activeFilter, viewMode = 'revenue', onValueChange, color = '#2563EB', bare = false }: RevenueChartProps) {
   const [activePoint, setActivePoint] = useState<RevenueDataPoint | null>(null);
   const [isScrubbing, setIsScrubbing] = useState(false);
 
@@ -103,14 +105,13 @@ export function RevenueChart({ data, activeFilter, viewMode = 'revenue', onValue
   };
 
   return (
-    <div className="relative">
-      {/* Chart Container - No scrolling, always fits screen */}
+    <div className={bare ? 'h-full touch-none' : 'relative'}>
       <div
-        className="border border-gray-200 dark:border-gray-800 rounded-lg p-4 bg-white dark:bg-black transition-colors touch-none"
+        className={bare ? 'h-full' : 'border border-capy-border rounded-lg p-4 bg-white transition-colors touch-none'}
         onTouchStart={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
       >
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={bare ? '100%' : 480}>
           {viewMode === 'revenue' ? (
             <LineChart
               data={chartData}
@@ -156,10 +157,10 @@ export function RevenueChart({ data, activeFilter, viewMode = 'revenue', onValue
               <Line
                 type="monotone"
                 dataKey="revenue"
-                stroke="#2563EB"
+                stroke={color}
                 strokeWidth={2.5}
                 dot={false}
-                activeDot={{ r: 4, fill: '#2563EB' }}
+                activeDot={{ r: 4, fill: color }}
                 animationDuration={400}
               />
             </LineChart>
@@ -206,7 +207,7 @@ export function RevenueChart({ data, activeFilter, viewMode = 'revenue', onValue
 
               <Bar
                 dataKey="orders"
-                fill="#2563EB"
+                fill={color}
                 radius={[4, 4, 0, 0]}
                 animationDuration={400}
               />

@@ -1,6 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Tektur:wght@400..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: "Helvetica";
+  src: url("/fonts/Helvetica.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Helvetica";
+  src: url("/fonts/Helvetica-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   --background: #ffffff;
@@ -15,13 +33,110 @@
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: #0f172a;
+  background: #ffffff;
+  font-family: "Helvetica", Arial, sans-serif;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Apply Tektur to an entire subtree */
+  .font-tektur,
+  .font-tektur * {
+    font-family: 'Tektur', sans-serif;
+  }
+}
+
+@layer components {
+  /* Card headings — Tektur semibold */
+  .card-heading {
+    font-family: 'Tektur', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem; /* text-sm */
+    color: #0F172A; /* capy-text */
+  }
+
+  /* Sub-headings (h3 level) inside cards */
+  .card-subheading {
+    font-family: 'Tektur', sans-serif;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #0F172A;
+  }
+
+  /* Body text */
+  .body-text {
+    font-family: 'Helvetica', Arial, sans-serif;
+    font-size: 0.875rem;
+    color: #0F172A;
+  }
+
+  /* Muted body text */
+  .body-muted {
+    font-family: 'Helvetica', Arial, sans-serif;
+    font-size: 0.875rem;
+    color: #64748B; /* capy-muted */
+  }
+
+  /* Small uppercase section label */
+  .section-label {
+    font-family: 'Helvetica', Arial, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748B;
+  }
+
+  /* Form inputs */
+  .card-input {
+    width: 100%;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    color: #0F172A;
+    font-family: 'Helvetica', Arial, sans-serif;
+    outline: none;
+  }
+  .card-input:focus {
+    ring: 2px solid #22C55E;
+  }
+}
+
+@keyframes bar-in {
+  from { width: 0% }
+  to   { width: 70% }
+}
+
+@keyframes bar-out {
+  from { width: 70% }
+  to   { width: 0% }
+}
+
+.nav-tab-bar::after {
+  content: "";
+  display: block;
+  position: absolute;
+  bottom: -1px;
+  left: 15%;
+  height: 2px;
+  width: 0%;
+  background-color: #01bf63;
+}
+
+.nav-tab-bar.nav-tab-hovering::after {
+  animation: bar-in 0.3s steps(14, end) forwards;
+}
+
+.nav-tab-bar.nav-tab-leaving::after {
+  animation: bar-out 0.3s steps(14, end) forwards;
+}
+
+.nav-tab-bar.nav-tab-active::after {
+  width: 70%;
+  animation: none;
 }
