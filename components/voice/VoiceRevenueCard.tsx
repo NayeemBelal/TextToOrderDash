@@ -33,7 +33,7 @@ export function VoiceRevenueCard() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/api/analytics/revenue?restaurant_id=${restaurantId}&time_range=${filter}&timezone=UTC`
+        `${API_BASE_URL}/api/analytics/revenue?restaurant_id=${restaurantId}&time_range=${filter}&timezone=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`
       );
       const data = await res.json();
       setRevenueData(data.data.map((p: any) => ({ timestamp: new Date(p.timestamp), revenue: p.revenue, orders: p.orders })));
