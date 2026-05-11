@@ -10,11 +10,14 @@ import { UpsellRuleEditor } from '@/components/voice/UpsellRuleEditor';
 import { ForwardingCard } from '@/components/voice/ForwardingCard';
 import { TextToOrderCard } from '@/components/voice/TextToOrderCard';
 import { MenuItemsCard } from '@/components/voice/MenuItemsCard';
+import { BusinessHoursCard } from '@/components/voice/BusinessHoursCard';
+import { TaxExportCard } from '@/components/voice/TaxExportCard';
 
 const SUB_TABS = [
   { key: 'configure', label: 'Configure' },
   { key: 'faqs', label: 'FAQs' },
   { key: 'upsells', label: 'Upsells' },
+  { key: 'settings', label: 'Settings' },
 ] as const;
 
 type TabKey = typeof SUB_TABS[number]['key'];
@@ -124,6 +127,7 @@ export default function ConfigurePage() {
               onToggle={handleSmsToggle}
             />
           </div>
+          <BusinessHoursCard />
         </div>
       )}
 
@@ -136,6 +140,14 @@ export default function ConfigurePage() {
       {activeTab === 'upsells' && (
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">
           <UpsellRuleEditor />
+        </div>
+      )}
+
+      {activeTab === 'settings' && restaurantId && (
+        <div className="flex-1 min-h-0 overflow-y-auto p-4">
+          <div className="max-w-lg">
+            <TaxExportCard restaurantId={restaurantId} />
+          </div>
         </div>
       )}
     </div>

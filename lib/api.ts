@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://text-to-order-coffee-34770846162.us-central1.run.app';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -69,4 +69,19 @@ export interface UpsellRule {
   suggestedItemName: string;
   message: string;
   active: boolean;
+}
+
+export interface SpecialClosure {
+  date: string;
+  message: string;
+}
+
+export interface BusinessHours {
+  googleHours: Record<string, string> | null;
+  googleHoursFetchedAt: string | null;
+  hoursOverride: Record<string, string | null> | null;
+  specialClosures: SpecialClosure[];
+  timezone: string;
+  isOpen: boolean;
+  closedMessage: string | null;
 }
