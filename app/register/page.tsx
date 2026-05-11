@@ -49,6 +49,7 @@ export default function RegisterPage() {
       });
       if (authError) throw authError;
       setSuccess(true);
+      router.push('/onboarding');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       setError(msg);
