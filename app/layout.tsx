@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
+import { Tektur } from "next/font/google";
 import "./globals.css";
 import { ConditionalWrapper } from "@/components/ConditionalWrapper";
 import { AuthProvider } from "@/lib/auth-context";
 
+const tektur = Tektur({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  variable: "--font-tektur",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Restaurant Phone AI That Never Misses a Call | Belan AI",
   description:
-    "Belan AI answers every restaurant call, takes the order, and sends it straight to your POS — automatically. $200/month all-in. Works with Clover, Toast, Square, and more.",
+    "Belan AI answers every restaurant call, takes the order, and fires it to your POS — automatically. $200/month all-in. No per-order fees.",
   alternates: {
     canonical: "https://belan.tech",
   },
@@ -80,12 +88,42 @@ const softwareApplicationSchema = {
     "Natural language sales analytics",
     "POS integration with Clover, Toast, Square, Lightspeed, Revel, TouchBistro",
   ],
-  screenshot: "https://belan.tech/BelanLogo.png",
+  screenshot: "https://belan.tech/og-screenshot.png",
   provider: {
     "@type": "Organization",
     name: "Belan AI",
     url: "https://belan.tech",
   },
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "5",
+    bestRating: "5",
+    worstRating: "1",
+    ratingCount: "3",
+  },
+  review: [
+    {
+      "@type": "Review",
+      author: { "@type": "Organization", name: "Lime N Dime" },
+      reviewBody:
+        "Dinner rush used to mean constant ringing phones and stressed staff. Now Belan handles the phones and our team stays on the grill. It paid for itself in the first week.",
+      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5", worstRating: "1" },
+    },
+    {
+      "@type": "Review",
+      author: { "@type": "Organization", name: "Epic Pizza" },
+      reviewBody:
+        "The global taste profile is a game changer. When someone visiting from out of town calls, Belan already knows their preferences — every visitor feels like a local regular.",
+      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5", worstRating: "1" },
+    },
+    {
+      "@type": "Review",
+      author: { "@type": "Organization", name: "Shaghf" },
+      reviewBody:
+        "Setup took 20 minutes. We connected Clover, chose a voice, and started taking orders. The Sales AI even flagged that we were underpricing our lattes.",
+      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5", worstRating: "1" },
+    },
+  ],
 };
 
 const organizationSchema = {
@@ -109,6 +147,7 @@ const organizationSchema = {
     contactType: "sales",
     availableLanguage: "English",
   },
+  sameAs: ["https://www.instagram.com/belantech"],
 };
 
 const websiteSchema = {
@@ -132,7 +171,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={tektur.variable}>
       <body className="antialiased">
         <script
           type="application/ld+json"

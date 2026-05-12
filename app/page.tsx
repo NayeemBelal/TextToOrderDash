@@ -20,6 +20,19 @@ const fadeIn = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { duration: 0.45 } },
 };
+// LCP-safe variants: start visible so Google can record the paint immediately
+const fadeUpLCP = {
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease } },
+};
+const scaleInLCP = {
+  hidden: { opacity: 1, scale: 1 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.55, ease } },
+};
+const fadeInLCP = {
+  hidden: { opacity: 1 },
+  visible: { opacity: 1, transition: { duration: 0.45 } },
+};
 const stagger = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
@@ -176,6 +189,8 @@ function RotatingCapybara() {
           <img
             src={`/capybaraPics/${encodeURIComponent(slot.img)}`}
             alt=""
+            width={400}
+            height={400}
             className="h-72 xl:h-96 2xl:h-[28rem] w-auto object-contain -mb-16"
           />
           <p className="text-center font-black text-xl xl:text-2xl 2xl:text-3xl text-black max-w-sm xl:max-w-md">
@@ -306,6 +321,9 @@ function ProductCards() {
             <img
               src={`/capybaraPics/${encodeURIComponent(img)}`}
               alt=""
+              width={112}
+              height={112}
+              loading="lazy"
               className="h-28 w-auto object-contain flex-shrink-0 pr-3"
             />
           </div>
@@ -351,6 +369,9 @@ function ProductCards() {
           <img
             src={`/capybaraPics/${encodeURIComponent(voice.img)}`}
             alt=""
+            width={320}
+            height={320}
+            loading="lazy"
             className="h-48 xl:h-64 2xl:h-80 w-auto object-contain self-end -mb-8"
           />
         </motion.div>
@@ -375,6 +396,9 @@ function ProductCards() {
               <img
                 src={`/capybaraPics/${encodeURIComponent(img)}`}
                 alt=""
+                width={176}
+                height={176}
+                loading="lazy"
                 className={`absolute bottom-0 right-0 w-auto object-contain pointer-events-none opacity-90 ${imgSize ?? "h-28 xl:h-36 2xl:h-44"}`}
                 style={{ zIndex: 0 }}
               />
@@ -662,6 +686,9 @@ function SandboxSection() {
           <img
             src="/capybaraPics/dishwashertalkingonphone.svg"
             alt=""
+            width={96}
+            height={96}
+            loading="lazy"
             className="md:hidden h-24 w-auto object-contain flex-shrink-0 self-end"
           />
         </motion.div>
@@ -751,6 +778,9 @@ function SandboxSection() {
               <img
                 src="/capybaraPics/dishwashertalkingonphone.svg"
                 alt=""
+                width={384}
+                height={384}
+                loading="lazy"
                 className="hidden lg:block absolute -right-24 xl:-right-32 bottom-0 h-72 xl:h-80 2xl:h-96 w-auto object-contain pointer-events-none"
                 style={{ zIndex: 2 }}
               />
@@ -1387,6 +1417,7 @@ export default function LandingPage() {
                 ["#how-it-works", "HOW IT WORKS"],
                 ["#sandbox", "TRY IT"],
                 ["#pricing", "PRICING"],
+                ["/about", "ABOUT"],
               ] as [string, string][]
             ).map(([href, label], i) => (
               <motion.a
@@ -1504,6 +1535,9 @@ export default function LandingPage() {
                 <a href="#pricing" onClick={() => setMobileOpen(false)}>
                   PRICING
                 </a>
+                <Link href="/about" onClick={() => setMobileOpen(false)}>
+                  ABOUT
+                </Link>
                 {user ? (
                   <Link href="/home">GO TO DASHBOARD →</Link>
                 ) : (
@@ -1625,20 +1659,20 @@ export default function LandingPage() {
           initial="hidden"
           animate="visible"
         >
-          {/* Badge — one line on all screens */}
-          <motion.div
-            variants={fadeUp}
+          {/* Badge — primary SEO heading */}
+          <motion.h1
+            variants={fadeUpLCP}
             className="border-2 border-black px-3 sm:px-5 py-2 sm:py-3 text-[11px] sm:text-sm xl:text-base font-bold mb-5 sm:mb-6 whitespace-nowrap"
             style={{ background: "#a4e5f8", transform: "rotate(-1deg)" }}
             whileHover={{ rotate: 0, scale: 1.03 }}
             transition={{ type: "spring", stiffness: 400, damping: 15 }}
           >
             Restaurant AI that actually works 📞
-          </motion.div>
+          </motion.h1>
 
-          {/* BELAN AI — one line on all screens */}
+          {/* BELAN AI — brand name display */}
           <motion.div
-            variants={scaleIn}
+            variants={scaleInLCP}
             className="relative inline-block mb-5 sm:mb-6"
           >
             {[
@@ -1660,14 +1694,14 @@ export default function LandingPage() {
               className="px-3 sm:px-6 py-2 sm:py-3"
               style={{ background: "transparent", border: "2px solid #36c5f0" }}
             >
-              <h1 className="text-6xl sm:text-7xl md:text-9xl xl:text-[11rem] 2xl:text-[13rem] font-black text-black leading-none tracking-tight whitespace-nowrap">
+              <p className="text-6xl sm:text-7xl md:text-9xl xl:text-[11rem] 2xl:text-[13rem] font-black text-black leading-none tracking-tight whitespace-nowrap">
                 BELAN AI
-              </h1>
+              </p>
             </div>
           </motion.div>
 
           <motion.div
-            variants={fadeIn}
+            variants={fadeInLCP}
             className="flex items-center justify-center gap-2 mb-4 sm:mb-6"
           >
             <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
@@ -1677,28 +1711,33 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Subtitle — 2 lines on mobile */}
-          <motion.p
-            variants={fadeUp}
-            className="text-lg sm:text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl font-black text-black leading-snug mb-2 sm:mb-3 max-w-xs sm:max-w-xl md:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl"
+          <motion.div
+            variants={fadeUpLCP}
+            className="flex flex-col gap-4 sm:gap-5 mb-2 sm:mb-3 max-w-xs sm:max-w-xl md:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl"
           >
-            The front-of-house that{" "}
-            <span
-              className="px-1.5 sm:px-2 py-0.5 border-2 border-black"
-              style={{ background: "#a4e5f8" }}
-            >
-              📞 never misses a sale
-            </span>{" "}
-            — or a call <span style={{ color: "#ecb32e" }}>🍕</span>
-          </motion.p>
+            {["Belan answers your phone.", "Takes the order.", "Then fires it straight to your POS."].map((line, i) => (
+              <span
+                key={i}
+                className="text-lg sm:text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl font-black text-black leading-tight"
+              >
+                {i === 1 ? (
+                  <span
+                    className="px-1.5 sm:px-2 py-0.5 border-2 border-black"
+                    style={{ background: "#a4e5f8" }}
+                  >
+                    {line}
+                  </span>
+                ) : line}
+              </span>
+            ))}
+          </motion.div>
 
           {/* Description — 2-3 lines on mobile */}
           <motion.p
-            variants={fadeUp}
+            variants={fadeUpLCP}
             className="text-sm sm:text-base md:text-lg xl:text-xl 2xl:text-2xl text-black/60 font-medium mb-6 sm:mb-8 max-w-xs sm:max-w-sm md:max-w-xl xl:max-w-2xl leading-relaxed"
           >
-            Belan AI picks up every call, upsells every order, and recommends
-            based on each customer&apos;s taste profile — then fires the order
-            straight to your POS.
+            AI that takes orders, drives sales, and brings customers back — built for restaurants.
           </motion.p>
 
           {/* Buttons — stacked on mobile, side by side on sm+ */}
@@ -1832,6 +1871,9 @@ export default function LandingPage() {
                     <img
                       src={`/capybaraPics/${mobileImg}`}
                       alt=""
+                      width={96}
+                      height={96}
+                      loading="lazy"
                       className={`md:hidden w-auto object-contain flex-shrink-0 ${num === "01" ? "h-24" : "h-16"}`}
                     />
                   </motion.div>
@@ -1946,6 +1988,9 @@ export default function LandingPage() {
             <img
               src="/capybaraPics/twotalkingontable.svg"
               alt=""
+              width={80}
+              height={80}
+              loading="lazy"
               className="md:hidden h-20 w-auto object-contain flex-shrink-0"
             />
           </div>
@@ -2047,6 +2092,9 @@ export default function LandingPage() {
               <img
                 src="/capybaraPics/scooterguytakingpic.svg"
                 alt=""
+                width={384}
+                height={384}
+                loading="lazy"
                 className="h-64 xl:h-80 2xl:h-96 w-auto object-contain"
               />
             </div>
@@ -2146,6 +2194,9 @@ export default function LandingPage() {
               <img
                 src="/capybaraPics/sittingoncrate.svg"
                 alt=""
+                width={384}
+                height={384}
+                loading="lazy"
                 className="h-64 xl:h-80 2xl:h-96 w-auto object-contain"
                 style={{ transform: "scaleX(-1)" }}
               />
@@ -2158,6 +2209,9 @@ export default function LandingPage() {
             <img
               src="/capybaraPics/scooterguytakingpic.svg"
               alt=""
+              width={144}
+              height={144}
+              loading="lazy"
               className="h-36 w-auto object-contain"
             />
           </div>
@@ -2228,6 +2282,8 @@ export default function LandingPage() {
             <img
               src="/BelanLogo.png"
               alt="Belan AI"
+              width={36}
+              height={36}
               className="w-6 h-6 sm:w-7 sm:h-7 xl:w-9 xl:h-9 rounded-full object-cover border-2 border-black"
             />
             <span className="font-black text-black text-xs xl:text-sm tracking-widest">
