@@ -4,8 +4,36 @@ import { ConditionalWrapper } from "@/components/ConditionalWrapper";
 import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
-  title: "Belan",
-  description: "Restaurant voice AI management dashboard",
+  title: "Restaurant Phone AI That Never Misses a Call | Belan AI",
+  description:
+    "Belan AI answers every restaurant call, takes the order, and sends it straight to your POS — automatically. $200/month all-in. Works with Clover, Toast, Square, and more.",
+  alternates: {
+    canonical: "https://belan.tech",
+  },
+  openGraph: {
+    title: "Restaurant AI Ordering — Every Call Answered | Belan AI",
+    description:
+      "Belan AI picks up every call, upsells every order, and fires it to your POS. $200/month flat. No per-order fees.",
+    url: "https://belan.tech",
+    siteName: "Belan AI",
+    images: [
+      {
+        url: "https://belan.tech/BelanLogo.png",
+        width: 512,
+        height: 512,
+        alt: "Belan AI — Restaurant Phone Ordering AI",
+      },
+    ],
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Restaurant AI Ordering — Every Call Answered | Belan AI",
+    description:
+      "Belan AI picks up every call, upsells every order, and fires it to your POS. $200/month flat.",
+    images: ["https://belan.tech/BelanLogo.png"],
+  },
   icons: {
     icon: [
       { url: "/BelanLogo.png", sizes: "32x32", type: "image/png" },
@@ -13,6 +41,88 @@ export const metadata: Metadata = {
       { url: "/BelanLogo.png", sizes: "192x192", type: "image/png" },
     ],
     apple: { url: "/BelanLogo.png", sizes: "180x180", type: "image/png" },
+  },
+};
+
+const softwareApplicationSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Belan AI",
+  url: "https://belan.tech",
+  description:
+    "AI-powered voice and SMS ordering automation for restaurants. Belan AI answers every call, takes orders, handles upsells, and fires them directly to your POS system.",
+  applicationCategory: "BusinessApplication",
+  applicationSubCategory: "Restaurant Management Software",
+  operatingSystem: "Web",
+  browserRequirements: "Requires a modern web browser",
+  offers: {
+    "@type": "Offer",
+    name: "Belan AI Monthly Plan",
+    price: "200.00",
+    priceCurrency: "USD",
+    priceSpecification: {
+      "@type": "UnitPriceSpecification",
+      price: "200.00",
+      priceCurrency: "USD",
+      billingDuration: "P1M",
+      unitCode: "MON",
+    },
+    description:
+      "Flat rate $200/month. Includes Voice AI, SMS Text AI, Dashboard Analytics, Marketing AI, and Sales AI. No per-order fees.",
+    url: "https://belan.tech",
+    availability: "https://schema.org/InStock",
+  },
+  featureList: [
+    "AI phone ordering — answers every call 24/7",
+    "SMS text ordering — no app required",
+    "Real-time revenue and orders dashboard",
+    "AI-powered SMS marketing campaigns",
+    "Natural language sales analytics",
+    "POS integration with Clover, Toast, Square, Lightspeed, Revel, TouchBistro",
+  ],
+  screenshot: "https://belan.tech/BelanLogo.png",
+  provider: {
+    "@type": "Organization",
+    name: "Belan AI",
+    url: "https://belan.tech",
+  },
+};
+
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Belan AI",
+  url: "https://belan.tech",
+  logo: {
+    "@type": "ImageObject",
+    url: "https://belan.tech/BelanLogo.png",
+    width: 192,
+    height: 192,
+  },
+  description:
+    "Belan AI builds restaurant ordering automation — voice AI, SMS ordering, and marketing campaigns powered by artificial intelligence.",
+  areaServed: "US",
+  serviceType: "Restaurant AI Software",
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: "+18554852690",
+    contactType: "sales",
+    availableLanguage: "English",
+  },
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Belan AI",
+  url: "https://belan.tech",
+  description:
+    "AI-powered ordering automation for restaurants. Voice AI, Text AI, and marketing campaigns — $200/month flat rate.",
+  inLanguage: "en-US",
+  publisher: {
+    "@type": "Organization",
+    name: "Belan AI",
+    url: "https://belan.tech",
   },
 };
 
@@ -24,6 +134,24 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(softwareApplicationSchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema),
+          }}
+        />
         <AuthProvider>
           <ConditionalWrapper>{children}</ConditionalWrapper>
         </AuthProvider>
