@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ConditionalNav } from '@/components/voice/ConditionalNav';
 import { useAuth } from '@/lib/auth-context';
 
-const FULL_PAGE_ROUTES = ['/', '/login', '/register'];
+const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/forgot-password', '/reset-password'];
 
 export function ConditionalWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
