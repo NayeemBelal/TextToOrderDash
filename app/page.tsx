@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
+import SiteNav from "@/components/SiteNav";
 
 /* ── animation ── */
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -141,26 +142,32 @@ const CAPY_SLOTS = [
   {
     img: "baristatalkingonphone.svg",
     text: "Answers every call — even during dinner rush",
+    alt: "Barista answering a customer call with Belan AI voice ordering",
   },
   {
     img: "pizzatalkingonphone.svg",
     text: "No hold music. No missed calls. Just orders.",
+    alt: "Restaurant staff taking a phone order via Belan AI voice ordering",
   },
   {
     img: "waiter_explaining_the_cost_of_a_menu_item.svg",
     text: "Track revenue, calls, and orders in real-time",
+    alt: "Waiter explaining menu pricing with AI-powered insights",
   },
   {
     img: "waiter_recommending_from_menu.svg",
     text: "AI suggests the right item at the right moment",
+    alt: "AI upsell suggestions helping a waiter recommend menu items",
   },
   {
     img: "runningwithpizza.svg",
     text: "Orders go straight to your kitchen, instantly",
+    alt: "Restaurant staff fulfilling orders faster with AI automation",
   },
   {
     img: "waiter_serving_a_drink_really_fast.svg",
     text: "Never miss an order — Belan AI is always ready",
+    alt: "Waiter serving drinks quickly enabled by Belan AI order automation",
   },
 ];
 
@@ -188,7 +195,7 @@ function RotatingCapybara() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/capybaraPics/${encodeURIComponent(slot.img)}`}
-            alt=""
+            alt={slot.alt}
             width={400}
             height={400}
             className="h-72 xl:h-96 2xl:h-[28rem] w-auto object-contain -mb-16"
@@ -216,6 +223,7 @@ const PRODUCTS = [
       "Handles checkout — answers questions and takes secure payment",
     ],
     img: "talkingonphone.svg",
+    alt: "Restaurant customer placing a phone order via Belan AI voice ordering",
   },
   {
     color: "#c6a591",
@@ -228,6 +236,7 @@ const PRODUCTS = [
       "Pay by text — secure checkout link goes to their phone",
     ],
     img: "baristatexting.svg",
+    alt: "Customer sending a text order to a restaurant using Belan AI",
   },
   {
     color: "#a1dfc5",
@@ -240,6 +249,7 @@ const PRODUCTS = [
       "Menu in seconds — update prices or 86 items instantly",
     ],
     img: "scooterguytalkingonphone.svg",
+    alt: "Restaurant manager monitoring orders on Belan AI dashboard",
   },
   {
     color: "#c4b5fd",
@@ -253,6 +263,7 @@ const PRODUCTS = [
     ],
     img: "runningupstairs.svg",
     imgSize: "h-20 xl:h-28 2xl:h-32",
+    alt: "Restaurant team keeping up with orders powered by Belan AI marketing",
   },
   {
     color: "#fbc8d4",
@@ -265,6 +276,7 @@ const PRODUCTS = [
       "Pricing tips — spots small tweaks that lift your margin",
     ],
     img: "waitertakingselfie.svg",
+    alt: "Happy restaurant staff after adopting Belan AI for sales analytics",
   },
 ];
 
@@ -287,7 +299,7 @@ function ProductCards() {
     <>
       {/* ── Mobile: stacked single-column ── */}
       <div className="md:hidden flex flex-col gap-0 border-2 border-black">
-        {PRODUCTS.map(({ color, name, tagline, desc, bullets, img }) => (
+        {PRODUCTS.map(({ color, name, tagline, desc, bullets, img, alt }) => (
           <div
             key={name}
             className="flex items-center gap-0 border-b-2 last:border-b-0 border-black"
@@ -320,7 +332,7 @@ function ProductCards() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`/capybaraPics/${encodeURIComponent(img)}`}
-              alt=""
+              alt={alt ?? name}
               width={112}
               height={112}
               loading="lazy"
@@ -368,7 +380,7 @@ function ProductCards() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/capybaraPics/${encodeURIComponent(voice.img)}`}
-            alt=""
+            alt={voice.alt ?? voice.name}
             width={320}
             height={320}
             loading="lazy"
@@ -377,64 +389,66 @@ function ProductCards() {
         </motion.div>
 
         {/* remaining 4 cards */}
-        {rest.map(({ color, name, tagline, desc, bullets, img, imgSize }) => {
-          const isHovered = hovered === name;
-          return (
-            <motion.div
-              key={name}
-              className="border-2 border-black -ml-[2px] -mt-[2px] p-5 xl:p-7 flex flex-col gap-3 overflow-hidden relative"
-              style={{
-                background: isHovered ? color : "rgba(255,255,255,0.85)",
-                transition: "background 0.2s ease",
-              }}
-              whileHover={{ y: -4, boxShadow: "4px 4px 0px #000" }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              onHoverStart={() => setHovered(name)}
-              onHoverEnd={() => setHovered(null)}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/capybaraPics/${encodeURIComponent(img)}`}
-                alt=""
-                width={176}
-                height={176}
-                loading="lazy"
-                className={`absolute bottom-0 right-0 w-auto object-contain pointer-events-none opacity-90 ${imgSize ?? "h-28 xl:h-36 2xl:h-44"}`}
-                style={{ zIndex: 0 }}
-              />
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <div className="font-black text-lg xl:text-xl 2xl:text-2xl text-black leading-tight">
-                  {name}
-                </div>
-                <div className="text-xs xl:text-sm font-bold text-black/40 uppercase tracking-widest mt-0.5">
-                  {tagline}
-                </div>
-              </div>
-              <p
-                className="text-sm xl:text-base font-bold text-black/70 leading-relaxed pr-24 xl:pr-32"
-                style={{ position: "relative", zIndex: 1 }}
+        {rest.map(
+          ({ color, name, tagline, desc, bullets, img, imgSize, alt }) => {
+            const isHovered = hovered === name;
+            return (
+              <motion.div
+                key={name}
+                className="border-2 border-black -ml-[2px] -mt-[2px] p-5 xl:p-7 flex flex-col gap-3 overflow-hidden relative"
+                style={{
+                  background: isHovered ? color : "rgba(255,255,255,0.85)",
+                  transition: "background 0.2s ease",
+                }}
+                whileHover={{ y: -4, boxShadow: "4px 4px 0px #000" }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                onHoverStart={() => setHovered(name)}
+                onHoverEnd={() => setHovered(null)}
               >
-                {desc}
-              </p>
-              <ul
-                className="flex flex-col gap-1.5 pr-20 xl:pr-28"
-                style={{ position: "relative", zIndex: 1 }}
-              >
-                {bullets.map((b) => (
-                  <li
-                    key={b}
-                    className="flex items-start gap-2 text-sm xl:text-[0.95rem] font-bold text-black/80 leading-snug"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-black/60 flex-shrink-0 mt-1.5" />
-                    <span>
-                      <Bullet text={b} />
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          );
-        })}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/capybaraPics/${encodeURIComponent(img)}`}
+                  alt={alt ?? name}
+                  width={176}
+                  height={176}
+                  loading="lazy"
+                  className={`absolute bottom-0 right-0 w-auto object-contain pointer-events-none opacity-90 ${imgSize ?? "h-28 xl:h-36 2xl:h-44"}`}
+                  style={{ zIndex: 0 }}
+                />
+                <div style={{ position: "relative", zIndex: 1 }}>
+                  <div className="font-black text-lg xl:text-xl 2xl:text-2xl text-black leading-tight">
+                    {name}
+                  </div>
+                  <div className="text-xs xl:text-sm font-bold text-black/40 uppercase tracking-widest mt-0.5">
+                    {tagline}
+                  </div>
+                </div>
+                <p
+                  className="text-sm xl:text-base font-bold text-black/70 leading-relaxed pr-24 xl:pr-32"
+                  style={{ position: "relative", zIndex: 1 }}
+                >
+                  {desc}
+                </p>
+                <ul
+                  className="flex flex-col gap-1.5 pr-20 xl:pr-28"
+                  style={{ position: "relative", zIndex: 1 }}
+                >
+                  {bullets.map((b) => (
+                    <li
+                      key={b}
+                      className="flex items-start gap-2 text-sm xl:text-[0.95rem] font-bold text-black/80 leading-snug"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-black/60 flex-shrink-0 mt-1.5" />
+                      <span>
+                        <Bullet text={b} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            );
+          },
+        )}
       </div>
     </>
   );
@@ -685,7 +699,7 @@ function SandboxSection() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/capybaraPics/dishwashertalkingonphone.svg"
-            alt=""
+            alt="Restaurant staff freed from phone duty by Belan AI"
             width={96}
             height={96}
             loading="lazy"
@@ -793,6 +807,10 @@ function SandboxSection() {
                 className="border-2 border-black"
                 style={{ background: "rgba(255,255,255,0.75)" }}
               >
+                <div
+                  id="sandbox-demo"
+                  className="scroll-mt-[320px] md:scroll-mt-[280px]"
+                />
                 {/* Mobile layout: phone number first, menu below */}
                 <div className="md:hidden flex flex-col">
                   {/* Phone number */}
@@ -1373,9 +1391,81 @@ function SandboxSection() {
   );
 }
 
+/* ── Hero badge carousel — shown only on ≤375px screens ── */
+const HERO_BADGES = [
+  { label: "📞 Voice AI Ordering",    bg: "#a1dfc5", color: "#000" },
+  { label: "💬 SMS Text Ordering",    bg: "#f5dda1", color: "#000" },
+  { label: "DIRECT TO POS",           bg: "#e01d5a", color: "#fff" },
+  { label: "→ 99%+ Order Accuracy",   bg: "#ecb32e", color: "#000" },
+  { label: "📊 Smart Dashboard",      bg: "#a4e5f8", color: "#000" },
+];
+
+function HeroBadgeCarousel() {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % HERO_BADGES.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="hero-badge-carousel mt-6 w-full" style={{ zIndex: 10 }}>
+      <div style={{ position: "relative", height: "44px", overflow: "hidden" }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={active}
+            initial={{ x: 60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -60, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <span
+              className="border-2 border-black font-bold text-sm px-5 py-2 whitespace-nowrap"
+              style={{
+                background: HERO_BADGES[active].bg,
+                color: HERO_BADGES[active].color,
+              }}
+            >
+              {HERO_BADGES[active].label}
+            </span>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* dot indicators */}
+      <div className="flex justify-center gap-1.5 mt-3">
+        {HERO_BADGES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            style={{
+              width: i === active ? "20px" : "8px",
+              height: "8px",
+              borderRadius: "999px",
+              background: i === active ? "#000" : "#00000033",
+              border: "none",
+              padding: 0,
+              transition: "width 0.3s ease, background 0.3s ease",
+              cursor: "pointer",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── page ── */
 export default function LandingPage() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
 
   return (
@@ -1395,253 +1485,113 @@ export default function LandingPage() {
       />
 
       {/* ── Nav ── */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b-2 border-black">
-        <div className="flex items-center h-14 md:h-16 xl:h-20 2xl:h-24 px-4 md:px-6 xl:px-12 2xl:px-20 gap-4 md:gap-6 max-w-[1920px] mx-auto">
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <motion.img
-              src="/BelanLogo.png"
-              alt="Belan AI"
-              className="w-9 h-9 md:w-12 md:h-12 xl:w-14 xl:h-14 2xl:w-16 2xl:h-16 rounded-full object-cover border-2 border-black"
-              whileHover={{ rotate: -5, scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            />
-            <span className="font-black text-black text-xs md:text-sm xl:text-base tracking-tight">
-              BELAN AI
-            </span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-0 flex-1">
-            {(
-              [
-                ["#", "HOME"],
-                ["#how-it-works", "HOW IT WORKS"],
-                ["#sandbox", "TRY IT"],
-                ["#pricing", "PRICING"],
-                ["/about", "ABOUT"],
-              ] as [string, string][]
-            ).map(([href, label], i) => (
-              <motion.a
-                key={href}
-                href={href}
-                className={`flex items-center px-4 xl:px-6 h-12 xl:h-14 2xl:h-16 text-xs xl:text-sm font-bold tracking-widest border-r-2 border-black ${i === 0 ? "bg-black text-white border-l-2" : "text-black"}`}
-                whileHover={
-                  i !== 0 ? { backgroundColor: "#000", color: "#fff" } : {}
-                }
-                transition={{ duration: 0.15 }}
-              >
-                {label}
-              </motion.a>
-            ))}
-          </nav>
-          <div className="ml-auto flex items-center gap-2 md:gap-3">
-            {user ? (
-              <motion.div
-                className="hidden md:block"
-                whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              >
-                <Link
-                  href="/home"
-                  className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest"
-                  style={{ background: "#a4e5f8" }}
-                >
-                  GO TO DASHBOARD →
-                </Link>
-              </motion.div>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="hidden md:block text-xs xl:text-sm font-bold text-black tracking-widest hover:underline"
-                >
-                  LOG IN
-                </Link>
-                <motion.div
-                  className="hidden md:block"
-                  whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                >
-                  <Link
-                    href="/register"
-                    className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest"
-                    style={{ background: "#a4e5f8" }}
-                  >
-                    SIGN UP
-                  </Link>
-                </motion.div>
-              </>
-            )}
-            <motion.div
-              whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            >
-              <Link
-                href="https://calendar.app.google/uCwfd2qfNtjJMSca9"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-black text-white text-xs font-bold px-3 md:px-5 xl:px-7 py-2 md:py-2.5 xl:py-3 tracking-widest border-2 border-black block whitespace-nowrap"
-              >
-                BOOK A DEMO →
-              </Link>
-            </motion.div>
-            <button
-              className="md:hidden text-black p-1"
-              onClick={() => setMobileOpen((o) => !o)}
-            >
-              <motion.svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                animate={{ rotate: mobileOpen ? 90 : 0 }}
-                transition={{ duration: 0.25 }}
-              >
-                {mobileOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </motion.svg>
-            </button>
-          </div>
-        </div>
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              className="md:hidden bg-white/95 border-t-2 border-black px-6 flex flex-col gap-3 text-xs font-bold tracking-widest overflow-hidden"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease }}
-            >
-              <div className="py-4 flex flex-col gap-3">
-                <a href="#how-it-works" onClick={() => setMobileOpen(false)}>
-                  HOW IT WORKS
-                </a>
-                <a href="#sandbox" onClick={() => setMobileOpen(false)}>
-                  TRY IT
-                </a>
-                <a href="#pricing" onClick={() => setMobileOpen(false)}>
-                  PRICING
-                </a>
-                <Link href="/about" onClick={() => setMobileOpen(false)}>
-                  ABOUT
-                </Link>
-                {user ? (
-                  <Link href="/home">GO TO DASHBOARD →</Link>
-                ) : (
-                  <Link href="/login">LOG IN</Link>
-                )}
-                <a
-                  href="https://calendar.app.google/uCwfd2qfNtjJMSca9"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-black text-white px-4 py-2 text-center"
-                >
-                  BOOK A DEMO →
-                </a>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
+      <SiteNav />
 
       {/* ── HERO ── */}
       <section
         className="min-h-[calc(100vh-3.5rem)] md:h-[calc(100vh-4rem)] xl:h-[calc(100vh-5rem)] 2xl:h-[calc(100vh-6rem)] px-4 sm:px-8 md:px-16 xl:px-24 flex items-center relative"
         style={{ zIndex: 1 }}
       >
-        {/* floating feature tiles — desktop only */}
+        {/* floating feature tiles */}
         <div
-          className="hidden lg:block absolute inset-0 pointer-events-none"
+          className="absolute inset-0 pointer-events-none hero-floating-badges"
           style={{ zIndex: 5 }}
         >
-          <div
-            className="absolute"
-            style={{
-              top: "16%",
-              left: "4%",
-              animation: "floatA 10s ease-in-out infinite",
+          <motion.div
+            className="absolute hero-badge-1"
+            style={{ animation: "floatA 10s ease-in-out infinite" }}
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 18,
+              delay: 0.5,
             }}
           >
             <div
-              className="px-4 py-2 border-2 border-black text-sm xl:text-base font-bold whitespace-nowrap"
+              className="hero-badge px-3 py-1.5 lg:px-4 lg:py-2 border-2 border-black text-[10px] lg:text-sm xl:text-base font-bold whitespace-nowrap"
               style={{ background: "#a1dfc5", transform: "rotate(-2deg)" }}
             >
               📞 Voice AI Ordering
             </div>
-          </div>
-          <div
-            className="absolute"
-            style={{
-              top: "11%",
-              right: "5%",
-              animation: "floatB 12s ease-in-out infinite",
+          </motion.div>
+          <motion.div
+            className="absolute hero-badge-2"
+            style={{ animation: "floatB 12s ease-in-out infinite" }}
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 18,
+              delay: 0.7,
             }}
           >
             <div
-              className="px-4 py-2 border-2 border-black text-sm xl:text-base font-bold whitespace-nowrap"
+              className="hero-badge px-3 py-1.5 lg:px-4 lg:py-2 border-2 border-black text-[10px] lg:text-sm xl:text-base font-bold whitespace-nowrap"
               style={{ background: "#f5dda1", transform: "rotate(3deg)" }}
             >
               💬 SMS Text Ordering
             </div>
-          </div>
-          <div
-            className="absolute"
-            style={{
-              top: "52%",
-              right: "3%",
-              animation: "floatC 9s ease-in-out infinite",
+          </motion.div>
+          <motion.div
+            className="absolute hero-badge-3"
+            style={{ animation: "floatC 9s ease-in-out infinite" }}
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 18,
+              delay: 0.9,
             }}
           >
             <div
-              className="px-4 py-2 border-2 border-black text-sm xl:text-base font-bold whitespace-nowrap text-white"
+              className="hero-badge px-3 py-1.5 lg:px-4 lg:py-2 border-2 border-black text-[10px] lg:text-sm xl:text-base font-bold whitespace-nowrap text-white"
               style={{ background: "#e01d5a", transform: "rotate(-1.5deg)" }}
             >
               DIRECT TO POS
             </div>
-          </div>
-          <div
-            className="absolute"
-            style={{
-              bottom: "20%",
-              left: "3%",
-              animation: "floatD 11s ease-in-out infinite",
+          </motion.div>
+          <motion.div
+            className="absolute hidden sm:block hero-badge-4"
+            style={{ animation: "floatD 11s ease-in-out infinite" }}
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 18,
+              delay: 1.1,
             }}
           >
             <div
-              className="px-4 py-2 border-2 border-black text-sm xl:text-base font-bold whitespace-nowrap text-white flex items-center gap-2"
+              className="hero-badge px-3 py-1.5 lg:px-4 lg:py-2 border-2 border-black text-[10px] lg:text-sm xl:text-base font-bold whitespace-nowrap text-white flex items-center gap-1 lg:gap-2"
               style={{ background: "#ecb32e", transform: "rotate(2deg)" }}
             >
               <span>→</span> 99%+ Order Accuracy
             </div>
-          </div>
-          <div
-            className="absolute"
-            style={{
-              top: "38%",
-              left: "2%",
-              animation: "floatE 13s ease-in-out infinite",
+          </motion.div>
+          <motion.div
+            className="absolute hero-badge-5"
+            style={{ animation: "floatE 13s ease-in-out infinite" }}
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 18,
+              delay: 1.3,
             }}
           >
             <div
-              className="px-4 py-2 border-2 border-black text-sm xl:text-base font-bold whitespace-nowrap"
+              className="hero-badge px-3 py-1.5 lg:px-4 lg:py-2 border-2 border-black text-[10px] lg:text-sm xl:text-base font-bold whitespace-nowrap"
               style={{ background: "#a4e5f8", transform: "rotate(1.5deg)" }}
             >
               📊 Smart Dashboard
             </div>
-          </div>
+          </motion.div>
         </div>
 
         <style>{`
@@ -1650,6 +1600,25 @@ export default function LandingPage() {
           @keyframes floatC { 0%,100%{transform:translate(0,0)} 40%{transform:translate(-14px,52px)} 70%{transform:translate(-6px,30px)} }
           @keyframes floatD { 0%,100%{transform:translate(0,0)} 35%{transform:translate(62px,-38px)} 65%{transform:translate(28px,-55px)} 85%{transform:translate(45px,-25px)} }
           @keyframes floatE { 0%,100%{transform:translate(0,0)} 30%{transform:translate(8px,-30px)} 60%{transform:translate(-12px,-52px)} 80%{transform:translate(4px,-22px)} }
+          @media (max-width: 375px) {
+            .hero-floating-badges { display: none; }
+            .hero-badge-carousel { display: block; }
+          }
+          .hero-badge-carousel { display: none; }
+          /* Mobile badge positions */
+          .hero-badge-1 { top: 14%; left: 1%; }
+          .hero-badge-2 { top: 9%;  right: 1%; }
+          .hero-badge-3 { bottom: 15%; right: 1%; }
+          .hero-badge-4 { bottom: 18%; left: 1%; }
+          .hero-badge-5 { bottom: 8%; left: 1%; }
+          /* Desktop badge positions */
+          @media (min-width: 1024px) {
+            .hero-badge-1 { top: 16%; left: 4%; }
+            .hero-badge-2 { top: 11%; right: 5%; }
+            .hero-badge-3 { top: 52%; right: 3%; }
+            .hero-badge-4 { bottom: 20%; left: 3%; }
+            .hero-badge-5 { top: 38%; left: 2%; }
+          }
         `}</style>
 
         <motion.div
@@ -1661,18 +1630,18 @@ export default function LandingPage() {
         >
           {/* Badge — primary SEO heading */}
           <motion.h1
-            variants={fadeUpLCP}
+            variants={fadeUp}
             className="border-2 border-black px-3 sm:px-5 py-2 sm:py-3 text-[11px] sm:text-sm xl:text-base font-bold mb-5 sm:mb-6 whitespace-nowrap"
             style={{ background: "#a4e5f8", transform: "rotate(-1deg)" }}
             whileHover={{ rotate: 0, scale: 1.03 }}
             transition={{ type: "spring", stiffness: 400, damping: 15 }}
           >
-            Restaurant AI that actually works 📞
+            Restaurant Voice AI That Answers Every Call 📞
           </motion.h1>
 
           {/* BELAN AI — brand name display */}
           <motion.div
-            variants={scaleInLCP}
+            variants={scaleIn}
             className="relative inline-block mb-5 sm:mb-6"
           >
             {[
@@ -1701,7 +1670,7 @@ export default function LandingPage() {
           </motion.div>
 
           <motion.div
-            variants={fadeInLCP}
+            variants={fadeIn}
             className="flex items-center justify-center gap-2 mb-4 sm:mb-6"
           >
             <span className="w-2 h-2 rounded-full bg-black animate-pulse" />
@@ -1712,10 +1681,14 @@ export default function LandingPage() {
 
           {/* Subtitle — 2 lines on mobile */}
           <motion.div
-            variants={fadeUpLCP}
+            variants={fadeUp}
             className="flex flex-col gap-4 sm:gap-5 mb-2 sm:mb-3 max-w-xs sm:max-w-xl md:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl"
           >
-            {["Belan answers your phone.", "Takes the order.", "Then fires it straight to your POS."].map((line, i) => (
+            {[
+              "Belan answers your phone.",
+              "Takes the order.",
+              "Then fires it straight to your POS.",
+            ].map((line, i) => (
               <span
                 key={i}
                 className="text-lg sm:text-2xl md:text-3xl xl:text-4xl 2xl:text-5xl font-black text-black leading-tight"
@@ -1727,17 +1700,20 @@ export default function LandingPage() {
                   >
                     {line}
                   </span>
-                ) : line}
+                ) : (
+                  line
+                )}
               </span>
             ))}
           </motion.div>
 
           {/* Description — 2-3 lines on mobile */}
           <motion.p
-            variants={fadeUpLCP}
+            variants={fadeUp}
             className="text-sm sm:text-base md:text-lg xl:text-xl 2xl:text-2xl text-black/60 font-medium mb-6 sm:mb-8 max-w-xs sm:max-w-sm md:max-w-xl xl:max-w-2xl leading-relaxed"
           >
-            AI that takes orders, drives sales, and brings customers back — built for restaurants.
+            AI that takes orders, drives sales, and brings customers back —
+            built for restaurants.
           </motion.p>
 
           {/* Buttons — stacked on mobile, side by side on sm+ */}
@@ -1751,10 +1727,16 @@ export default function LandingPage() {
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
             >
               <Link
-                href={user ? "/home" : "/register"}
+                href={
+                  user
+                    ? "/home"
+                    : "https://calendar.app.google/uCwfd2qfNtjJMSca9"
+                }
+                target={user ? undefined : "_blank"}
+                rel={user ? undefined : "noopener noreferrer"}
                 className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
               >
-                {user ? "GO TO DASHBOARD →" : "GET STARTED →"}
+                {user ? "GO TO DASHBOARD →" : "BOOK A DEMO →"}
               </Link>
             </motion.div>
             {!user && (
@@ -1764,7 +1746,7 @@ export default function LandingPage() {
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
                 <motion.a
-                  href="#how-it-works"
+                  href="#sandbox-demo"
                   className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
                 >
                   SEE HOW IT WORKS
@@ -1772,6 +1754,10 @@ export default function LandingPage() {
               </motion.div>
             )}
           </motion.div>
+
+          {/* ── Hero badge carousel (≤375px only) ── */}
+          <HeroBadgeCarousel />
+
         </motion.div>
       </section>
 
@@ -1816,6 +1802,8 @@ export default function LandingPage() {
                     title: "Customer calls. Belan answers.",
                     desc: "Every call picked up on the first ring — no hold music, no missed orders, no staff needed.",
                     mobileImg: "baristatalkingonphone.svg",
+                    mobileAlt:
+                      "Barista answering a customer call with Belan AI voice ordering",
                   },
                   {
                     num: "02",
@@ -1823,6 +1811,8 @@ export default function LandingPage() {
                     title: "AI takes the order naturally.",
                     desc: "Belan checks each customer's taste profile and allergy history, recommends what they'll love, and applies your upsell rules on every single order.",
                     mobileImg: "waiter_recommending_from_menu.svg",
+                    mobileAlt:
+                      "AI upsell suggestions helping a waiter recommend menu items",
                   },
                   {
                     num: "03",
@@ -1831,53 +1821,65 @@ export default function LandingPage() {
                     desc: "Belan texts a payment link, then fires the order straight to your POS the moment they pay.",
                     white: true,
                     mobileImg: "runningwithpizza.svg",
+                    mobileAlt:
+                      "Restaurant staff fulfilling orders faster with AI automation",
                   },
-                ].map(({ num, color, title, desc, white, mobileImg }) => (
-                  <motion.div
-                    key={num}
-                    variants={fadeUp}
-                    className="flex gap-3 sm:gap-5 items-center p-4 sm:p-5 xl:p-6 border-2 border-black"
-                    style={{ background: "rgba(255,255,255,0.75)" }}
-                    whileHover={{
-                      x: 4,
-                      boxShadow: "4px 4px 0px #000",
-                      transition: {
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 20,
-                      },
-                    }}
-                  >
-                    <div
-                      className="text-base sm:text-xl xl:text-2xl font-black border-2 border-black w-9 h-9 sm:w-12 sm:h-12 xl:w-14 xl:h-14 flex items-center justify-center flex-shrink-0"
-                      style={{
-                        background: color,
-                        color: white ? "white" : "black",
-                        fontFamily: "Tektur, sans-serif",
+                ].map(
+                  ({
+                    num,
+                    color,
+                    title,
+                    desc,
+                    white,
+                    mobileImg,
+                    mobileAlt,
+                  }) => (
+                    <motion.div
+                      key={num}
+                      variants={fadeUp}
+                      className="flex gap-3 sm:gap-5 items-center p-4 sm:p-5 xl:p-6 border-2 border-black"
+                      style={{ background: "rgba(255,255,255,0.75)" }}
+                      whileHover={{
+                        x: 4,
+                        boxShadow: "4px 4px 0px #000",
+                        transition: {
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 20,
+                        },
                       }}
                     >
-                      {num}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-black text-sm sm:text-lg xl:text-xl 2xl:text-2xl text-black mb-0.5 sm:mb-1">
-                        {title}
+                      <div
+                        className="text-base sm:text-xl xl:text-2xl font-black border-2 border-black w-9 h-9 sm:w-12 sm:h-12 xl:w-14 xl:h-14 flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: color,
+                          color: white ? "white" : "black",
+                          fontFamily: "Tektur, sans-serif",
+                        }}
+                      >
+                        {num}
                       </div>
-                      <div className="text-xs sm:text-sm xl:text-base text-black leading-relaxed font-bold">
-                        {desc}
+                      <div className="flex-1">
+                        <div className="font-black text-sm sm:text-lg xl:text-xl 2xl:text-2xl text-black mb-0.5 sm:mb-1">
+                          {title}
+                        </div>
+                        <div className="text-xs sm:text-sm xl:text-base text-black leading-relaxed font-bold">
+                          {desc}
+                        </div>
                       </div>
-                    </div>
-                    {/* Mobile static capybara per step */}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/capybaraPics/${mobileImg}`}
-                      alt=""
-                      width={96}
-                      height={96}
-                      loading="lazy"
-                      className={`md:hidden w-auto object-contain flex-shrink-0 ${num === "01" ? "h-24" : "h-16"}`}
-                    />
-                  </motion.div>
-                ))}
+                      {/* Mobile static capybara per step */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/capybaraPics/${mobileImg}`}
+                        alt={mobileAlt}
+                        width={96}
+                        height={96}
+                        loading="lazy"
+                        className={`md:hidden w-auto object-contain flex-shrink-0 ${num === "01" ? "h-24" : "h-16"}`}
+                      />
+                    </motion.div>
+                  ),
+                )}
               </motion.div>
 
               {/* POS row */}
@@ -1987,7 +1989,7 @@ export default function LandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/capybaraPics/twotalkingontable.svg"
-              alt=""
+              alt="Restaurant owners discussing AI ordering results"
               width={80}
               height={80}
               loading="lazy"
@@ -2193,7 +2195,7 @@ export default function LandingPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/capybaraPics/sittingoncrate.svg"
-                alt=""
+                alt="Restaurant owner reviewing AI ordering analytics"
                 width={384}
                 height={384}
                 loading="lazy"
@@ -2208,15 +2210,126 @@ export default function LandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/capybaraPics/scooterguytakingpic.svg"
-              alt=""
+              alt="Restaurant delivery with AI-powered order management"
               width={144}
               height={144}
               loading="lazy"
               className="h-36 w-auto object-contain"
             />
           </div>
-
         </div>
+      </RevealSection>
+
+      {/* ── FAQ ── */}
+      <RevealSection
+        id="faq"
+        className="py-16 md:py-20 xl:py-24 px-4 sm:px-8 md:px-16 xl:px-24"
+        style={{ position: "relative", zIndex: 1 }}
+      >
+        <div className="max-w-3xl xl:max-w-4xl mx-auto">
+          <motion.div variants={fadeUp} className="mb-8 sm:mb-10">
+            <span
+              className="inline-block border-2 border-black px-3 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-3"
+              style={{ background: "#a4e5f8" }}
+            >
+              FAQ
+            </span>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl xl:text-5xl font-black text-black leading-tight">
+              Common questions about restaurant voice AI
+            </h2>
+          </motion.div>
+          <motion.div
+            variants={stagger}
+            className="flex flex-col divide-y-2 divide-black border-2 border-black bg-white"
+          >
+            {[
+              {
+                q: "How does restaurant voice AI work?",
+                a: "Belan AI answers your phone on the first ring. It greets the caller with a custom voice, takes their order, checks allergy history, applies your upsell rules, then texts a payment link and fires the confirmed order straight to your POS — no staff required.",
+              },
+              {
+                q: "How much does AI phone ordering for restaurants cost?",
+                a: "Belan AI is $200 per month, flat rate. That includes unlimited calls, unlimited SMS orders, POS integration, dashboard analytics, marketing campaigns, and sales AI. No per-order fees, no setup fees. Unlike competitors that charge $250–$600/month or per-order fees, every feature is included.",
+              },
+              {
+                q: "Does Belan AI work with my POS system?",
+                a: "Yes. Belan AI integrates directly with Clover, Toast, Square, Lightspeed, Revel, and TouchBistro. Orders appear in your POS automatically the moment the customer pays — no manual entry needed.",
+              },
+              {
+                q: "How long does setup take?",
+                a: "About 20 minutes. You connect your POS, pick a voice and greeting, and Belan AI starts answering calls immediately. No hardware, no installation, no IT required.",
+              },
+              {
+                q: "What happens if a customer calls during a dinner rush?",
+                a: "Belan AI handles unlimited concurrent calls 24/7. Every call is answered on the first ring regardless of how busy your restaurant is — no hold music, no missed orders.",
+              },
+            ].map(({ q, a }, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                className="px-5 sm:px-6 xl:px-8 py-5 sm:py-6"
+              >
+                <div className="font-black text-sm sm:text-base xl:text-lg text-black mb-2">
+                  {q}
+                </div>
+                <div className="text-sm sm:text-base text-black/70 font-bold leading-relaxed">
+                  {a}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "How does restaurant voice AI work?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Belan AI answers your phone on the first ring. It greets the caller with a custom voice, takes their order, checks allergy history, applies your upsell rules, then texts a payment link and fires the confirmed order straight to your POS — no staff required.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How much does AI phone ordering for restaurants cost?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Belan AI is $200 per month, flat rate. That includes unlimited calls, unlimited SMS orders, POS integration, dashboard analytics, marketing campaigns, and sales AI. No per-order fees, no setup fees.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "Does Belan AI work with my POS system?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Yes. Belan AI integrates directly with Clover, Toast, Square, Lightspeed, Revel, and TouchBistro. Orders appear in your POS automatically the moment the customer pays — no manual entry needed.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How long does setup take?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "About 20 minutes. You connect your POS, pick a voice and greeting, and Belan AI starts answering calls immediately. No hardware, no installation, no IT required.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "What happens if a customer calls during a dinner rush?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Belan AI handles unlimited concurrent calls 24/7. Every call is answered on the first ring regardless of how busy your restaurant is — no hold music, no missed orders.",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
       </RevealSection>
 
       {/* ── CTA Band ── */}
@@ -2290,17 +2403,35 @@ export default function LandingPage() {
               BELAN AI
             </span>
           </div>
-          <div className="flex gap-4 sm:gap-6 text-xs xl:text-sm font-bold tracking-widest text-black/50">
+          <div className="flex flex-wrap gap-4 sm:gap-6 text-xs xl:text-sm font-bold tracking-widest text-black/50 justify-center">
+            <Link
+              href="/integrations"
+              className="hover:text-black transition-colors"
+            >
+              POS INTEGRATIONS
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="hover:text-black transition-colors"
+            >
+              HOW IT WORKS
+            </Link>
             {user ? (
               <Link href="/home" className="hover:text-black transition-colors">
                 DASHBOARD
               </Link>
             ) : (
               <>
-                <Link href="/login" className="hover:text-black transition-colors">
+                <Link
+                  href="/login"
+                  className="hover:text-black transition-colors"
+                >
                   LOG IN
                 </Link>
-                <Link href="/register" className="hover:text-black transition-colors">
+                <Link
+                  href="/register"
+                  className="hover:text-black transition-colors"
+                >
                   SIGN UP
                 </Link>
               </>

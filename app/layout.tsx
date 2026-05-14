@@ -12,7 +12,7 @@ const tektur = Tektur({
 });
 
 export const metadata: Metadata = {
-  title: "Restaurant Phone AI That Never Misses a Call | Belan AI",
+  title: "Restaurant Voice AI That Answers Every Call | Belan AI",
   description:
     "Belan AI answers every restaurant call, takes the order, and fires it to your POS — automatically. $200/month all-in. No per-order fees.",
   alternates: {
@@ -26,10 +26,10 @@ export const metadata: Metadata = {
     siteName: "Belan AI",
     images: [
       {
-        url: "https://belan.tech/BelanLogo.png",
-        width: 512,
-        height: 512,
-        alt: "Belan AI — Restaurant Phone Ordering AI",
+        url: "https://belan.tech/og-screenshot.png",
+        width: 3024,
+        height: 1640,
+        alt: "Belan AI restaurant phone ordering dashboard",
       },
     ],
     type: "website",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     title: "Restaurant AI Ordering — Every Call Answered | Belan AI",
     description:
       "Belan AI picks up every call, upsells every order, and fires it to your POS. $200/month flat.",
-    images: ["https://belan.tech/BelanLogo.png"],
+    images: ["https://belan.tech/og-screenshot.png"],
   },
   icons: {
     icon: [
@@ -81,7 +81,8 @@ const softwareApplicationSchema = {
     availability: "https://schema.org/InStock",
   },
   featureList: [
-    "AI phone ordering — answers every call 24/7",
+    "Restaurant voice AI ordering — answers every call 24/7",
+    "Voice AI for restaurants — no app, no staff needed",
     "SMS text ordering — no app required",
     "Real-time revenue and orders dashboard",
     "AI-powered SMS marketing campaigns",
@@ -94,36 +95,6 @@ const softwareApplicationSchema = {
     name: "Belan AI",
     url: "https://belan.tech",
   },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "5",
-    bestRating: "5",
-    worstRating: "1",
-    ratingCount: "3",
-  },
-  review: [
-    {
-      "@type": "Review",
-      author: { "@type": "Organization", name: "Lime N Dime" },
-      reviewBody:
-        "Dinner rush used to mean constant ringing phones and stressed staff. Now Belan handles the phones and our team stays on the grill. It paid for itself in the first week.",
-      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5", worstRating: "1" },
-    },
-    {
-      "@type": "Review",
-      author: { "@type": "Organization", name: "Epic Pizza" },
-      reviewBody:
-        "The global taste profile is a game changer. When someone visiting from out of town calls, Belan already knows their preferences — every visitor feels like a local regular.",
-      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5", worstRating: "1" },
-    },
-    {
-      "@type": "Review",
-      author: { "@type": "Organization", name: "Shaghf" },
-      reviewBody:
-        "Setup took 20 minutes. We connected Clover, chose a voice, and started taking orders. The Sales AI even flagged that we were underpricing our lattes.",
-      reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5", worstRating: "1" },
-    },
-  ],
 };
 
 const organizationSchema = {
@@ -140,14 +111,44 @@ const organizationSchema = {
   description:
     "Belan AI builds restaurant ordering automation — voice AI, SMS ordering, and marketing campaigns powered by artificial intelligence.",
   areaServed: "US",
-  serviceType: "Restaurant AI Software",
   contactPoint: {
     "@type": "ContactPoint",
     telephone: "+18554852690",
-    contactType: "sales",
+    contactType: "customer support",
     availableLanguage: "English",
   },
   sameAs: ["https://www.instagram.com/belantech"],
+};
+
+const serviceSchema = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: "Belan AI Restaurant Voice AI Ordering",
+  serviceType: "Restaurant Voice AI Phone and SMS Ordering",
+  description:
+    "Belan AI answers every restaurant call, takes orders via voice and SMS, upsells automatically, and fires orders to your POS. $200/month flat rate.",
+  url: "https://belan.tech",
+  provider: {
+    "@type": "Organization",
+    name: "Belan AI",
+    url: "https://belan.tech",
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "United States",
+  },
+  offers: {
+    "@type": "Offer",
+    price: "200.00",
+    priceCurrency: "USD",
+    availability: "https://schema.org/InStock",
+    priceSpecification: {
+      "@type": "UnitPriceSpecification",
+      price: "200.00",
+      priceCurrency: "USD",
+      billingDuration: "P1M",
+    },
+  },
 };
 
 const websiteSchema = {
@@ -189,6 +190,12 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(websiteSchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(serviceSchema),
           }}
         />
         <AuthProvider>

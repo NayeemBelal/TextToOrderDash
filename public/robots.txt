@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /home
 Disallow: /items
+Disallow: /configure
 Disallow: /marketing
 Disallow: /onboarding
 Disallow: /login

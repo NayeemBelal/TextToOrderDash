@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteNav from "@/components/SiteNav";
 
 export const metadata: Metadata = {
   title: "About Belan AI — The Team Behind Restaurant Phone AI",
@@ -14,14 +15,6 @@ export const metadata: Metadata = {
       "Meet the team that built the AI answering system for restaurants. Learn our story, our mission, and why $200/month beats a missed order every time.",
     url: "https://belan.tech/about",
     siteName: "Belan AI",
-    images: [
-      {
-        url: "https://belan.tech/BelanLogo.png",
-        width: 512,
-        height: 512,
-        alt: "Belan AI Logo",
-      },
-    ],
     type: "website",
     locale: "en_US",
   },
@@ -169,42 +162,7 @@ export default function AboutPage() {
       />
 
       <main className="bg-white min-h-screen font-tektur">
-        {/* ── Nav ── */}
-        <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b-2 border-black px-4 sm:px-8 xl:px-16 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/BelanLogo.png"
-              alt="Belan AI logo"
-              width={32}
-              height={32}
-              className="w-7 h-7 rounded-full border-2 border-black object-cover"
-            />
-            <span className="font-black text-black text-sm tracking-widest">
-              BELAN AI
-            </span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-xs font-bold text-black/60 hover:text-black tracking-widest uppercase transition-colors"
-            >
-              Home
-            </Link>
-            <Link
-              href="/#pricing"
-              className="text-xs font-bold text-black/60 hover:text-black tracking-widest uppercase transition-colors"
-            >
-              Pricing
-            </Link>
-            <Link
-              href="/register"
-              className="bg-black text-white text-xs font-bold px-4 py-2 border-2 border-black tracking-widest hover:bg-white hover:text-black transition-colors"
-            >
-              GET STARTED
-            </Link>
-          </div>
-        </nav>
+        <SiteNav />
 
         {/* ── Hero ── */}
         <section className="border-b-2 border-black px-4 sm:px-8 xl:px-16 py-16 sm:py-20 xl:py-24">
