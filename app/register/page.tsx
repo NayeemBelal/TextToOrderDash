@@ -37,7 +37,7 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
@@ -48,6 +48,12 @@ export default function RegisterPage() {
         },
       });
       if (authError) throw authError;
+      // When the email is already registered, Supabase returns success with a
+      // user object whose identities array is empty (anti-enumeration behaviour).
+      if (!data.user || data.user.identities?.length === 0) {
+        setError('An account with this email already exists. Please sign in instead.');
+        return;
+      }
       setSuccess(true);
       router.push('/onboarding');
     } catch (err: unknown) {
@@ -113,7 +119,19 @@ export default function RegisterPage() {
 
         {error && (
           <div className="mb-4 px-3 py-2 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
-            {error}
+            {error.includes('already exists') ? (
+              <>
+                An account with this email already exists.{' '}
+                <Link
+                  href="/login"
+                  className="underline font-medium hover:text-red-700 transition-colors"
+                >
+                  Sign in instead →
+                </Link>
+              </>
+            ) : (
+              error
+            )}
           </div>
         )}
 

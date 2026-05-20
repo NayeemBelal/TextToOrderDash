@@ -42,7 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        if (isSessionValid()) {
+        // Never sign out on the reset-password page — the recovery session is
+        // established by reset-password's useEffect via setSession().
+        // Calling signOut() here revokes those tokens server-side (Supabase
+        // strips the hash before this callback runs, so hash checks don't work),
+        // which causes updateUser() to fail with "Auth session missing!".
+        const isResetPasswordPage =
+          typeof window !== 'undefined' &&
+          window.location.pathname === '/reset-password';
+
+        if (isSessionValid() || isResetPasswordPage) {
           setUser(session.user);
         } else {
           supabase.auth.signOut();

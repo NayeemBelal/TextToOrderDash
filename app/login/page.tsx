@@ -91,12 +91,12 @@ export default function LoginPage() {
               <label htmlFor="password" className="section-label">
                 Password
               </label>
-              <button
-                type="button"
+              <Link
+                href="/forgot-password"
                 className="text-xs text-capy-brown-accent hover:text-capy-brown-accent-dark transition-colors"
               >
                 Forgot password?
-              </button>
+              </Link>
             </div>
             <div className="relative">
               <input
