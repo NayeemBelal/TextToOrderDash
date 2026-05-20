@@ -1,4 +1,7 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  'https://text-to-order-coffee-34770846162.us-central1.run.app';
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -71,6 +74,24 @@ export interface UpsellRule {
   active: boolean;
 }
 
+export interface SalesAIQueryRecord {
+  query: string;
+  row_count: number;
+  error: string | null;
+}
+
+export type SalesAIChartType = "bar" | "time_series";
+
+export interface SalesAIChart {
+  type: SalesAIChartType;
+  title?: string | null;
+  x_key: string;
+  y_key: string;
+  x_label?: string | null;
+  y_label?: string | null;
+  data: Array<Record<string, unknown>>;
+}
+
 export interface SpecialClosure {
   date: string;
   message: string;
@@ -84,4 +105,15 @@ export interface BusinessHours {
   timezone: string;
   isOpen: boolean;
   closedMessage: string | null;
+}
+
+export interface SalesAIResponse {
+  answer: string;
+  message: string;
+  thinking: string | null;
+  python_code: string | null;
+  chart: SalesAIChart | null;
+  queries: SalesAIQueryRecord[];
+  iterations: number;
+  error: string | null;
 }

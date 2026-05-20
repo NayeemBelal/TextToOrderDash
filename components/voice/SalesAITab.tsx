@@ -1,22 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { API_BASE_URL, type SalesAIChart as SalesAIChartPayload, type SalesAIQueryRecord, type SalesAIResponse } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { SalesAIChart } from "./SalesAIChart";
 
 type Role = "user" | "assistant" | "error";
-
-interface QueryRecord {
-  query: string;
-  row_count: number;
-  error: string | null;
-}
 
 interface ChatMessage {
   id: string;
   role: Role;
   content: string;
-  queries?: QueryRecord[];
+  thinking?: string | null;
+  python_code?: string | null;
+  chart?: SalesAIChartPayload | null;
+  queries?: SalesAIQueryRecord[];
   iterations?: number;
 }
 
@@ -75,19 +75,17 @@ export function SalesAITab() {
         throw new Error(detail);
       }
 
-      const data: {
-        answer: string;
-        queries: QueryRecord[];
-        iterations: number;
-        error: string | null;
-      } = await res.json();
+      const data: SalesAIResponse = await res.json();
 
       setMessages((prev) => [
         ...prev,
         {
           id: uid(),
           role: "assistant",
-          content: data.answer,
+          content: data.message ?? data.answer,
+          thinking: data.thinking,
+          python_code: data.python_code,
+          chart: data.chart,
           queries: data.queries,
           iterations: data.iterations,
         },
@@ -195,13 +193,27 @@ function Bubble({ message }: { message: ChatMessage }) {
       </div>
     );
   }
+
+  const hasDetails =
+    (message.thinking && message.thinking.trim().length > 0) ||
+    (message.queries && message.queries.length > 0) ||
+    (message.python_code && message.python_code.trim().length > 0);
+
   return (
-    <div className="self-start max-w-[90%] flex flex-col gap-2">
-      <div className="bg-white border border-capy-border rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-capy-text whitespace-pre-wrap shadow-sm">
-        {message.content}
+    <div className="self-start max-w-[90%] w-full flex flex-col gap-2">
+      <div className="bg-white border border-capy-border rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-capy-text shadow-sm">
+        <Markdown>{message.content}</Markdown>
       </div>
-      {message.queries && message.queries.length > 0 && (
-        <QueryDetails queries={message.queries} iterations={message.iterations} />
+      {message.chart && message.chart.data && message.chart.data.length > 0 && (
+        <SalesAIChart chart={message.chart} />
+      )}
+      {hasDetails && (
+        <AnswerDetails
+          thinking={message.thinking ?? null}
+          queries={message.queries ?? []}
+          python_code={message.python_code ?? null}
+          iterations={message.iterations}
+        />
       )}
     </div>
   );
@@ -229,14 +241,29 @@ function Dot({ delay }: { delay: number }) {
   );
 }
 
-function QueryDetails({
+function AnswerDetails({
+  thinking,
   queries,
+  python_code,
   iterations,
 }: {
-  queries: QueryRecord[];
+  thinking: string | null;
+  queries: SalesAIQueryRecord[];
+  python_code: string | null;
   iterations?: number;
 }) {
   const [open, setOpen] = useState(false);
+
+  const parts: string[] = [];
+  if (thinking) parts.push("Thinking");
+  if (queries.length > 0) {
+    parts.push(queries.length === 1 ? "1 query" : `${queries.length} queries`);
+  }
+  if (python_code) parts.push("Python");
+  if (iterations) parts.push(`${iterations} step${iterations === 1 ? "" : "s"}`);
+
+  const summary = parts.join(" · ") || "Details";
+
   return (
     <details
       className="group bg-white/60 border border-capy-border rounded-xl text-xs"
@@ -257,33 +284,132 @@ function QueryDetails({
             d="M9 5l7 7-7 7"
           />
         </svg>
-        <span>
-          {queries.length === 1 ? "1 query" : `${queries.length} queries`}
-          {iterations ? ` · ${iterations} step${iterations === 1 ? "" : "s"}` : ""}
-        </span>
+        <span>{summary}</span>
       </summary>
-      <div className="px-3 pb-3 pt-1 flex flex-col gap-2">
-        {queries.map((q, i) => (
-          <div key={i} className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-capy-muted">
-              <span>Query {i + 1}</span>
-              {q.error ? (
-                <span className="text-red-500">error</span>
-              ) : (
-                <span>
-                  {q.row_count} row{q.row_count === 1 ? "" : "s"}
-                </span>
-              )}
+      <div className="px-3 pb-3 pt-1 flex flex-col gap-3">
+        {thinking && (
+          <Section label="Thinking">
+            <div className="text-[12px] leading-relaxed text-capy-text">
+              <Markdown>{thinking}</Markdown>
             </div>
+          </Section>
+        )}
+        {queries.length > 0 && (
+          <Section label={queries.length === 1 ? "SQL" : "SQL queries"}>
+            <div className="flex flex-col gap-2">
+              {queries.map((q, i) => (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-capy-muted">
+                    <span>Query {i + 1}</span>
+                    {q.error ? (
+                      <span className="text-red-500">error</span>
+                    ) : (
+                      <span>
+                        {q.row_count} row{q.row_count === 1 ? "" : "s"}
+                      </span>
+                    )}
+                  </div>
+                  <pre className="bg-capy-bg rounded-lg px-2.5 py-2 text-[11px] leading-snug text-capy-text whitespace-pre-wrap break-words font-mono">
+                    {q.query}
+                  </pre>
+                  {q.error && (
+                    <p className="text-[11px] text-red-600 break-words">{q.error}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+        {python_code && (
+          <Section label="Python">
             <pre className="bg-capy-bg rounded-lg px-2.5 py-2 text-[11px] leading-snug text-capy-text whitespace-pre-wrap break-words font-mono">
-              {q.query}
+              {python_code}
             </pre>
-            {q.error && (
-              <p className="text-[11px] text-red-600 break-words">{q.error}</p>
-            )}
-          </div>
-        ))}
+          </Section>
+        )}
       </div>
     </details>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-capy-muted font-medium">
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// Minimal markdown wrapper that styles the elements we expect the Sales AI
+// model to emit: headings, bold, lists, inline code, and small tables. Kept
+// here (rather than a shared component) because no other tab uses markdown
+// today; promote if that changes.
+function Markdown({ children }: { children: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => (
+          <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-semibold text-capy-text">{children}</strong>
+        ),
+        em: ({ children }) => <em className="italic">{children}</em>,
+        h1: ({ children }) => (
+          <h3 className="text-base font-semibold mb-1.5 mt-1">{children}</h3>
+        ),
+        h2: ({ children }) => (
+          <h3 className="text-base font-semibold mb-1.5 mt-1">{children}</h3>
+        ),
+        h3: ({ children }) => (
+          <h4 className="text-sm font-semibold mb-1 mt-2 first:mt-0">{children}</h4>
+        ),
+        h4: ({ children }) => (
+          <h5 className="text-sm font-semibold mb-1 mt-2 first:mt-0">{children}</h5>
+        ),
+        ul: ({ children }) => (
+          <ul className="list-disc pl-5 mb-2 last:mb-0 space-y-0.5">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal pl-5 mb-2 last:mb-0 space-y-0.5">{children}</ol>
+        ),
+        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+        code: ({ children }) => (
+          <code className="bg-capy-bg rounded px-1 py-0.5 font-mono text-[0.9em]">
+            {children}
+          </code>
+        ),
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-capy-green underline hover:brightness-110"
+          >
+            {children}
+          </a>
+        ),
+        table: ({ children }) => (
+          <div className="overflow-x-auto mb-2 last:mb-0">
+            <table className="text-[12px] border-collapse">{children}</table>
+          </div>
+        ),
+        th: ({ children }) => (
+          <th className="border border-capy-border px-2 py-1 text-left bg-capy-bg font-medium">
+            {children}
+          </th>
+        ),
+        td: ({ children }) => (
+          <td className="border border-capy-border px-2 py-1">{children}</td>
+        ),
+        hr: () => <hr className="my-2 border-capy-border" />,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
   );
 }
