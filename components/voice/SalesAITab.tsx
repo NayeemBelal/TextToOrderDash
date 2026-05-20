@@ -27,6 +27,12 @@ const SUGGESTIONS = [
   "Which day of the week is busiest?",
 ];
 
+// Ticket #32, Phase 4: the reasoning trace is captured server-side (logged to
+// sales_ai_queries and consumed by night-dreaming consolidation) but hidden
+// from the dashboard collapsible by default. Flip NEXT_PUBLIC_SHOW_THINKING=1
+// to re-enable for internal debugging.
+const SHOW_THINKING = process.env.NEXT_PUBLIC_SHOW_THINKING === "1";
+
 const WELCOME: ChatMessage = {
   id: "welcome",
   role: "assistant",
@@ -194,8 +200,16 @@ function Bubble({ message }: { message: ChatMessage }) {
     );
   }
 
+  // SHOW_THINKING gate: even when the backend returns a thinking trace,
+  // suppress it from the UI unless the env flag is on. Backend stays
+  // unchanged so logging + memory consolidation keep working.
+  const visibleThinking =
+    SHOW_THINKING && message.thinking && message.thinking.trim().length > 0
+      ? message.thinking
+      : null;
+
   const hasDetails =
-    (message.thinking && message.thinking.trim().length > 0) ||
+    (visibleThinking && visibleThinking.length > 0) ||
     (message.queries && message.queries.length > 0) ||
     (message.python_code && message.python_code.trim().length > 0);
 
@@ -209,7 +223,7 @@ function Bubble({ message }: { message: ChatMessage }) {
       )}
       {hasDetails && (
         <AnswerDetails
-          thinking={message.thinking ?? null}
+          thinking={visibleThinking}
           queries={message.queries ?? []}
           python_code={message.python_code ?? null}
           iterations={message.iterations}

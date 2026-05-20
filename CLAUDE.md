@@ -60,6 +60,8 @@ The dashboard will automatically fetch data from the backend on load and when fi
    - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Public anon key
    - `SUPABASE_SERVICE_ROLE_KEY`: (Optional) For server-side operations
+3. Sales AI options:
+   - `NEXT_PUBLIC_SHOW_THINKING`: `0` (default) hides the reasoning trace from the Sales AI details collapsible; `1` shows it. Backend keeps emitting `thinking` either way — the flag only gates the UI. (Ticket #32, Phase 4.)
 
 **Note:** Current dashboard analytics do NOT use these Supabase env vars - they fetch from the backend API instead.
 
