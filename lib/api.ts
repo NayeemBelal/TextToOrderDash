@@ -1,3 +1,4 @@
+
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   'https://text-to-order-coffee-34770846162.us-central1.run.app';
@@ -89,6 +90,21 @@ export interface SalesAIChart {
   x_label?: string | null;
   y_label?: string | null;
   data: Array<Record<string, unknown>>;
+}
+
+export interface SpecialClosure {
+  date: string;
+  message: string;
+}
+
+export interface BusinessHours {
+  googleHours: Record<string, string> | null;
+  googleHoursFetchedAt: string | null;
+  hoursOverride: Record<string, string | null> | null;
+  specialClosures: SpecialClosure[];
+  timezone: string;
+  isOpen: boolean;
+  closedMessage: string | null;
 }
 
 export interface SalesAIResponse {
