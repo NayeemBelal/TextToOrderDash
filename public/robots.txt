@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+Disallow: /home
+Disallow: /items
+Disallow: /configure
+Disallow: /marketing
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://belan.tech/sitemap.xml

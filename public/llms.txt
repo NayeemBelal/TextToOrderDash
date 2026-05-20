@@ -1,0 +1,54 @@
+# Belan AI
+
+> Belan AI is a B2B SaaS platform providing voice and SMS AI ordering automation for restaurants. The AI answers every incoming call, takes orders, handles upsells, and fires orders directly to the restaurant's POS system — automatically.
+
+## What We Do
+
+Belan AI provides two core ordering channels for restaurants:
+
+1. **Voice AI Ordering** — Answers every phone call on the first ring, 24/7. Takes the order using the customer's taste profile and allergy history, recommends upsells, and sends a secure SMS payment link. Order prints in the kitchen the moment payment is confirmed.
+
+2. **SMS Text Ordering** — Customers text the restaurant's number to place an order. No app download or login required. Works on iMessage and standard SMS. Belan remembers returning customers and their preferences.
+
+## Products Included
+
+- Voice AI Ordering — unlimited concurrent calls
+- SMS Text-to-Order — unlimited messages
+- Dashboard Analytics — real-time orders, calls, and revenue
+- Marketing AI — one-click SMS campaigns to targeted customer segments
+- Sales AI — natural language queries over restaurant data ("How many of X did we sell last Thursday?")
+
+## Pricing
+
+$200 per month, flat rate. No per-order fees. No usage limits.
+$6.67 per day equivalent.
+
+## Key Claims
+
+- 99%+ order accuracy
+- Answers calls within 1 second
+- Setup in 30 minutes
+- Works with existing POS systems
+- No app required for customers
+
+## POS Integrations
+
+Clover, Toast, Square, Lightspeed, Revel, TouchBistro, and others.
+
+## Target Audience
+
+Independent restaurant owners, multi-location restaurant operators, ghost kitchen operators, fast-casual and quick-service restaurants.
+
+## Contact & Demo
+
+- Phone / Demo line: (855) 485-2690 — call or text to experience the AI live
+- Book a demo: https://belan.tech/#sandbox
+- Sign up: https://belan.tech/register
+
+## Canonical Brand Name
+
+Belan AI (also referred to as "Belan")
+
+## Site
+
+https://belan.tech

@@ -51,6 +51,7 @@ export function ItemAnalytics({
         restaurant_id: restaurantId,
         item_name: itemName,
         time_range: filter,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
       const response = await fetch(
         `${API_BASE_URL}/api/analytics/item-analytics?${params}`,

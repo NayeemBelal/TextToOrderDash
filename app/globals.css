@@ -1,8 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Tektur:wght@400..900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
 
 @font-face {
   font-family: "Helvetica";
@@ -46,14 +48,14 @@ body {
   /* Apply Tektur to an entire subtree */
   .font-tektur,
   .font-tektur * {
-    font-family: 'Tektur', sans-serif;
+    font-family: var(--font-tektur), sans-serif;
   }
 }
 
 @layer components {
   /* Card headings — Tektur semibold */
   .card-heading {
-    font-family: 'Tektur', sans-serif;
+    font-family: var(--font-tektur), sans-serif;
     font-weight: 600;
     font-size: 0.875rem; /* text-sm */
     color: #0F172A; /* capy-text */
@@ -61,7 +63,7 @@ body {
 
   /* Sub-headings (h3 level) inside cards */
   .card-subheading {
-    font-family: 'Tektur', sans-serif;
+    font-family: var(--font-tektur), sans-serif;
     font-weight: 700;
     font-size: 0.875rem;
     color: #0F172A;
