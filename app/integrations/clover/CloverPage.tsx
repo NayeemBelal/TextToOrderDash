@@ -57,7 +57,7 @@ const faqSchema = {
       name: "Which Clover plan do I need to use Belan AI?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Belan AI works with Clover's web API, which is available on Clover's standard restaurant plans. No special Clover tier is required. Your Belan AI subscription ($200/month) covers the integration.",
+        text: "Belan AI works with Clover's web API, which is available on Clover's standard restaurant plans (Counter Service, Full Service, and Bar & Nightclub). No special Clover tier or add-on is required. Your Belan AI subscription ($200/month) covers the integration.",
       },
     },
     {
@@ -65,26 +65,42 @@ const faqSchema = {
       name: "How long does it take to connect Belan AI to Clover?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Connecting Belan AI to Clover takes about 5 minutes. You authorize the Clover connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically.",
+        text: "Connecting Belan AI to Clover takes about 5 minutes. You authorize the connection in your Belan AI dashboard via Clover's OAuth flow, and your full menu — items, modifiers, prices — syncs automatically.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Which Clover hardware is compatible with Belan AI?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Belan AI works with all current Clover hardware: Clover Station Duo, Clover Flex, Clover Mini, and Clover Go. Orders appear in the same Clover ticket queue your kitchen staff already uses — no new hardware required.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Will Belan AI respect items I 86 in Clover?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Clover item availability syncs in real time. The moment you mark an item unavailable in Clover, Belan AI stops offering it on the next call. If a customer asks for it, the AI lets them know it's not available today and suggests an alternative.",
       },
     },
   ],
 };
 
 const syncItems = [
-  "Menu items & descriptions",
-  "Prices — updated in real time",
-  "Modifier groups & options",
-  "Item availability (86 detection)",
-  "Orders → Clover ticket queue",
-  "Payment status → Clover",
+  "Menu items & descriptions — pulled from Clover's item library",
+  "Prices — updated in real time as you change them in Clover",
+  "Modifier groups & options — all Clover modifier logic preserved",
+  "Item availability — 86 in Clover, gone from the AI instantly",
+  "Orders → Clover ticket queue (Clover Flex, Station Duo, Mini)",
+  "Payment status → Clover dashboard for real-time reporting",
 ];
 
 const setupSteps = [
-  { n: "01", t: "Create your Belan AI account", d: "Sign up at belan.tech — no credit card required." },
-  { n: "02", t: "Connect Clover", d: "Click 'Connect POS', select Clover, and authorize the connection. Your menu syncs in under a minute." },
-  { n: "03", t: "Set your voice & rules", d: "Pick a voice, write your greeting, set upsell rules. Takes 5 minutes." },
-  { n: "04", t: "Go live", d: "Forward your restaurant number to your Belan AI line. The AI starts answering immediately." },
+  { n: "01", t: "Create your Belan AI account", d: "Sign up at belan.tech — no credit card required. Works on any device." },
+  { n: "02", t: "Connect Clover", d: "Click 'Connect POS', select Clover, and authorize via Clover's OAuth. Your full item library — items, modifiers, prices — syncs in under a minute. Compatible with all current Clover hardware." },
+  { n: "03", t: "Set your voice & upsell rules", d: "Pick a voice, write your greeting, configure upsell suggestions. Clover's employee permissions stay untouched — Belan AI writes orders as a standard Clover integration." },
+  { n: "04", t: "Go live", d: "Forward your restaurant number to your Belan AI line. The AI starts answering immediately. Orders appear in your Clover ticket queue and Clover reporting dashboard." },
 ];
 
 const faqItems = [
@@ -94,11 +110,19 @@ const faqItems = [
   },
   {
     q: "Which Clover plan do I need?",
-    a: "Belan AI works with Clover's web API, available on Clover's standard restaurant plans. No special Clover tier is required. Your Belan AI subscription ($200/month) covers the integration.",
+    a: "Belan AI works with Clover's web API, which is available on Clover's standard restaurant plans (Counter Service, Full Service, and Bar & Nightclub). No special Clover tier or add-on is required. Your Belan AI subscription ($200/month) covers the integration.",
   },
   {
     q: "How long does setup take?",
-    a: "Connecting Belan AI to Clover takes about 5 minutes. You authorize the connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically.",
+    a: "Connecting Belan AI to Clover takes about 5 minutes. You authorize the connection in your Belan AI dashboard via Clover's OAuth flow, and your full menu — items, modifiers, prices — syncs automatically.",
+  },
+  {
+    q: "Which Clover hardware is compatible?",
+    a: "Belan AI works with all current Clover hardware: Clover Station Duo, Clover Flex, Clover Mini, and Clover Go. Orders appear in the same Clover ticket queue your kitchen staff already uses — no new hardware required.",
+  },
+  {
+    q: "Will Belan AI respect items I 86 in Clover?",
+    a: "Yes. Clover item availability syncs in real time. The moment you mark an item unavailable in Clover, Belan AI stops offering it on the next call. If a customer asks for it, the AI lets them know it's not available today and suggests an alternative.",
   },
 ];
 

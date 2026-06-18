@@ -19,7 +19,25 @@
       "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/readingnews.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
       "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/baristatexting.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
       "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/waiter_serving_a_drink_really_fast.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
-      "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/twotalkingontable.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)"
+      "Bash(cp \"/Users/nayeembelal/workspace/BelanCode/Balen Assets/twotalkingontable.svg\" /Users/nayeembelal/workspace/BelanCode/TextToOrderDashboard/public/capybaraPics/)",
+      "WebFetch(domain:belan.tech)",
+      "Bash(curl -sL \"https://belan.tech/robots.txt\" --max-time 10)",
+      "Bash(curl -sL \"https://belan.tech/sitemap.xml\" --max-time 10)",
+      "Bash(curl -sIL \"https://belan.tech/llms.txt\" --max-time 10)",
+      "Bash(curl -s \"https://belan.tech/\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl *)",
+      "WebSearch",
+      "Bash(python3 -c \"import sys,re; html=sys.stdin.read\\(\\); title=re.search\\(r'<title[^>]*>\\(.*?\\)</title>',html,re.DOTALL\\); desc=re.search\\(r'<meta name=\\\\\"description\\\\\" content=\\\\\"\\([^\\\\\"]+\\)\\\\\"',html\\); h1=re.search\\(r'<h1[^>]*>\\(.*?\\)</h1>',html,re.DOTALL\\); canonical=re.search\\(r'<link rel=\\\\\"canonical\\\\\" href=\\\\\"\\([^\\\\\"]+\\)\\\\\"',html\\); print\\('Title:',title.group\\(1\\) if title else 'MISSING'\\); print\\('Meta desc:',desc.group\\(1\\) if desc else 'MISSING'\\); print\\('H1:',re.sub\\('<[^>]+>','',h1.group\\(1\\)\\).strip\\(\\) if h1 else 'MISSING'\\); print\\('Canonical:',canonical.group\\(1\\) if canonical else 'MISSING'\\)\")",
+      "Skill(claude-seo:seo)",
+      "Skill(browse)",
+      "Read(//Users/nayeembelal/.claude/plugins/cache/agricidaniel-seo/claude-seo/1.9.9/**)",
+      "Bash(python scripts/google_auth.py --check)",
+      "Skill(claude-seo:seo-audit)",
+      "Bash(python scripts/fetch_page.py https://belan.tech/)",
+      "Bash(python3 *)",
+      "mcp__notion__notion-search",
+      "mcp__notion__notion-fetch"
     ]
   }
 }

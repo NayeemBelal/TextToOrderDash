@@ -57,7 +57,7 @@ const faqSchema = {
       name: "Which Toast plan do I need to use Belan AI?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Belan AI connects to Toast through Toast's standard API access. Your Belan AI subscription ($200/month) covers the integration — no additional Toast add-on is required for most plans.",
+        text: "Belan AI connects to Toast through Toast's standard API access, available on Toast's Point of Sale plan and above. Your Belan AI subscription ($200/month) covers the integration — no additional Toast add-on or partner fee is required.",
       },
     },
     {
@@ -65,26 +65,42 @@ const faqSchema = {
       name: "How long does it take to connect Belan AI to Toast?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Connecting Belan AI to Toast takes about 5 minutes. You authorize the Toast connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically.",
+        text: "Connecting Belan AI to Toast takes about 5 minutes. You authorize the connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically from Toast's menu management.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Do orders appear on Toast's Kitchen Display System (KDS)?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Belan AI fires orders to your Toast ticket queue as standard Toast orders, which means they appear on your Kitchen Display System exactly like orders placed through Toast's own ordering channels. Your kitchen workflow stays exactly the same.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Belan AI work with Toast Go handhelds?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Since Belan AI integrates at the POS level, orders placed by phone or text show up across all Toast devices — including Toast Go handhelds and Toast Kiosk — in real time.",
       },
     },
   ],
 };
 
 const syncItems = [
-  "Menu items & descriptions",
-  "Prices — updated in real time",
-  "Modifier groups & options",
-  "Item availability (86 detection)",
-  "Orders → Toast ticket queue",
-  "Payment status → Toast",
+  "Menu items & descriptions — synced from Toast's menu management",
+  "Prices — reflect Toast price changes in real time",
+  "Modifier groups & options — all Toast modifier logic preserved",
+  "Item availability — 86 in Toast, removed from AI responses instantly",
+  "Orders → Toast ticket queue + Kitchen Display System (KDS)",
+  "Payment status → Toast reporting dashboard",
 ];
 
 const setupSteps = [
-  { n: "01", t: "Create your Belan AI account", d: "Sign up at belan.tech — no credit card required." },
-  { n: "02", t: "Connect Toast", d: "Click 'Connect POS', select Toast, and authorize the connection. Your menu syncs in under a minute." },
-  { n: "03", t: "Set your voice & rules", d: "Pick a voice, write your greeting, set upsell rules. Takes 5 minutes." },
-  { n: "04", t: "Go live", d: "Forward your restaurant number to your Belan AI line. The AI starts answering immediately." },
+  { n: "01", t: "Create your Belan AI account", d: "Sign up at belan.tech — no credit card required. Works on any device." },
+  { n: "02", t: "Connect Toast", d: "Click 'Connect POS', select Toast, and authorize via Toast's API. Your full menu — items, modifiers, prices — syncs in under a minute. Compatible with Toast POS, Toast Go handhelds, and Toast Kitchen Display System." },
+  { n: "03", t: "Set your voice & upsell rules", d: "Pick a voice, write your greeting, configure upsell suggestions. Toast's menu structure, categories, and modifier logic carry over exactly — no rebuilding your menu." },
+  { n: "04", t: "Go live", d: "Forward your restaurant number to your Belan AI line. Orders fire directly to your Toast ticket queue and appear on your Kitchen Display System (KDS) just like any other order." },
 ];
 
 const faqItems = [
@@ -94,11 +110,19 @@ const faqItems = [
   },
   {
     q: "Which Toast plan do I need?",
-    a: "Belan AI connects to Toast through Toast's standard API access. Your Belan AI subscription ($200/month) covers the integration — no additional Toast add-on is required for most plans.",
+    a: "Belan AI connects to Toast through Toast's standard API access, available on Toast's Point of Sale plan and above. Your Belan AI subscription ($200/month) covers the integration — no additional Toast add-on or partner fee is required.",
   },
   {
     q: "How long does setup take?",
-    a: "Connecting Belan AI to Toast takes about 5 minutes. You authorize the connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically.",
+    a: "Connecting Belan AI to Toast takes about 5 minutes. You authorize the connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically from Toast's menu management.",
+  },
+  {
+    q: "Do orders appear on Toast's Kitchen Display System (KDS)?",
+    a: "Yes. Belan AI fires orders to your Toast ticket queue as standard Toast orders, which means they appear on your Kitchen Display System exactly like orders placed through Toast's own ordering channels. Your kitchen workflow stays exactly the same.",
+  },
+  {
+    q: "Does Belan AI work with Toast Go handhelds?",
+    a: "Yes. Since Belan AI integrates at the POS level, orders placed by phone or text show up across all Toast devices — including Toast Go handhelds and Toast Kiosk — in real time.",
   },
 ];
 

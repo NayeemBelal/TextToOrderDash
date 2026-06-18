@@ -198,6 +198,8 @@ function RotatingCapybara() {
             alt={slot.alt}
             width={400}
             height={400}
+            fetchPriority={idx === 0 ? "high" : "auto"}
+            loading={idx === 0 ? "eager" : "lazy"}
             className="h-72 xl:h-96 2xl:h-[28rem] w-auto object-contain -mb-16"
           />
           <p className="text-center font-black text-xl xl:text-2xl 2xl:text-3xl text-black max-w-sm xl:max-w-md">
@@ -1721,39 +1723,58 @@ export default function LandingPage() {
             variants={fadeUp}
             className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto justify-center"
           >
-            <motion.div
-              whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            >
-              <Link
-                href={
-                  user
-                    ? "/home"
-                    : "https://calendar.app.google/uCwfd2qfNtjJMSca9"
-                }
-                target={user ? undefined : "_blank"}
-                rel={user ? undefined : "noopener noreferrer"}
-                className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
-              >
-                {user ? "GO TO DASHBOARD →" : "BOOK A DEMO →"}
-              </Link>
-            </motion.div>
-            {!user && (
+            {user ? (
               <motion.div
                 whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
               >
-                <motion.a
-                  href="#sandbox-demo"
-                  className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
+                <Link
+                  href="/home"
+                  className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
                 >
-                  SEE HOW IT WORKS
-                </motion.a>
+                  GO TO DASHBOARD →
+                </Link>
               </motion.div>
+            ) : (
+              <>
+                <motion.div
+                  whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  <a
+                    href="tel:+18554852690"
+                    className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    <span>CALL THE LIVE AI: (855) 485-2690</span>
+                  </a>
+                </motion.div>
+                <motion.div
+                  whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  <Link
+                    href="https://calendar.app.google/uCwfd2qfNtjJMSca9"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
+                  >
+                    BOOK A DEMO →
+                  </Link>
+                </motion.div>
+              </>
             )}
           </motion.div>
+          {!user && (
+            <motion.p
+              variants={fadeUp}
+              className="text-[10px] sm:text-xs text-black/40 font-bold mt-1 text-center"
+            >
+              No credit card required · $200/month flat
+            </motion.p>
+          )}
 
           {/* ── Hero badge carousel (≤375px only) ── */}
           <HeroBadgeCarousel />
