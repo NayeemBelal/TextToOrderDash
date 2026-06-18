@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
-const API_BASE_URL = "http://localhost:8000"; // Replace with your actual backend URL
+const API_BASE_URL =
+  "https://text-to-order-coffee-34770846162.us-central1.run.app"; // Replace with your actual backend URL
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -1032,7 +1033,7 @@ export function GamifiedMarketingTab() {
                         className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                       >
                         {Array.from({ length: 60 }, (_, i) =>
-                          String(i).padStart(2, "0")
+                          String(i).padStart(2, "0"),
                         ).map((m) => (
                           <option key={m} value={m}>
                             {m}
