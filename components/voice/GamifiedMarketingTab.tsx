@@ -1,20 +1,32 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
+import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = "http://localhost:8000"; // Replace with your actual backend URL
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type GameType = 'pick-number' | 'trivia' | 'guess-letter' | 'roll-dice';
-type PrizeType = 'free-item' | 'percent-off';
-type ScheduleDay = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
+type GameType = "pick-number" | "trivia" | "guess-letter" | "roll-dice";
+type PrizeType = "free-item" | "percent-off";
+type ScheduleDay = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
-interface MockCustomer { id: string; phone: string; name: string; }
-interface GameConfig { type: GameType; day: ScheduleDay; time: string; }
-interface PrizeConfig { type: PrizeType; itemName?: string; percent?: number; }
+interface MockCustomer {
+  id: string;
+  phone: string;
+  name: string;
+}
+interface GameConfig {
+  type: GameType;
+  day: ScheduleDay;
+  time: string;
+}
+interface PrizeConfig {
+  type: PrizeType;
+  itemName?: string;
+  percent?: number;
+}
 interface CampaignConfig {
   selectedDays: ScheduleDay[];
   dayTimes: Record<string, string>;
@@ -35,42 +47,62 @@ interface MarketingMenuItem {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const DAYS_OF_WEEK: ScheduleDay[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS_OF_WEEK: ScheduleDay[] = [
+  "Mon",
+  "Tue",
+  "Wed",
+  "Thu",
+  "Fri",
+  "Sat",
+  "Sun",
+];
 
-const GAME_DEFINITIONS: Record<GameType, { label: string; emoji: string; template: string }> = {
-  'pick-number': {
-    label: 'Pick a Number 1–100',
-    emoji: '🎲',
-    template: '🎲 Pick a number between 1–100 for your chance to win [PRIZE]! Reply with your number.',
+const GAME_DEFINITIONS: Record<
+  GameType,
+  { label: string; emoji: string; template: string }
+> = {
+  "pick-number": {
+    label: "Pick a Number 1–100",
+    emoji: "🎲",
+    template:
+      "🎲 Pick a number between 1–100 for your chance to win [PRIZE]! Reply with your number.",
   },
   trivia: {
-    label: 'Food Trivia',
-    emoji: '🍕',
-    template: '🍕 Trivia time! [QUESTION] Reply A, B, or C. Get it right and win [PRIZE]!',
+    label: "Food Trivia",
+    emoji: "🍕",
+    template:
+      "🍕 Trivia time! [QUESTION] Reply A, B, or C. Get it right and win [PRIZE]!",
   },
-  'guess-letter': {
-    label: 'Guess the Letter A–Z',
-    emoji: '🔤',
-    template: '🔤 Guess a letter between A–Z for your chance to win [PRIZE]! Reply with your letter.',
+  "guess-letter": {
+    label: "Guess the Letter A–Z",
+    emoji: "🔤",
+    template:
+      "🔤 Guess a letter between A–Z for your chance to win [PRIZE]! Reply with your letter.",
   },
-  'roll-dice': {
-    label: 'Roll the Dice',
-    emoji: '🎰',
-    template: '🎰 Text a number 1–6. If it matches our roll, you win [PRIZE]. Everyone gets something though!',
+  "roll-dice": {
+    label: "Roll the Dice",
+    emoji: "🎰",
+    template:
+      "🎰 Text a number 1–6. If it matches our roll, you win [PRIZE]. Everyone gets something though!",
   },
 };
 
-const DEFAULT_GAME_ORDER: GameType[] = ['pick-number', 'roll-dice', 'trivia', 'guess-letter'];
+const DEFAULT_GAME_ORDER: GameType[] = [
+  "pick-number",
+  "roll-dice",
+  "trivia",
+  "guess-letter",
+];
 
 const MOCK_OPTED_IN: MockCustomer[] = [
-  { id: '1', phone: '+1 (555) 234-5678', name: 'Alex Rivera' },
-  { id: '2', phone: '+1 (555) 876-5432', name: 'Sam Chen' },
-  { id: '3', phone: '+1 (555) 345-6789', name: 'Jordan Lee' },
-  { id: '4', phone: '+1 (555) 567-8901', name: 'Taylor Kim' },
-  { id: '5', phone: '+1 (555) 678-9012', name: 'Morgan Patel' },
-  { id: '6', phone: '+1 (555) 789-0123', name: 'Casey Johnson' },
-  { id: '7', phone: '+1 (555) 890-1234', name: 'Riley Nguyen' },
-  { id: '8', phone: '+1 (555) 901-2345', name: 'Drew Martinez' },
+  { id: "1", phone: "+1 (555) 234-5678", name: "Alex Rivera" },
+  { id: "2", phone: "+1 (555) 876-5432", name: "Sam Chen" },
+  { id: "3", phone: "+1 (555) 345-6789", name: "Jordan Lee" },
+  { id: "4", phone: "+1 (555) 567-8901", name: "Taylor Kim" },
+  { id: "5", phone: "+1 (555) 678-9012", name: "Morgan Patel" },
+  { id: "6", phone: "+1 (555) 789-0123", name: "Casey Johnson" },
+  { id: "7", phone: "+1 (555) 890-1234", name: "Riley Nguyen" },
+  { id: "8", phone: "+1 (555) 901-2345", name: "Drew Martinez" },
 ];
 
 const MOCK_NOT_OPTED_IN_COUNT = 42;
@@ -81,11 +113,41 @@ const MOCK_STATS = {
   redeemed: 89,
   campaignScore: 74,
   topCustomers: [
-    { rank: 1, phone: '+1 (555) ***-1234', gamesPlayed: 8, redeemed: 5, returnVisits: 6 },
-    { rank: 2, phone: '+1 (555) ***-5678', gamesPlayed: 7, redeemed: 4, returnVisits: 5 },
-    { rank: 3, phone: '+1 (555) ***-9012', gamesPlayed: 6, redeemed: 3, returnVisits: 4 },
-    { rank: 4, phone: '+1 (555) ***-3456', gamesPlayed: 5, redeemed: 3, returnVisits: 3 },
-    { rank: 5, phone: '+1 (555) ***-7890', gamesPlayed: 4, redeemed: 2, returnVisits: 2 },
+    {
+      rank: 1,
+      phone: "+1 (555) ***-1234",
+      gamesPlayed: 8,
+      redeemed: 5,
+      returnVisits: 6,
+    },
+    {
+      rank: 2,
+      phone: "+1 (555) ***-5678",
+      gamesPlayed: 7,
+      redeemed: 4,
+      returnVisits: 5,
+    },
+    {
+      rank: 3,
+      phone: "+1 (555) ***-9012",
+      gamesPlayed: 6,
+      redeemed: 3,
+      returnVisits: 4,
+    },
+    {
+      rank: 4,
+      phone: "+1 (555) ***-3456",
+      gamesPlayed: 5,
+      redeemed: 3,
+      returnVisits: 3,
+    },
+    {
+      rank: 5,
+      phone: "+1 (555) ***-7890",
+      gamesPlayed: 4,
+      redeemed: 2,
+      returnVisits: 2,
+    },
   ],
 };
 
@@ -95,33 +157,38 @@ const MOCK_PER_GAME = [
 ];
 
 const WIZARD_STEPS = [
-  { id: 1, label: 'Roster' },
-  { id: 2, label: 'Schedule' },
-  { id: 3, label: 'Games' },
-  { id: 4, label: 'Prizes' },
-  { id: 5, label: 'Review' },
+  { id: 1, label: "Roster" },
+  { id: 2, label: "Schedule" },
+  { id: 3, label: "Games" },
+  { id: 4, label: "Prizes" },
+  { id: 5, label: "Review" },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function buildDefaultGames(days: ScheduleDay[], times: Record<string, string>): GameConfig[] {
+function buildDefaultGames(
+  days: ScheduleDay[],
+  times: Record<string, string>,
+): GameConfig[] {
   return days.map((day, i) => ({
     type: DEFAULT_GAME_ORDER[i % DEFAULT_GAME_ORDER.length],
     day,
-    time: times[day] ?? '12:00 PM',
+    time: times[day] ?? "12:00 PM",
   }));
 }
 
 function buildDefaultPrizes(count: number): PrizeConfig[] {
-  return Array.from({ length: count }, () => ({ type: 'percent-off' as PrizeType }));
+  return Array.from({ length: count }, () => ({
+    type: "percent-off" as PrizeType,
+  }));
 }
 
 function buildMessagePreview(game: GameConfig, prize: PrizeConfig): string {
   const prizeLabel =
-    prize.type === 'free-item'
-      ? `Free ${prize.itemName ?? 'item'}`
+    prize.type === "free-item"
+      ? `Free ${prize.itemName ?? "item"}`
       : `${prize.percent ?? 0}% off your order`;
-  return GAME_DEFINITIONS[game.type].template.replace('[PRIZE]', prizeLabel);
+  return GAME_DEFINITIONS[game.type].template.replace("[PRIZE]", prizeLabel);
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -130,23 +197,28 @@ export function GamifiedMarketingTab() {
   const { restaurantId } = useAuth();
 
   // Phase
-  const [pagePhase, setPagePhase] = useState<'setup' | 'active' | 'paused'>('setup');
+  const [pagePhase, setPagePhase] = useState<"setup" | "active" | "paused">(
+    "setup",
+  );
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4 | 5>(1);
 
   // Step 1 — Roster
   const [optedInCustomers, setOptedInCustomers] = useState<MockCustomer[]>([]);
-  const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [rosterLoading, setRosterLoading] = useState(true);
-  const [rosterSearch, setRosterSearch] = useState('');
+  const [rosterSearch, setRosterSearch] = useState("");
 
   // Step 2 — Schedule
-  const [restaurantTimezone, setRestaurantTimezone] = useState<string>('America/Chicago');
+  const [restaurantTimezone, setRestaurantTimezone] =
+    useState<string>("America/Chicago");
   const [selectedDays, setSelectedDays] = useState<ScheduleDay[]>([]);
   const [dayHours, setDayHours] = useState<Record<string, string>>({});
   const [dayMinutes, setDayMinutes] = useState<Record<string, string>>({});
   const [dayAmPm, setDayAmPm] = useState<Record<string, string>>({});
   const [runIndefinitely, setRunIndefinitely] = useState(true);
-  const [endDate, setEndDate] = useState('');
+  const [endDate, setEndDate] = useState("");
 
   // Step 3 — Games
   const [games, setGames] = useState<GameConfig[]>([]);
@@ -158,27 +230,34 @@ export function GamifiedMarketingTab() {
   const [loserDiscountCap, setLoserDiscountCap] = useState(50);
   const [menuItems, setMenuItems] = useState<MarketingMenuItem[]>([]);
   const [menuItemsLoading, setMenuItemsLoading] = useState(false);
-  const [menuItemSearch, setMenuItemSearch] = useState('');
+  const [menuItemSearch, setMenuItemSearch] = useState("");
   const [openMenuDropdown, setOpenMenuDropdown] = useState<number | null>(null);
 
   // Dashboard
-  const [launchedConfig, setLaunchedConfig] = useState<CampaignConfig | null>(null);
+  const [launchedConfig, setLaunchedConfig] = useState<CampaignConfig | null>(
+    null,
+  );
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
 
-  const getDayTime = (day: string) => `${dayHours[day] ?? '12'}:${dayMinutes[day] ?? '00'} ${dayAmPm[day] ?? 'PM'}`;
+  const getDayTime = (day: string) =>
+    `${dayHours[day] ?? "12"}:${dayMinutes[day] ?? "00"} ${dayAmPm[day] ?? "PM"}`;
 
   // Fetch opted-in customers and menu items on mount
   useEffect(() => {
-    const id = restaurantId ?? 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
+    const id = restaurantId ?? "a9d9fb45-34a7-4c63-b0d9-70add44b6275";
 
     // Opted-in customers
-    fetch(`${API_BASE_URL}/api/marketing/opted-in-customers?restaurant_id=${id}`)
-      .then(r => r.json())
-      .then(d => {
+    fetch(
+      `${API_BASE_URL}/api/marketing/opted-in-customers?restaurant_id=${id}`,
+    )
+      .then((r) => r.json())
+      .then((d) => {
         const customers = d.customers ?? [];
         setOptedInCustomers(customers);
-        setSelectedCustomerIds(new Set(customers.map((c: MockCustomer) => c.id)));
+        setSelectedCustomerIds(
+          new Set(customers.map((c: MockCustomer) => c.id)),
+        );
         if (d.timezone) setRestaurantTimezone(d.timezone);
       })
       .catch(() => setOptedInCustomers([]))
@@ -186,63 +265,78 @@ export function GamifiedMarketingTab() {
 
     // Menu items for prize selection
     setMenuItemsLoading(true);
-    const params = new URLSearchParams({ restaurant_id: id, limit: '100' });
+    const params = new URLSearchParams({ restaurant_id: id, limit: "100" });
     fetch(`${API_BASE_URL}/api/marketing/items?${params}`)
-      .then(r => r.json())
-      .then(d => setMenuItems(d.items ?? []))
+      .then((r) => r.json())
+      .then((d) => setMenuItems(d.items ?? []))
       .catch(() => setMenuItems([]))
       .finally(() => setMenuItemsLoading(false));
   }, [restaurantId]);
 
   // Rebuild games + prizes when selected days change
   useEffect(() => {
-    if (selectedDays.length === 0) { setGames([]); setPrizes([]); return; }
+    if (selectedDays.length === 0) {
+      setGames([]);
+      setPrizes([]);
+      return;
+    }
     const times: Record<string, string> = {};
-    selectedDays.forEach(day => { times[day] = getDayTime(day); });
+    selectedDays.forEach((day) => {
+      times[day] = getDayTime(day);
+    });
     setGames(buildDefaultGames(selectedDays, times));
     setPrizes(buildDefaultPrizes(selectedDays.length));
   }, [selectedDays]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDayToggle = (day: ScheduleDay) => {
-    setSelectedDays(prev => {
-      if (prev.includes(day)) return prev.filter(d => d !== day);
+    setSelectedDays((prev) => {
+      if (prev.includes(day)) return prev.filter((d) => d !== day);
       if (prev.length < 2) return [...prev, day];
       return [...prev.slice(1), day];
     });
   };
 
   const updateGame = (index: number, type: GameType) => {
-    setGames(prev => prev.map((g, i) => i === index ? { ...g, type } : g));
+    setGames((prev) => prev.map((g, i) => (i === index ? { ...g, type } : g)));
   };
 
   const updatePrizeType = (index: number, type: PrizeType) => {
-    setPrizes(prev => prev.map((p, i) => i === index ? { type } : p));
-    if (type === 'free-item') setOpenMenuDropdown(index);
-    else { setOpenMenuDropdown(null); setMenuItemSearch(''); }
+    setPrizes((prev) => prev.map((p, i) => (i === index ? { type } : p)));
+    if (type === "free-item") setOpenMenuDropdown(index);
+    else {
+      setOpenMenuDropdown(null);
+      setMenuItemSearch("");
+    }
   };
 
   const updatePrizePercent = (index: number, value: number) => {
-    setPrizes(prev => prev.map((p, i) => i === index ? { ...p, percent: value } : p));
+    setPrizes((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, percent: value } : p)),
+    );
   };
 
   const selectFreeItem = (index: number, itemName: string) => {
-    setPrizes(prev => prev.map((p, i) => i === index ? { ...p, itemName } : p));
+    setPrizes((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, itemName } : p)),
+    );
     setOpenMenuDropdown(null);
-    setMenuItemSearch('');
+    setMenuItemSearch("");
   };
 
   const handleNext = () => {
-    if (wizardStep < 5) setWizardStep(prev => (prev + 1) as 1 | 2 | 3 | 4 | 5);
+    if (wizardStep < 5)
+      setWizardStep((prev) => (prev + 1) as 1 | 2 | 3 | 4 | 5);
   };
 
   const handleBack = () => {
-    if (wizardStep > 1) setWizardStep(prev => (prev - 1) as 1 | 2 | 3 | 4 | 5);
+    if (wizardStep > 1)
+      setWizardStep((prev) => (prev - 1) as 1 | 2 | 3 | 4 | 5);
   };
 
   const handleLaunch = async () => {
     const config: CampaignConfig = {
       selectedDays,
-      dayTimes: Object.fromEntries(selectedDays.map(d => [d, getDayTime(d)])),
+      dayTimes: Object.fromEntries(selectedDays.map((d) => [d, getDayTime(d)])),
       endDate: runIndefinitely ? null : endDate,
       games,
       prizes,
@@ -252,104 +346,124 @@ export function GamifiedMarketingTab() {
       targetCustomerIds: Array.from(selectedCustomerIds),
     };
     setLaunchedConfig(config);
-    setPagePhase('active');
+    setPagePhase("active");
 
     // Persist campaign to backend
-    const rid = restaurantId ?? 'a9d9fb45-34a7-4c63-b0d9-70add44b6275';
+    const rid = restaurantId ?? "a9d9fb45-34a7-4c63-b0d9-70add44b6275";
     fetch(`${API_BASE_URL}/api/marketing/campaigns`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restaurant_id: rid, config }),
     })
-      .then(r => r.json())
-      .then(d => { if (d.campaign_id) setCampaignId(d.campaign_id); })
-      .catch(err => console.error('Failed to persist campaign:', err));
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.campaign_id) setCampaignId(d.campaign_id);
+      })
+      .catch((err) => console.error("Failed to persist campaign:", err));
   };
 
   const filteredRoster = rosterSearch
-    ? optedInCustomers.filter(c =>
-        c.name.toLowerCase().includes(rosterSearch.toLowerCase()) ||
-        c.phone.includes(rosterSearch)
+    ? optedInCustomers.filter(
+        (c) =>
+          c.name.toLowerCase().includes(rosterSearch.toLowerCase()) ||
+          c.phone.includes(rosterSearch),
       )
     : optedInCustomers;
 
   const filteredMenuItems = menuItemSearch
-    ? menuItems.filter(m => m.name.toLowerCase().includes(menuItemSearch.toLowerCase()))
+    ? menuItems.filter((m) =>
+        m.name.toLowerCase().includes(menuItemSearch.toLowerCase()),
+      )
     : menuItems;
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   const canProceed = (() => {
     switch (wizardStep) {
-      case 2: return selectedDays.length >= 1;
+      case 2:
+        return selectedDays.length >= 1;
       case 4:
         return (
-          prizes.every(p => p.type === 'free-item' ? !!p.itemName : (p.percent ?? 0) > 0) &&
-          loserDiscount > 0 && loserDiscountCap > 0
+          prizes.every((p) =>
+            p.type === "free-item" ? !!p.itemName : (p.percent ?? 0) > 0,
+          ) &&
+          loserDiscount > 0 &&
+          loserDiscountCap > 0
         );
-      default: return true;
+      default:
+        return true;
     }
   })();
 
   // ── Render ──────────────────────────────────────────────────────────────
 
-  if (pagePhase !== 'setup') {
+  if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */
     return (
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <p className="card-heading text-base">Gamified Campaign</p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                pagePhase === 'active'
-                  ? 'bg-capy-green-light text-capy-green-dark'
-                  : 'bg-amber-100 text-amber-700'
-              }`}>
-                {pagePhase === 'active' ? '● Active' : '⏸ Paused'}
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                  pagePhase === "active"
+                    ? "bg-capy-green-light text-capy-green-dark"
+                    : "bg-amber-100 text-amber-700"
+                }`}
+              >
+                {pagePhase === "active" ? "● Active" : "⏸ Paused"}
               </span>
               {launchedConfig && (
                 <span className="text-xs text-capy-muted">
-                  {launchedConfig.selectedDays.join(', ')} · {launchedConfig.optedInCount} opted in
+                  {launchedConfig.selectedDays.join(", ")} ·{" "}
+                  {launchedConfig.optedInCount} opted in
                 </span>
               )}
             </div>
           </div>
           <button
             onClick={() => {
-              const next = pagePhase === 'active' ? 'paused' : 'active';
+              const next = pagePhase === "active" ? "paused" : "active";
               setPagePhase(next);
               if (campaignId) {
                 fetch(`${API_BASE_URL}/api/marketing/campaigns/${campaignId}`, {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ status: next }),
-                }).catch(err => console.error('Failed to update campaign status:', err));
+                }).catch((err) =>
+                  console.error("Failed to update campaign status:", err),
+                );
               }
             }}
             className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              pagePhase === 'active'
-                ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                : 'bg-capy-green text-white hover:opacity-90'
+              pagePhase === "active"
+                ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                : "bg-capy-green text-white hover:opacity-90"
             }`}
-            style={{ fontFamily: 'Tektur, sans-serif' }}
+            style={{ fontFamily: "Tektur, sans-serif" }}
           >
-            {pagePhase === 'active' ? 'Pause' : 'Resume'}
+            {pagePhase === "active" ? "Pause" : "Resume"}
           </button>
         </div>
 
         {/* Metrics */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Opted In', value: MOCK_STATS.optedIn },
-            { label: 'Played', value: MOCK_STATS.played },
-            { label: 'Redeemed', value: MOCK_STATS.redeemed },
-          ].map(stat => (
-            <div key={stat.label} className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+            { label: "Opted In", value: MOCK_STATS.optedIn },
+            { label: "Played", value: MOCK_STATS.played },
+            { label: "Redeemed", value: MOCK_STATS.redeemed },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-white rounded-2xl border border-capy-border shadow-sm p-4"
+            >
               <p className="section-label">{stat.label}</p>
-              <p className="text-2xl font-bold text-capy-text mt-1" style={{ fontFamily: 'Tektur, sans-serif' }}>
+              <p
+                className="text-2xl font-bold text-capy-text mt-1"
+                style={{ fontFamily: "Tektur, sans-serif" }}
+              >
                 {stat.value.toLocaleString()}
               </p>
             </div>
@@ -359,13 +473,18 @@ export function GamifiedMarketingTab() {
         {/* Score card */}
         <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-capy-green-light border-4 border-capy-green flex items-center justify-center shrink-0">
-            <span className="text-xl font-bold text-capy-green-dark" style={{ fontFamily: 'Tektur, sans-serif' }}>
+            <span
+              className="text-xl font-bold text-capy-green-dark"
+              style={{ fontFamily: "Tektur, sans-serif" }}
+            >
               {MOCK_STATS.campaignScore}
             </span>
           </div>
           <div className="flex-1">
             <p className="card-heading">Campaign Score</p>
-            <p className="text-xs text-capy-muted mt-0.5">Redemption rate × return visits</p>
+            <p className="text-xs text-capy-muted mt-0.5">
+              Redemption rate × return visits
+            </p>
             <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2.5 overflow-hidden">
               <div
                 className="h-full bg-capy-green rounded-full"
@@ -379,32 +498,52 @@ export function GamifiedMarketingTab() {
         <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-capy-border">
             <p className="card-heading">Top 5 Returning Customers</p>
-            <p className="text-xs text-capy-muted mt-0.5">Returned within 30 days of redeeming</p>
+            <p className="text-xs text-capy-muted mt-0.5">
+              Returned within 30 days of redeeming
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50">
-                  {['Rank', 'Customer', 'Played', 'Redeemed', 'Returns'].map(col => (
-                    <th key={col} className="px-4 py-2.5 text-left section-label">{col}</th>
-                  ))}
+                  {["Rank", "Customer", "Played", "Redeemed", "Returns"].map(
+                    (col) => (
+                      <th
+                        key={col}
+                        className="px-4 py-2.5 text-left section-label"
+                      >
+                        {col}
+                      </th>
+                    ),
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-capy-border/60">
-                {MOCK_STATS.topCustomers.map(row => (
-                  <tr key={row.rank} className="hover:bg-slate-50/50 transition-colors">
+                {MOCK_STATS.topCustomers.map((row) => (
+                  <tr
+                    key={row.rank}
+                    className="hover:bg-slate-50/50 transition-colors"
+                  >
                     <td className="px-4 py-2.5">
                       <span
                         className="w-5 h-5 rounded-full bg-capy-text text-white text-xs font-bold flex items-center justify-center"
-                        style={{ fontFamily: 'Tektur, sans-serif' }}
+                        style={{ fontFamily: "Tektur, sans-serif" }}
                       >
                         {row.rank}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text font-mono">{row.phone}</td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">{row.gamesPlayed}</td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">{row.redeemed}</td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">{row.returnVisits}</td>
+                    <td className="px-4 py-2.5 text-xs text-capy-text font-mono">
+                      {row.phone}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-capy-text">
+                      {row.gamesPlayed}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-capy-text">
+                      {row.redeemed}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-capy-text">
+                      {row.returnVisits}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -417,24 +556,41 @@ export function GamifiedMarketingTab() {
           <p className="card-heading mb-3">Per-Game Breakdown</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {(launchedConfig?.games ?? []).map((game, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-capy-border shadow-sm p-4"
+              >
                 <div className="flex items-center gap-2.5 mb-3">
-                  <span className="text-xl">{GAME_DEFINITIONS[game.type].emoji}</span>
+                  <span className="text-xl">
+                    {GAME_DEFINITIONS[game.type].emoji}
+                  </span>
                   <div>
-                    <p className="card-heading text-xs">{GAME_DEFINITIONS[game.type].label}</p>
-                    <p className="text-xs text-capy-muted">{game.day} at {game.time}</p>
+                    <p className="card-heading text-xs">
+                      {GAME_DEFINITIONS[game.type].label}
+                    </p>
+                    <p className="text-xs text-capy-muted">
+                      {game.day} at {game.time}
+                    </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {[
-                    { label: 'Sent', value: MOCK_PER_GAME[i]?.sent ?? 0 },
-                    { label: 'Played', value: MOCK_PER_GAME[i]?.played ?? 0 },
-                    { label: 'Won', value: MOCK_PER_GAME[i]?.won ?? 0 },
-                    { label: 'Discounts', value: MOCK_PER_GAME[i]?.discounts ?? 0 },
-                  ].map(s => (
+                    { label: "Sent", value: MOCK_PER_GAME[i]?.sent ?? 0 },
+                    { label: "Played", value: MOCK_PER_GAME[i]?.played ?? 0 },
+                    { label: "Won", value: MOCK_PER_GAME[i]?.won ?? 0 },
+                    {
+                      label: "Discounts",
+                      value: MOCK_PER_GAME[i]?.discounts ?? 0,
+                    },
+                  ].map((s) => (
                     <div key={s.label}>
                       <p className="section-label">{s.label}</p>
-                      <p className="text-lg font-bold text-capy-text mt-0.5" style={{ fontFamily: 'Tektur, sans-serif' }}>{s.value}</p>
+                      <p
+                        className="text-lg font-bold text-capy-text mt-0.5"
+                        style={{ fontFamily: "Tektur, sans-serif" }}
+                      >
+                        {s.value}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -451,37 +607,60 @@ export function GamifiedMarketingTab() {
           >
             <p className="card-heading">Campaign Settings</p>
             <svg
-              className={`w-4 h-4 text-capy-muted transition-transform duration-200 ${isSettingsExpanded ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              className={`w-4 h-4 text-capy-muted transition-transform duration-200 ${isSettingsExpanded ? "rotate-180" : ""}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
           {isSettingsExpanded && launchedConfig && (
             <div className="px-4 pb-4 border-t border-capy-border space-y-3 pt-3">
               <div className="p-3 bg-slate-50 rounded-xl">
                 <p className="section-label mb-1.5">Schedule</p>
-                {launchedConfig.selectedDays.map(day => (
-                  <p key={day} className="text-xs text-capy-text">{day} at {launchedConfig.dayTimes[day]}</p>
+                {launchedConfig.selectedDays.map((day) => (
+                  <p key={day} className="text-xs text-capy-text">
+                    {day} at {launchedConfig.dayTimes[day]}
+                  </p>
                 ))}
                 <p className="text-xs text-capy-muted mt-1">
-                  {launchedConfig.endDate ? `Ends ${launchedConfig.endDate}` : 'Runs indefinitely'}
+                  {launchedConfig.endDate
+                    ? `Ends ${launchedConfig.endDate}`
+                    : "Runs indefinitely"}
                 </p>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl">
                 <p className="section-label mb-1.5">Games & Prizes</p>
                 {launchedConfig.games.map((g, i) => (
                   <p key={i} className="text-xs text-capy-text">
-                    {GAME_DEFINITIONS[g.type].emoji} {g.day} — {GAME_DEFINITIONS[g.type].label}
-                    <span className="text-capy-muted"> · {launchedConfig.prizes[i]?.type === 'free-item' ? `Free ${launchedConfig.prizes[i]?.itemName}` : `${launchedConfig.prizes[i]?.percent}% off`}</span>
+                    {GAME_DEFINITIONS[g.type].emoji} {g.day} —{" "}
+                    {GAME_DEFINITIONS[g.type].label}
+                    <span className="text-capy-muted">
+                      {" "}
+                      ·{" "}
+                      {launchedConfig.prizes[i]?.type === "free-item"
+                        ? `Free ${launchedConfig.prizes[i]?.itemName}`
+                        : `${launchedConfig.prizes[i]?.percent}% off`}
+                    </span>
                   </p>
                 ))}
               </div>
               <div className="p-3 bg-slate-50 rounded-xl">
                 <p className="section-label mb-1">Loser&apos;s Discount</p>
-                <p className="text-xs text-capy-text">{launchedConfig.loserDiscount}% off · Cap: {launchedConfig.loserDiscountCap}</p>
+                <p className="text-xs text-capy-text">
+                  {launchedConfig.loserDiscount}% off · Cap:{" "}
+                  {launchedConfig.loserDiscountCap}
+                </p>
               </div>
-              <p className="text-xs text-capy-muted italic">Settings cannot be edited while a campaign is running.</p>
+              <p className="text-xs text-capy-muted italic">
+                Settings cannot be edited while a campaign is running.
+              </p>
             </div>
           )}
         </div>
@@ -492,13 +671,14 @@ export function GamifiedMarketingTab() {
   /* ── SETUP WIZARD ───────────────────────────────────────────────────── */
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-
       {/* Wizard header */}
       <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-capy-border">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="card-heading">Gamified SMS Campaign</p>
-            <p className="text-xs text-capy-muted mt-0.5">Set up your automated game-based marketing</p>
+            <p className="text-xs text-capy-muted mt-0.5">
+              Set up your automated game-based marketing
+            </p>
           </div>
         </div>
 
@@ -512,27 +692,49 @@ export function GamifiedMarketingTab() {
                 <div className="flex flex-col items-center flex-1">
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                      done ? 'bg-capy-green text-white' : active ? 'bg-capy-text text-white' : 'bg-slate-100 text-capy-muted'
+                      done
+                        ? "bg-capy-green text-white"
+                        : active
+                          ? "bg-capy-text text-white"
+                          : "bg-slate-100 text-capy-muted"
                     }`}
-                    style={{ fontFamily: 'Tektur, sans-serif' }}
+                    style={{ fontFamily: "Tektur, sans-serif" }}
                   >
                     {done ? (
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
-                    ) : index + 1}
+                    ) : (
+                      index + 1
+                    )}
                   </div>
                   <span
                     className={`text-[10px] mt-0.5 hidden sm:block ${
-                      done ? 'text-capy-green-dark' : active ? 'text-capy-text font-semibold' : 'text-capy-muted'
+                      done
+                        ? "text-capy-green-dark"
+                        : active
+                          ? "text-capy-text font-semibold"
+                          : "text-capy-muted"
                     }`}
-                    style={{ fontFamily: 'Tektur, sans-serif' }}
+                    style={{ fontFamily: "Tektur, sans-serif" }}
                   >
                     {step.label}
                   </span>
                 </div>
                 {index < WIZARD_STEPS.length - 1 && (
-                  <div className={`h-px flex-1 mx-1.5 mb-3 ${index < wizardStep - 1 ? 'bg-capy-green' : 'bg-slate-200'}`} />
+                  <div
+                    className={`h-px flex-1 mx-1.5 mb-3 ${index < wizardStep - 1 ? "bg-capy-green" : "bg-slate-200"}`}
+                  />
                 )}
               </div>
             );
@@ -542,7 +744,6 @@ export function GamifiedMarketingTab() {
 
       {/* Step content — scrollable */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
-
         {/* ── Step 1: Roster ── */}
         {wizardStep === 1 && (
           <div className="space-y-4">
@@ -552,7 +753,8 @@ export function GamifiedMarketingTab() {
               <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-capy-border">
                 <p className="card-heading">Opted In</p>
                 <span className="text-xs font-semibold text-capy-green-dark bg-capy-green-light px-2.5 py-1 rounded-full">
-                  {selectedCustomerIds.size} / {optedInCustomers.length} selected
+                  {selectedCustomerIds.size} / {optedInCustomers.length}{" "}
+                  selected
                 </span>
               </div>
 
@@ -561,27 +763,46 @@ export function GamifiedMarketingTab() {
                 <div
                   className="flex items-center gap-3 px-4 py-2.5 border-b border-capy-border cursor-pointer hover:bg-slate-50 transition-colors"
                   onClick={() => {
-                    const allSelected = selectedCustomerIds.size === optedInCustomers.length;
-                    setSelectedCustomerIds(allSelected ? new Set() : new Set(optedInCustomers.map(c => c.id)));
+                    const allSelected =
+                      selectedCustomerIds.size === optedInCustomers.length;
+                    setSelectedCustomerIds(
+                      allSelected
+                        ? new Set()
+                        : new Set(optedInCustomers.map((c) => c.id)),
+                    );
                   }}
                 >
-                  <div className={`w-4 h-4 rounded flex items-center justify-center border-2 flex-shrink-0 transition-colors ${
-                    selectedCustomerIds.size === optedInCustomers.length
-                      ? 'bg-capy-green border-capy-green'
-                      : selectedCustomerIds.size > 0
-                      ? 'bg-capy-green/30 border-capy-green'
-                      : 'border-capy-border bg-white'
-                  }`}>
+                  <div
+                    className={`w-4 h-4 rounded flex items-center justify-center border-2 flex-shrink-0 transition-colors ${
+                      selectedCustomerIds.size === optedInCustomers.length
+                        ? "bg-capy-green border-capy-green"
+                        : selectedCustomerIds.size > 0
+                          ? "bg-capy-green/30 border-capy-green"
+                          : "border-capy-border bg-white"
+                    }`}
+                  >
                     {selectedCustomerIds.size === optedInCustomers.length ? (
-                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-2.5 h-2.5 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     ) : selectedCustomerIds.size > 0 ? (
                       <div className="w-2 h-0.5 bg-capy-green rounded" />
                     ) : null}
                   </div>
                   <span className="text-sm font-medium text-capy-text">
-                    {selectedCustomerIds.size === optedInCustomers.length ? 'Deselect all' : 'Select all'}
+                    {selectedCustomerIds.size === optedInCustomers.length
+                      ? "Deselect all"
+                      : "Select all"}
                   </span>
                 </div>
               )}
@@ -589,13 +810,23 @@ export function GamifiedMarketingTab() {
               {/* Search */}
               <div className="px-4 py-2.5 border-b border-capy-border">
                 <div className="flex items-center gap-2 bg-slate-50 border border-capy-border rounded-xl px-3 py-2">
-                  <svg className="w-3.5 h-3.5 text-capy-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="w-3.5 h-3.5 text-capy-muted flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                   <input
                     type="text"
                     value={rosterSearch}
-                    onChange={e => setRosterSearch(e.target.value)}
+                    onChange={(e) => setRosterSearch(e.target.value)}
                     placeholder="Search by name or phone..."
                     className="flex-1 bg-transparent text-sm text-capy-text placeholder:text-capy-muted outline-none"
                   />
@@ -605,48 +836,88 @@ export function GamifiedMarketingTab() {
               {/* Customer list */}
               <div className="max-h-52 overflow-y-auto">
                 {rosterLoading ? (
-                  <p className="text-xs text-capy-muted text-center py-6">Loading customers…</p>
+                  <p className="text-xs text-capy-muted text-center py-6">
+                    Loading customers…
+                  </p>
                 ) : filteredRoster.length === 0 ? (
                   <p className="text-xs text-capy-muted text-center py-6">
-                    {rosterSearch ? `No results for "${rosterSearch}"` : 'No opted-in customers yet'}
+                    {rosterSearch
+                      ? `No results for "${rosterSearch}"`
+                      : "No opted-in customers yet"}
                   </p>
-                ) : filteredRoster.map(customer => {
-                  const isChecked = selectedCustomerIds.has(customer.id);
-                  return (
-                    <div
-                      key={customer.id}
-                      className="flex items-center gap-3 px-4 py-3 border-b border-capy-border/60 last:border-0 cursor-pointer hover:bg-slate-50 transition-colors"
-                      onClick={() => setSelectedCustomerIds(prev => {
-                        const next = new Set(prev);
-                        isChecked ? next.delete(customer.id) : next.add(customer.id);
-                        return next;
-                      })}
-                    >
-                      <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        isChecked ? 'bg-capy-green border-capy-green' : 'border-capy-border bg-white'
-                      }`}>
-                        {isChecked && (
-                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
+                ) : (
+                  filteredRoster.map((customer) => {
+                    const isChecked = selectedCustomerIds.has(customer.id);
+                    return (
+                      <div
+                        key={customer.id}
+                        className="flex items-center gap-3 px-4 py-3 border-b border-capy-border/60 last:border-0 cursor-pointer hover:bg-slate-50 transition-colors"
+                        onClick={() =>
+                          setSelectedCustomerIds((prev) => {
+                            const next = new Set(prev);
+                            isChecked
+                              ? next.delete(customer.id)
+                              : next.add(customer.id);
+                            return next;
+                          })
+                        }
+                      >
+                        <div
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                            isChecked
+                              ? "bg-capy-green border-capy-green"
+                              : "border-capy-border bg-white"
+                          }`}
+                        >
+                          {isChecked && (
+                            <svg
+                              className="w-2.5 h-2.5 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={3}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-capy-text truncate">
+                            {customer.name}
+                          </p>
+                          <p className="text-xs text-capy-muted font-mono">
+                            {customer.phone}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-capy-text truncate">{customer.name}</p>
-                        <p className="text-xs text-capy-muted font-mono">{customer.phone}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
 
             {selectedCustomerIds.size === 0 && !rosterLoading && (
               <div className="flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
-                <svg className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                <svg
+                  className="w-4 h-4 text-amber-600 mt-0.5 shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                  />
                 </svg>
-                <p className="text-sm text-amber-700">No opted-in customers yet — you can still launch.</p>
+                <p className="text-sm text-amber-700">
+                  No opted-in customers yet — you can still launch.
+                </p>
               </div>
             )}
 
@@ -654,7 +925,9 @@ export function GamifiedMarketingTab() {
             <div className="bg-white rounded-2xl border border-capy-border shadow-sm px-4 py-3.5 flex items-center justify-between">
               <div>
                 <p className="card-heading text-capy-muted">Not Opted In</p>
-                <p className="text-xs text-capy-muted mt-0.5">Will receive an opt-in SMS automatically</p>
+                <p className="text-xs text-capy-muted mt-0.5">
+                  Will receive an opt-in SMS automatically
+                </p>
               </div>
               <span className="text-xs font-semibold text-capy-muted bg-slate-100 px-2.5 py-1 rounded-full">
                 {MOCK_NOT_OPTED_IN_COUNT} customers
@@ -669,7 +942,7 @@ export function GamifiedMarketingTab() {
             <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
               <p className="section-label mb-3">Send Days (max 2)</p>
               <div className="flex flex-wrap gap-2">
-                {DAYS_OF_WEEK.map(day => {
+                {DAYS_OF_WEEK.map((day) => {
                   const isSelected = selectedDays.includes(day);
                   return (
                     <button
@@ -677,10 +950,10 @@ export function GamifiedMarketingTab() {
                       onClick={() => handleDayToggle(day)}
                       className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
                         isSelected
-                          ? 'border-capy-green bg-capy-green-light text-capy-green-dark'
-                          : 'border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark'
+                          ? "border-capy-green bg-capy-green-light text-capy-green-dark"
+                          : "border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark"
                       }`}
-                      style={{ fontFamily: 'Tektur, sans-serif' }}
+                      style={{ fontFamily: "Tektur, sans-serif" }}
                     >
                       {day}
                     </button>
@@ -688,7 +961,9 @@ export function GamifiedMarketingTab() {
                 })}
               </div>
               {selectedDays.length === 2 && (
-                <p className="text-xs text-capy-muted mt-2">Selecting another replaces the first</p>
+                <p className="text-xs text-capy-muted mt-2">
+                  Selecting another replaces the first
+                </p>
               )}
             </div>
 
@@ -697,11 +972,17 @@ export function GamifiedMarketingTab() {
                 <div className="flex items-center justify-between">
                   <p className="section-label">Send Times</p>
                   <span className="text-xs text-capy-muted bg-slate-100 px-2.5 py-1 rounded-full">
-                    🕐 {(() => {
+                    🕐{" "}
+                    {(() => {
                       try {
-                        const abbr = new Intl.DateTimeFormat('en-US', { timeZone: restaurantTimezone, timeZoneName: 'short' })
-                          .formatToParts(new Date())
-                          .find(p => p.type === 'timeZoneName')?.value ?? restaurantTimezone;
+                        const abbr =
+                          new Intl.DateTimeFormat("en-US", {
+                            timeZone: restaurantTimezone,
+                            timeZoneName: "short",
+                          })
+                            .formatToParts(new Date())
+                            .find((p) => p.type === "timeZoneName")?.value ??
+                          restaurantTimezone;
                         return `${abbr} · ${restaurantTimezone}`;
                       } catch {
                         return restaurantTimezone;
@@ -709,32 +990,63 @@ export function GamifiedMarketingTab() {
                     })()}
                   </span>
                 </div>
-                {selectedDays.map(day => (
-                  <div key={day} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                    <span className="w-8 text-xs font-bold text-capy-text" style={{ fontFamily: 'Tektur, sans-serif' }}>{day}</span>
+                {selectedDays.map((day) => (
+                  <div
+                    key={day}
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl"
+                  >
+                    <span
+                      className="w-8 text-xs font-bold text-capy-text"
+                      style={{ fontFamily: "Tektur, sans-serif" }}
+                    >
+                      {day}
+                    </span>
                     <div className="flex items-center gap-1.5">
                       <select
-                        value={dayHours[day] ?? '12'}
-                        onChange={e => setDayHours(prev => ({ ...prev, [day]: e.target.value }))}
+                        value={dayHours[day] ?? "12"}
+                        onChange={(e) =>
+                          setDayHours((prev) => ({
+                            ...prev,
+                            [day]: e.target.value,
+                          }))
+                        }
                         className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                       >
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map(h => (
-                          <option key={h} value={String(h)}>{h}</option>
-                        ))}
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                          (h) => (
+                            <option key={h} value={String(h)}>
+                              {h}
+                            </option>
+                          ),
+                        )}
                       </select>
                       <span className="text-xs text-capy-muted">:</span>
                       <select
-                        value={dayMinutes[day] ?? '00'}
-                        onChange={e => setDayMinutes(prev => ({ ...prev, [day]: e.target.value }))}
+                        value={dayMinutes[day] ?? "00"}
+                        onChange={(e) =>
+                          setDayMinutes((prev) => ({
+                            ...prev,
+                            [day]: e.target.value,
+                          }))
+                        }
                         className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                       >
-                        {['00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'].map(m => (
-                          <option key={m} value={m}>{m}</option>
+                        {Array.from({ length: 60 }, (_, i) =>
+                          String(i).padStart(2, "0")
+                        ).map((m) => (
+                          <option key={m} value={m}>
+                            {m}
+                          </option>
                         ))}
                       </select>
                       <select
-                        value={dayAmPm[day] ?? 'PM'}
-                        onChange={e => setDayAmPm(prev => ({ ...prev, [day]: e.target.value }))}
+                        value={dayAmPm[day] ?? "PM"}
+                        onChange={(e) =>
+                          setDayAmPm((prev) => ({
+                            ...prev,
+                            [day]: e.target.value,
+                          }))
+                        }
                         className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                       >
                         <option>AM</option>
@@ -749,14 +1061,16 @@ export function GamifiedMarketingTab() {
             <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
               <p className="section-label mb-3">Duration</p>
               <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit">
-                {['Run indefinitely', 'Set end date'].map((opt, i) => {
+                {["Run indefinitely", "Set end date"].map((opt, i) => {
                   const active = i === 0 ? runIndefinitely : !runIndefinitely;
                   return (
                     <button
                       key={opt}
                       onClick={() => setRunIndefinitely(i === 0)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        active ? 'bg-white text-capy-text shadow-sm' : 'text-capy-muted'
+                        active
+                          ? "bg-white text-capy-text shadow-sm"
+                          : "text-capy-muted"
                       }`}
                     >
                       {opt}
@@ -768,7 +1082,7 @@ export function GamifiedMarketingTab() {
                 <input
                   type="date"
                   value={endDate}
-                  onChange={e => setEndDate(e.target.value)}
+                  onChange={(e) => setEndDate(e.target.value)}
                   min={today}
                   className="mt-3 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                 />
@@ -780,69 +1094,109 @@ export function GamifiedMarketingTab() {
         {/* ── Step 3: Games ── */}
         {wizardStep === 3 && (
           <div className="space-y-3">
-            <p className="text-xs text-capy-muted">One game per send day — swap any you&apos;d like</p>
+            <p className="text-xs text-capy-muted">
+              One game per send day — swap any you&apos;d like
+            </p>
             {games.length === 0 ? (
-              <p className="text-xs text-capy-muted py-6 text-center">Go back and select at least one send day</p>
-            ) : games.map((game, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
-                <div className="flex items-start justify-between p-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="section-label mb-1.5">Game {i + 1} — {game.day} at {getDayTime(game.day)}</p>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-xl">{GAME_DEFINITIONS[game.type].emoji}</span>
-                      <span className="font-semibold text-capy-text text-sm" style={{ fontFamily: 'Tektur, sans-serif' }}>
-                        {GAME_DEFINITIONS[game.type].label}
-                      </span>
-                    </div>
-                    <p className="text-xs text-capy-muted italic leading-relaxed">
-                      &ldquo;{GAME_DEFINITIONS[game.type].template}&rdquo;
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setOpenGamePicker(openGamePicker === i ? null : i)}
-                    className="ml-3 px-3 py-1.5 text-xs font-medium rounded-lg border border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark transition-all shrink-0"
-                  >
-                    Change
-                  </button>
-                </div>
-                {openGamePicker === i && (
-                  <div className="px-4 pb-4 border-t border-capy-border pt-3">
-                    <p className="text-xs text-capy-muted mb-2 font-medium">Select a game type:</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(Object.keys(GAME_DEFINITIONS) as GameType[]).map(type => (
-                        <button
-                          key={type}
-                          onClick={() => { updateGame(i, type); setOpenGamePicker(null); }}
-                          className={`p-3 rounded-xl border-2 text-left transition-all ${
-                            game.type === type
-                              ? 'border-capy-green bg-capy-green-light'
-                              : 'border-capy-border hover:border-capy-green'
-                          }`}
+              <p className="text-xs text-capy-muted py-6 text-center">
+                Go back and select at least one send day
+              </p>
+            ) : (
+              games.map((game, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden"
+                >
+                  <div className="flex items-start justify-between p-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="section-label mb-1.5">
+                        Game {i + 1} — {game.day} at {getDayTime(game.day)}
+                      </p>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-xl">
+                          {GAME_DEFINITIONS[game.type].emoji}
+                        </span>
+                        <span
+                          className="font-semibold text-capy-text text-sm"
+                          style={{ fontFamily: "Tektur, sans-serif" }}
                         >
-                          <span className="text-lg">{GAME_DEFINITIONS[type].emoji}</span>
-                          <p className="text-xs font-semibold text-capy-text mt-1" style={{ fontFamily: 'Tektur, sans-serif' }}>
-                            {GAME_DEFINITIONS[type].label}
-                          </p>
-                        </button>
-                      ))}
+                          {GAME_DEFINITIONS[game.type].label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-capy-muted italic leading-relaxed">
+                        &ldquo;{GAME_DEFINITIONS[game.type].template}&rdquo;
+                      </p>
                     </div>
+                    <button
+                      onClick={() =>
+                        setOpenGamePicker(openGamePicker === i ? null : i)
+                      }
+                      className="ml-3 px-3 py-1.5 text-xs font-medium rounded-lg border border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark transition-all shrink-0"
+                    >
+                      Change
+                    </button>
                   </div>
-                )}
-              </div>
-            ))}
+                  {openGamePicker === i && (
+                    <div className="px-4 pb-4 border-t border-capy-border pt-3">
+                      <p className="text-xs text-capy-muted mb-2 font-medium">
+                        Select a game type:
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(Object.keys(GAME_DEFINITIONS) as GameType[]).map(
+                          (type) => (
+                            <button
+                              key={type}
+                              onClick={() => {
+                                updateGame(i, type);
+                                setOpenGamePicker(null);
+                              }}
+                              className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                game.type === type
+                                  ? "border-capy-green bg-capy-green-light"
+                                  : "border-capy-border hover:border-capy-green"
+                              }`}
+                            >
+                              <span className="text-lg">
+                                {GAME_DEFINITIONS[type].emoji}
+                              </span>
+                              <p
+                                className="text-xs font-semibold text-capy-text mt-1"
+                                style={{ fontFamily: "Tektur, sans-serif" }}
+                              >
+                                {GAME_DEFINITIONS[type].label}
+                              </p>
+                            </button>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 
         {/* ── Step 4: Prizes ── */}
         {wizardStep === 4 && (
           <div className="space-y-3">
-            <p className="text-xs text-capy-muted">One prize per game, plus a consolation for everyone else</p>
+            <p className="text-xs text-capy-muted">
+              One prize per game, plus a consolation for everyone else
+            </p>
             {prizes.map((prize, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
-                <p className="section-label mb-3">Game {i + 1} Prize — {games[i]?.day ?? ''}</p>
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-capy-border shadow-sm p-4"
+              >
+                <p className="section-label mb-3">
+                  Game {i + 1} Prize — {games[i]?.day ?? ""}
+                </p>
                 <div className="flex items-center gap-4 mb-3">
-                  {(['percent-off', 'free-item'] as PrizeType[]).map(type => (
-                    <label key={type} className="flex items-center gap-2 cursor-pointer">
+                  {(["percent-off", "free-item"] as PrizeType[]).map((type) => (
+                    <label
+                      key={type}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
                         type="radio"
                         checked={prize.type === type}
@@ -850,39 +1204,69 @@ export function GamifiedMarketingTab() {
                         className="w-3.5 h-3.5 accent-capy-green"
                       />
                       <span className="text-xs text-capy-text font-medium">
-                        {type === 'percent-off' ? '% Off' : 'Free Item'}
+                        {type === "percent-off" ? "% Off" : "Free Item"}
                       </span>
                     </label>
                   ))}
                 </div>
-                {prize.type === 'percent-off' ? (
+                {prize.type === "percent-off" ? (
                   <div className="relative w-32">
                     <input
                       type="number"
-                      value={prize.percent ?? ''}
-                      onChange={e => updatePrizePercent(i, Number(e.target.value))}
-                      min={1} max={100}
+                      value={prize.percent ?? ""}
+                      onChange={(e) =>
+                        updatePrizePercent(i, Number(e.target.value))
+                      }
+                      min={1}
+                      max={100}
                       placeholder="20"
                       className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
                     />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">%</span>
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">
+                      %
+                    </span>
                   </div>
                 ) : (
                   <div className="relative">
                     <input
                       type="text"
-                      value={openMenuDropdown === i ? menuItemSearch : ''}
-                      onChange={e => { setMenuItemSearch(e.target.value); setOpenMenuDropdown(i); }}
-                      onFocus={() => { if (!prize.itemName) setOpenMenuDropdown(i); }}
-                      placeholder={prize.itemName || 'Search menu items...'}
+                      value={openMenuDropdown === i ? menuItemSearch : ""}
+                      onChange={(e) => {
+                        setMenuItemSearch(e.target.value);
+                        setOpenMenuDropdown(i);
+                      }}
+                      onFocus={() => {
+                        if (!prize.itemName) setOpenMenuDropdown(i);
+                      }}
+                      placeholder={prize.itemName || "Search menu items..."}
                       className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green"
                     />
                     {prize.itemName && openMenuDropdown !== i && (
                       <div className="flex items-center justify-between mt-1.5 px-3 py-1.5 bg-capy-green-light border border-capy-green/30 rounded-lg">
-                        <span className="text-xs text-capy-green-dark font-medium">{prize.itemName}</span>
-                        <button onClick={() => setPrizes(prev => prev.map((p, idx) => idx === i ? { ...p, itemName: undefined } : p))}>
-                          <svg className="w-3 h-3 text-capy-green-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <span className="text-xs text-capy-green-dark font-medium">
+                          {prize.itemName}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setPrizes((prev) =>
+                              prev.map((p, idx) =>
+                                idx === i ? { ...p, itemName: undefined } : p,
+                              ),
+                            )
+                          }
+                        >
+                          <svg
+                            className="w-3 h-3 text-capy-green-dark"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -890,19 +1274,29 @@ export function GamifiedMarketingTab() {
                     {openMenuDropdown === i && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-capy-border rounded-xl shadow-lg z-10 max-h-36 overflow-y-auto">
                         {menuItemsLoading ? (
-                          <p className="p-3 text-center text-xs text-capy-muted">Loading...</p>
+                          <p className="p-3 text-center text-xs text-capy-muted">
+                            Loading...
+                          </p>
                         ) : filteredMenuItems.length === 0 ? (
-                          <p className="p-3 text-center text-xs text-capy-muted">No items found</p>
-                        ) : filteredMenuItems.slice(0, 20).map(item => (
-                          <button
-                            key={item.clover_id}
-                            onClick={() => selectFreeItem(i, item.name)}
-                            className="w-full text-left px-3 py-2 text-xs text-capy-text hover:bg-capy-green-light border-b border-capy-border/60 last:border-0 transition-colors"
-                          >
-                            <span className="font-medium">{item.name}</span>
-                            {item.category && <span className="text-capy-muted ml-1.5">{item.category}</span>}
-                          </button>
-                        ))}
+                          <p className="p-3 text-center text-xs text-capy-muted">
+                            No items found
+                          </p>
+                        ) : (
+                          filteredMenuItems.slice(0, 20).map((item) => (
+                            <button
+                              key={item.clover_id}
+                              onClick={() => selectFreeItem(i, item.name)}
+                              className="w-full text-left px-3 py-2 text-xs text-capy-text hover:bg-capy-green-light border-b border-capy-border/60 last:border-0 transition-colors"
+                            >
+                              <span className="font-medium">{item.name}</span>
+                              {item.category && (
+                                <span className="text-capy-muted ml-1.5">
+                                  {item.category}
+                                </span>
+                              )}
+                            </button>
+                          ))
+                        )}
                       </div>
                     )}
                   </div>
@@ -913,7 +1307,10 @@ export function GamifiedMarketingTab() {
             {/* Loser's Discount */}
             <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
               <p className="card-heading mb-0.5">Loser&apos;s Discount</p>
-              <p className="text-xs text-capy-muted mb-3">Given to every non-winner. After the cap, losers get a &ldquo;Sorry&rdquo; message.</p>
+              <p className="text-xs text-capy-muted mb-3">
+                Given to every non-winner. After the cap, losers get a
+                &ldquo;Sorry&rdquo; message.
+              </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="section-label mb-1.5">Discount</p>
@@ -921,11 +1318,14 @@ export function GamifiedMarketingTab() {
                     <input
                       type="number"
                       value={loserDiscount}
-                      onChange={e => setLoserDiscount(Number(e.target.value))}
-                      min={1} max={100}
+                      onChange={(e) => setLoserDiscount(Number(e.target.value))}
+                      min={1}
+                      max={100}
                       className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
                     />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">%</span>
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">
+                      %
+                    </span>
                   </div>
                 </div>
                 <div>
@@ -933,7 +1333,9 @@ export function GamifiedMarketingTab() {
                   <input
                     type="number"
                     value={loserDiscountCap}
-                    onChange={e => setLoserDiscountCap(Number(e.target.value))}
+                    onChange={(e) =>
+                      setLoserDiscountCap(Number(e.target.value))
+                    }
                     min={1}
                     className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green"
                   />
@@ -946,19 +1348,28 @@ export function GamifiedMarketingTab() {
         {/* ── Step 5: Review ── */}
         {wizardStep === 5 && (
           <div className="space-y-3">
-            <p className="text-xs text-capy-muted">Review your settings before going live</p>
+            <p className="text-xs text-capy-muted">
+              Review your settings before going live
+            </p>
             <div className="p-3.5 bg-slate-50 rounded-xl border border-capy-border">
               <p className="section-label mb-1.5">Schedule</p>
-              {selectedDays.map(day => (
-                <p key={day} className="text-xs text-capy-text">{day} at {getDayTime(day)}</p>
+              {selectedDays.map((day) => (
+                <p key={day} className="text-xs text-capy-text">
+                  {day} at {getDayTime(day)}
+                </p>
               ))}
-              <p className="text-xs text-capy-muted mt-1">{runIndefinitely ? 'Runs indefinitely' : `Ends ${endDate || '—'}`}</p>
+              <p className="text-xs text-capy-muted mt-1">
+                {runIndefinitely
+                  ? "Runs indefinitely"
+                  : `Ends ${endDate || "—"}`}
+              </p>
             </div>
             <div className="p-3.5 bg-slate-50 rounded-xl border border-capy-border">
               <p className="section-label mb-1.5">Games</p>
               {games.map((g, i) => (
                 <p key={i} className="text-xs text-capy-text">
-                  {GAME_DEFINITIONS[g.type].emoji} {g.day} — {GAME_DEFINITIONS[g.type].label}
+                  {GAME_DEFINITIONS[g.type].emoji} {g.day} —{" "}
+                  {GAME_DEFINITIONS[g.type].label}
                 </p>
               ))}
             </div>
@@ -966,32 +1377,59 @@ export function GamifiedMarketingTab() {
               <p className="section-label mb-1.5">Prizes</p>
               {prizes.map((p, i) => (
                 <p key={i} className="text-xs text-capy-text">
-                  Game {i + 1}: {p.type === 'free-item' ? `Free ${p.itemName}` : `${p.percent}% off`}
+                  Game {i + 1}:{" "}
+                  {p.type === "free-item"
+                    ? `Free ${p.itemName}`
+                    : `${p.percent}% off`}
                 </p>
               ))}
-              <p className="text-xs text-capy-muted mt-1">Loser&apos;s discount: {loserDiscount}% off (cap: {loserDiscountCap})</p>
+              <p className="text-xs text-capy-muted mt-1">
+                Loser&apos;s discount: {loserDiscount}% off (cap:{" "}
+                {loserDiscountCap})
+              </p>
             </div>
             <div className="p-3.5 bg-slate-50 rounded-xl border border-capy-border">
               <p className="section-label mb-1">Customers</p>
-              <p className="text-xs text-capy-text">{selectedCustomerIds.size} of {optedInCustomers.length} opted-in customers selected</p>
+              <p className="text-xs text-capy-text">
+                {selectedCustomerIds.size} of {optedInCustomers.length} opted-in
+                customers selected
+              </p>
             </div>
             <div className="p-3.5 bg-slate-50 rounded-xl border border-capy-border">
               <p className="section-label mb-1.5">Message Preview</p>
               <p className="text-xs text-capy-muted mb-3">
-                This is the first message your customers will receive once the campaign starts. Each week&apos;s game and prize may vary.
+                This is the first message your customers will receive once the
+                campaign starts. Each week&apos;s game and prize may vary.
               </p>
               <div className="space-y-3">
                 {games.map((g, i) => {
-                  const preview = buildMessagePreview(g, prizes[i] ?? { type: 'percent-off', percent: 0 });
+                  const preview = buildMessagePreview(
+                    g,
+                    prizes[i] ?? { type: "percent-off", percent: 0 },
+                  );
                   return (
-                    <div key={i} style={{ animation: `fadeInUp 0.3s ease-out ${i * 0.08}s both` }}>
-                      <p className="section-label text-capy-muted mb-1.5">{g.day} · {getDayTime(g.day)}</p>
+                    <div
+                      key={i}
+                      style={{
+                        animation: `fadeInUp 0.3s ease-out ${i * 0.08}s both`,
+                      }}
+                    >
+                      <p className="section-label text-capy-muted mb-1.5">
+                        {g.day} · {getDayTime(g.day)}
+                      </p>
                       <div className="flex items-start gap-2">
                         <div className="w-7 h-7 rounded-full bg-capy-green flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <span className="text-white text-xs font-bold" style={{ fontFamily: 'Tektur, sans-serif' }}>T</span>
+                          <span
+                            className="text-white text-xs font-bold"
+                            style={{ fontFamily: "Tektur, sans-serif" }}
+                          >
+                            T
+                          </span>
                         </div>
                         <div className="bg-white border border-capy-border rounded-2xl rounded-tl-sm px-3 py-2.5 max-w-[85%] shadow-sm">
-                          <p className="text-xs text-capy-text leading-relaxed">{preview}</p>
+                          <p className="text-xs text-capy-text leading-relaxed">
+                            {preview}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1010,8 +1448,18 @@ export function GamifiedMarketingTab() {
           disabled={wizardStep === 1}
           className="px-4 py-2 text-sm text-capy-muted hover:text-capy-text transition-colors font-medium disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
         >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
           Back
         </button>
@@ -1021,18 +1469,28 @@ export function GamifiedMarketingTab() {
             onClick={handleNext}
             disabled={!canProceed}
             className="px-5 py-2.5 bg-capy-text text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
-            style={{ fontFamily: 'Tektur, sans-serif' }}
+            style={{ fontFamily: "Tektur, sans-serif" }}
           >
             Continue
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         ) : (
           <button
             onClick={handleLaunch}
             className="px-5 py-2.5 bg-capy-green hover:opacity-90 text-white text-sm font-semibold rounded-xl transition-opacity flex items-center gap-2"
-            style={{ fontFamily: 'Tektur, sans-serif' }}
+            style={{ fontFamily: "Tektur, sans-serif" }}
           >
             🚀 Launch Campaign
           </button>
