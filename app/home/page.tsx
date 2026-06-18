@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { VoiceRevenueCard } from "@/components/voice/VoiceRevenueCard";
 import { IncomingCallsCard } from "@/components/voice/IncomingCallsCard";
 import { VoiceAnalyticsTab } from "@/components/voice/VoiceAnalyticsTab";
-import { VoiceMarketingTab } from "@/components/voice/VoiceMarketingTab";
+import { GamifiedMarketingTab } from "@/components/voice/GamifiedMarketingTab";
 import { SalesAITab } from "@/components/voice/SalesAITab";
 
 const SUB_TABS = [
@@ -80,7 +80,7 @@ export default function HomePage() {
 
       {activeTab === 'marketing' && (
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <VoiceMarketingTab />
+          <GamifiedMarketingTab />
         </div>
       )}
     </div>

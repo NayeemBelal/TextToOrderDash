@@ -54,10 +54,10 @@ const faqSchema = {
     },
     {
       "@type": "Question",
-      name: "Which Square plan do I need to use Belan AI?",
+      name: "Does Belan AI work with Square for Restaurants and regular Square POS?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Belan AI connects to Square through Square's standard API access, available on Square for Restaurants plans. Your Belan AI subscription ($200/month) covers the integration — no additional Square add-on is required.",
+        text: "Both. Belan AI connects to Square's standard API, which works with Square for Restaurants (Free, Plus, and Premium plans) as well as the standard Square Point of Sale app. You don't need to upgrade your Square plan to use Belan AI.",
       },
     },
     {
@@ -65,26 +65,42 @@ const faqSchema = {
       name: "How long does it take to connect Belan AI to Square?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Connecting Belan AI to Square takes about 5 minutes. You authorize the Square connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically.",
+        text: "Connecting Belan AI to Square takes about 5 minutes. You authorize the connection via Square's OAuth in your Belan AI dashboard, and your full Square Item Library — items, modifiers, prices — syncs automatically.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Where do phone orders appear in Square?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Belan AI fires orders to your Square ticket queue as standard Square orders. They show up in your Square Dashboard alongside your in-person orders, so your sales reporting stays unified. No separate system to check.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "What happens if a customer orders a sold-out item?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Square's item availability syncs in real time with Belan AI. Mark an item as sold out in your Square Item Library and the AI stops offering it on the very next call. It will let the customer know and suggest an alternative from your active menu.",
       },
     },
   ],
 };
 
 const syncItems = [
-  "Menu items & descriptions",
-  "Prices — updated in real time",
-  "Modifier groups & options",
-  "Item availability (86 detection)",
-  "Orders → Square ticket queue",
-  "Payment status → Square",
+  "Menu items & descriptions — pulled from Square's Item Library",
+  "Prices — sync with Square price updates in real time",
+  "Modifier groups & options — Square modifier sets preserved exactly",
+  "Item availability — sold-out items removed from AI responses instantly",
+  "Orders → Square ticket queue (Square for Restaurants + Square POS)",
+  "Payment status → Square Dashboard for unified reporting",
 ];
 
 const setupSteps = [
-  { n: "01", t: "Create your Belan AI account", d: "Sign up at belan.tech — no credit card required." },
-  { n: "02", t: "Connect Square", d: "Click 'Connect POS', select Square, and authorize the connection. Your menu syncs in under a minute." },
-  { n: "03", t: "Set your voice & rules", d: "Pick a voice, write your greeting, set upsell rules. Takes 5 minutes." },
-  { n: "04", t: "Go live", d: "Forward your restaurant number to your Belan AI line. The AI starts answering immediately." },
+  { n: "01", t: "Create your Belan AI account", d: "Sign up at belan.tech — no credit card required. Works on any device." },
+  { n: "02", t: "Connect Square", d: "Click 'Connect POS', select Square, and authorize via Square's OAuth. Your full Square Item Library — items, modifiers, prices, categories — syncs in under a minute. Works with Square for Restaurants and standard Square POS." },
+  { n: "03", t: "Set your voice & upsell rules", d: "Pick a voice, write your greeting, configure upsell suggestions. Your Square catalog structure and modifier sets carry over exactly — no rebuilding required. Square Team Management permissions stay untouched." },
+  { n: "04", t: "Go live", d: "Forward your restaurant number to your Belan AI line. Orders appear in your Square ticket queue and Square Dashboard in real time, unified with your in-person sales data." },
 ];
 
 const faqItems = [
@@ -93,12 +109,20 @@ const faqItems = [
     a: "Yes. Belan AI integrates directly with Square via the Square API. Your menu syncs automatically and orders fire to your Square system the moment a customer confirms and pays — no manual entry required.",
   },
   {
-    q: "Which Square plan do I need?",
-    a: "Belan AI connects to Square through Square's standard API access, available on Square for Restaurants plans. Your Belan AI subscription ($200/month) covers the integration — no additional Square add-on is required.",
+    q: "Does Belan AI work with Square for Restaurants and regular Square POS?",
+    a: "Both. Belan AI connects to Square's standard API, which works with Square for Restaurants (Free, Plus, and Premium plans) as well as the standard Square Point of Sale app. You don't need to upgrade your Square plan to use Belan AI.",
   },
   {
     q: "How long does setup take?",
-    a: "Connecting Belan AI to Square takes about 5 minutes. You authorize the connection in your Belan AI dashboard, and your full menu — items, modifiers, prices — syncs automatically.",
+    a: "Connecting Belan AI to Square takes about 5 minutes. You authorize the connection via Square's OAuth in your Belan AI dashboard, and your full Square Item Library — items, modifiers, prices — syncs automatically.",
+  },
+  {
+    q: "Where do phone orders appear in Square?",
+    a: "Belan AI fires orders to your Square ticket queue as standard Square orders. They show up in your Square Dashboard alongside your in-person orders, so your sales reporting stays unified. No separate system to check.",
+  },
+  {
+    q: "What happens if a customer orders a sold-out item?",
+    a: "Square's item availability syncs in real time with Belan AI. Mark an item as sold out in your Square Item Library and the AI stops offering it on the very next call. It will let the customer know and suggest an alternative from your active menu.",
   },
 ];
 
