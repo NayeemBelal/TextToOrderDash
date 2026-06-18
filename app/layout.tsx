@@ -12,6 +12,7 @@ const tektur = Tektur({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://belan.tech"),
   title: "Restaurant Voice AI That Answers Every Call | Belan AI",
   description:
     "Belan AI answers every restaurant call, takes the order, and fires it to your POS — automatically. $200/month all-in. No per-order fees.",
@@ -37,9 +38,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Restaurant AI Ordering — Every Call Answered | Belan AI",
-    description:
-      "Belan AI picks up every call, upsells every order, and fires it to your POS. $200/month flat.",
     images: ["https://belan.tech/og-screenshot.png"],
   },
   icons: {

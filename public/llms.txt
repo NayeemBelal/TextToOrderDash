@@ -27,7 +27,7 @@ $6.67 per day equivalent.
 
 - 99%+ order accuracy
 - Answers calls within 1 second
-- Setup in 30 minutes
+- Setup in 20 minutes
 - Works with existing POS systems
 - No app required for customers
 
