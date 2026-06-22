@@ -5,7 +5,8 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 const API_BASE_URL =
-  "https://text-to-order-coffee-34770846162.us-central1.run.app"; // Replace with your actual backend URL
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://text-to-order-coffee-34770846162.us-central1.run.app";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -258,7 +259,14 @@ export function GamifiedMarketingTab() {
 
   // Fetch opted-in customers and menu items on mount
   useEffect(() => {
-    const id = restaurantId ?? "a9d9fb45-34a7-4c63-b0d9-70add44b6275";
+    // New owners who just finished onboarding have no restaurant_id yet — Belan
+    // staff provisions their restaurant afterward. Until then we must NOT fetch
+    // anything, otherwise this component would surface another restaurant's data.
+    if (!restaurantId) {
+      setRosterLoading(false);
+      return;
+    }
+    const id = restaurantId;
 
     // Opted-in customers
     fetch(
@@ -292,9 +300,10 @@ export function GamifiedMarketingTab() {
       .catch(() => {});
   }, [restaurantId]);
 
-  const rid = restaurantId ?? "a9d9fb45-34a7-4c63-b0d9-70add44b6275";
+  const rid = restaurantId;
 
   const handleScanClover = async () => {
+    if (!rid) return;
     setScanLoading(true);
     setScanResult(null);
     try {
@@ -313,6 +322,7 @@ export function GamifiedMarketingTab() {
   };
 
   const handleSendBlast = async () => {
+    if (!rid) return;
     if (!scanResult || scanResult.new_customers === 0) return;
     setBlastLoading(true);
     try {
@@ -400,6 +410,7 @@ export function GamifiedMarketingTab() {
   };
 
   const handleLaunch = async () => {
+    if (!restaurantId) return;
     const config: CampaignConfig = {
       selectedDays,
       dayTimes: Object.fromEntries(selectedDays.map((d) => [d, getDayTime(d)])),
@@ -415,7 +426,7 @@ export function GamifiedMarketingTab() {
     setPagePhase("active");
 
     // Persist campaign to backend
-    const rid = restaurantId ?? "a9d9fb45-34a7-4c63-b0d9-70add44b6275";
+    const rid = restaurantId;
     fetch(`${API_BASE_URL}/api/marketing/campaigns`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -462,6 +473,31 @@ export function GamifiedMarketingTab() {
   })();
 
   // ── Render ──────────────────────────────────────────────────────────────
+
+  /* ── SETTING UP (no restaurant provisioned yet) ─────────────────────────
+     Owners land here right after onboarding, before Belan staff connects
+     their restaurant. They have no restaurant_id, so there is nothing to
+     show — and we must never fall back to another restaurant's data. */
+  if (!restaurantId) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center p-6">
+        <div className="max-w-md text-center flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-capy-green-light flex items-center justify-center">
+            <svg className="w-7 h-7 text-capy-green-dark animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+          <h2 className="text-capy-text text-xl font-semibold">We&apos;re setting up your page</h2>
+          <p className="text-capy-muted text-sm leading-relaxed">
+            Thanks for completing onboarding! Our team is provisioning your restaurant&apos;s
+            marketing dashboard and RCS number. This usually takes 1–2 business days — we&apos;ll
+            reach out as soon as it&apos;s ready.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */

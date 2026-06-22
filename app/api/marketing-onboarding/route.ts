@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
     const storeEmail = formData.get('storeEmail') as string;
     const websiteUrl = formData.get('websiteUrl') as string;
     const accountEmail = formData.get('accountEmail') as string;
+    const cloverMerchantId = formData.get('cloverMerchantId') as string | null;
+    const cloverApiKey = formData.get('cloverApiKey') as string | null;
+    const cloverEcomApiKey = formData.get('cloverEcomApiKey') as string | null;
+    const hasClover = !!(cloverMerchantId || cloverApiKey || cloverEcomApiKey);
 
     const verificationDoc = formData.get('verificationDoc') as File | null;
     const logo = formData.get('logo') as File | null;
@@ -112,6 +116,17 @@ export async function POST(req: NextRequest) {
           <tr><td>Store Phone</td><td>${storePhone}</td></tr>
           <tr><td>Store Email</td><td>${storeEmail}</td></tr>
           <tr><td>Website</td><td>${websiteUrl || '—'}</td></tr>
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Clover POS Credentials</div>
+        <table>
+          ${hasClover ? `
+          <tr><td>Merchant ID</td><td>${cloverMerchantId || '—'}</td></tr>
+          <tr><td>API Key</td><td>${cloverApiKey || '—'}</td></tr>
+          <tr><td>Ecommerce API Key</td><td>${cloverEcomApiKey || '—'}</td></tr>
+          ` : `<tr><td>Status</td><td>Skipped — not provided</td></tr>`}
         </table>
       </div>
 

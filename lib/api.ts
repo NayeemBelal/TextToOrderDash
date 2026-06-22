@@ -1,6 +1,7 @@
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
   'https://text-to-order-coffee-34770846162.us-central1.run.app';
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {

@@ -5,40 +5,50 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-type Step = 1 | 2 | 3 | 4 | 5 | 'success';
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 'success';
 
 const LEGAL_FORMS = ['Public', 'Private', 'Government', 'Non-profit', 'Sole Proprietor'];
 const LEGAL_ENTITY_TYPES = ['LLC', 'Sole Proprietorship', 'Partnership', 'Corporation', 'S Corporation'];
 
-const STEP_LABELS = ['Account', 'Business', 'Contact', 'Verification', 'Brand'];
+const STEP_LABELS = ['Account', 'Business', 'Contact', 'Verify', 'Brand', 'Clover'];
+
+const ACCENT = '#c4b5fd'; // Marketing AI purple — matches landing page
 
 function StepIndicator({ step }: { step: Step }) {
   if (step === 'success') return null;
   const current = step as number;
   return (
-    <div className="flex items-center justify-center gap-2 mb-8">
+    <div className="flex items-center justify-center gap-1 sm:gap-1.5 mb-8">
       {STEP_LABELS.map((label, i) => {
         const n = i + 1;
         const done = n < current;
         const active = n === current;
         return (
-          <div key={n} className="flex items-center gap-2">
-            <div className="flex flex-col items-center gap-1">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-                done ? 'bg-capy-brown-accent text-white' :
-                active ? 'bg-capy-brown-accent text-white ring-4 ring-orange-100' :
-                'bg-gray-100 text-capy-muted'
-              }`}>
+          <div key={n} className="flex items-center gap-1 sm:gap-1.5">
+            <div className="flex flex-col items-center gap-1.5">
+              <div
+                className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-black flex items-center justify-center text-xs font-black"
+                style={{
+                  background: done ? '#000' : active ? ACCENT : '#fff',
+                  color: done ? '#fff' : '#000',
+                  boxShadow: active ? '2px 2px 0px #000' : 'none',
+                }}
+              >
                 {done ? (
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 ) : n}
               </div>
-              <span className={`text-[10px] font-medium ${active ? 'text-capy-brown-accent' : 'text-capy-muted'}`}>{label}</span>
+              <span
+                className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: active ? '#000' : 'rgba(0,0,0,0.4)' }}
+              >
+                {label}
+              </span>
             </div>
             {i < STEP_LABELS.length - 1 && (
-              <div className={`w-8 h-px mb-4 ${done ? 'bg-capy-brown-accent' : 'bg-gray-200'}`} />
+              <div className="w-3 sm:w-5 h-0.5 mb-4 bg-black" style={{ opacity: done ? 1 : 0.2 }} />
             )}
           </div>
         );
@@ -49,8 +59,8 @@ function StepIndicator({ step }: { step: Step }) {
 
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <label className="block text-sm font-medium text-capy-text mb-1.5">
-      {children}{required && <span className="text-red-500 ml-0.5">*</span>}
+    <label className="block text-xs font-bold uppercase tracking-widest text-black mb-1.5">
+      {children}{required && <span className="text-[#e01d5a] ml-0.5">*</span>}
     </label>
   );
 }
@@ -59,7 +69,7 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full border border-capy-border rounded-lg px-3 py-2.5 text-sm text-capy-text placeholder:text-capy-muted focus:outline-none focus:ring-2 focus:ring-capy-brown-accent/30 focus:border-capy-brown-accent transition-colors bg-white ${props.className ?? ''}`}
+      className={`w-full border-2 border-black px-3 py-2.5 text-sm font-medium text-black placeholder:text-black/30 bg-white focus:outline-none focus:shadow-[3px_3px_0px_#000] transition-shadow ${props.className ?? ''}`}
     />
   );
 }
@@ -68,12 +78,41 @@ function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectEle
   return (
     <select
       {...props}
-      className={`w-full border border-capy-border rounded-lg px-3 py-2.5 text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-brown-accent/30 focus:border-capy-brown-accent transition-colors bg-white ${props.className ?? ''}`}
+      className={`w-full border-2 border-black px-3 py-2.5 text-sm font-medium text-black bg-white focus:outline-none focus:shadow-[3px_3px_0px_#000] transition-shadow ${props.className ?? ''}`}
     >
       {children}
     </select>
   );
 }
+
+function PrimaryButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...props}
+      className={`h-11 rounded-none bg-black text-white font-bold text-sm uppercase tracking-widest border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#000] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2 ${props.className ?? ''}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...props}
+      className={`h-11 rounded-none bg-white text-black font-bold text-sm uppercase tracking-widest border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#000] flex items-center justify-center gap-2 ${props.className ?? ''}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+const Spinner = () => (
+  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+);
 
 function FileUploadBox({
   label,
@@ -94,30 +133,30 @@ function FileUploadBox({
       <Label>{label}</Label>
       <div
         onClick={() => inputRef.current?.click()}
-        className="border-2 border-dashed border-capy-border rounded-lg p-5 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-capy-brown-accent/60 hover:bg-orange-50/40 transition-colors"
+        className="border-2 border-dashed border-black p-5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors hover:bg-[#c4b5fd]/20"
       >
         {file ? (
           <div className="flex items-center gap-3 w-full">
-            <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-capy-brown-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="w-9 h-9 border-2 border-black flex items-center justify-center flex-shrink-0" style={{ background: ACCENT }}>
+              <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-capy-text truncate">{file.name}</p>
-              <p className="text-xs text-capy-muted">{(file.size / 1024).toFixed(0)} KB — click to change</p>
+              <p className="text-sm font-bold text-black truncate">{file.name}</p>
+              <p className="text-xs font-medium text-black/50">{(file.size / 1024).toFixed(0)} KB — click to change</p>
             </div>
           </div>
         ) : (
           <>
-            <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-capy-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div className="w-9 h-9 border-2 border-black flex items-center justify-center bg-white">
+              <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-capy-text">Click to upload</p>
-              {hint && <p className="text-xs text-capy-muted mt-0.5">{hint}</p>}
+              <p className="text-sm font-bold uppercase tracking-widest text-black">Click to upload</p>
+              {hint && <p className="text-xs font-medium text-black/50 mt-0.5">{hint}</p>}
             </div>
           </>
         )}
@@ -171,6 +210,11 @@ export default function MarketingOnboardingPage() {
   const [storePhone, setStorePhone] = useState('');
   const [storeEmail, setStoreEmail] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
+
+  // Step 6 — Clover (optional)
+  const [cloverMerchantId, setCloverMerchantId] = useState('');
+  const [cloverApiKey, setCloverApiKey] = useState('');
+  const [cloverEcomApiKey, setCloverEcomApiKey] = useState('');
 
   async function handleStep1() {
     setError('');
@@ -235,11 +279,16 @@ export default function MarketingOnboardingPage() {
     setStep(5);
   }
 
-  async function handleStep5() {
+  function handleStep5() {
     setError('');
     if (!storePhone.trim()) return setError('Store phone number is required.');
     if (!storeEmail.trim()) return setError('Store email is required.');
+    setStep(6);
+  }
 
+  // Final submission — `includeClover` is false when the owner skips the Clover step.
+  async function submitApplication(includeClover: boolean) {
+    setError('');
     setIsLoading(true);
     try {
       const fd = new FormData();
@@ -261,6 +310,11 @@ export default function MarketingOnboardingPage() {
       fd.append('storePhone', storePhone);
       fd.append('storeEmail', storeEmail);
       fd.append('websiteUrl', websiteUrl);
+      if (includeClover) {
+        fd.append('cloverMerchantId', cloverMerchantId);
+        fd.append('cloverApiKey', cloverApiKey);
+        fd.append('cloverEcomApiKey', cloverEcomApiKey);
+      }
       if (verificationDoc) fd.append('verificationDoc', verificationDoc);
       if (logo) fd.append('logo', logo);
 
@@ -282,34 +336,61 @@ export default function MarketingOnboardingPage() {
     }
   }
 
+  function handleFinishWithClover() {
+    setError('');
+    const anyFilled = cloverMerchantId.trim() || cloverApiKey.trim() || cloverEcomApiKey.trim();
+    if (anyFilled && (!cloverMerchantId.trim() || !cloverApiKey.trim() || !cloverEcomApiKey.trim())) {
+      return setError('Please fill in all three Clover fields, or skip this step.');
+    }
+    submitApplication(true);
+  }
+
+  // ── Shared page chrome ──────────────────────────────────────────────
+  const GridBg = () => (
+    <div
+      className="fixed inset-0 pointer-events-none"
+      style={{
+        backgroundImage:
+          'linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px)',
+        backgroundSize: '64px 64px',
+        zIndex: 0,
+      }}
+    />
+  );
+
+  const Header = ({ withLabel = true }: { withLabel?: boolean }) => (
+    <header className="relative z-10 bg-white border-b-2 border-black flex-shrink-0 h-16 flex items-center px-6 justify-between">
+      <Link href="/">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/BelanLogo.png" alt="Belan" className="w-10 h-10 rounded-full object-cover border-2 border-black" />
+      </Link>
+      {withLabel && (
+        <p className="text-xs font-bold uppercase tracking-widest text-black/50">Marketing Onboarding</p>
+      )}
+    </header>
+  );
+
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-capy-bg flex flex-col font-sans">
-        <header className="bg-white border-b border-capy-border flex-shrink-0 h-16 flex items-center px-6 justify-between">
-          <Link href="/">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/BelanLogo.png" alt="Belan" className="w-10 h-10 rounded-full object-cover" />
-          </Link>
-        </header>
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
-          <div className="w-full max-w-md bg-white rounded-2xl p-10 flex flex-col items-center text-center gap-5 shadow-sm border border-capy-border">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <div className="min-h-screen font-tektur relative overflow-x-hidden" style={{ background: '#fafafa' }}>
+        <GridBg />
+        <Header withLabel={false} />
+        <div className="relative z-10 flex items-center justify-center px-4 py-12 min-h-[calc(100vh-4rem)]">
+          <div className="w-full max-w-md bg-white border-2 border-black shadow-[6px_6px_0px_#000] p-10 flex flex-col items-center text-center gap-5">
+            <div className="w-16 h-16 border-2 border-black flex items-center justify-center" style={{ background: '#2fb67d' }}>
+              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
-              <h1 className="text-capy-text text-2xl font-semibold mb-2">You&apos;re all set!</h1>
-              <p className="text-capy-muted text-sm leading-relaxed">
+              <h1 className="text-black text-3xl font-black mb-2">You&apos;re all set!</h1>
+              <p className="text-black/60 text-sm font-medium leading-relaxed">
                 Thanks for signing up. We&apos;re processing your information and getting your business RCS number set up. This usually takes 1–2 business days. We&apos;ll reach out once you&apos;re ready to go.
               </p>
             </div>
-            <button
-              onClick={() => router.push('/home?tab=marketing')}
-              className="mt-2 h-11 w-full rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors"
-            >
-              Go to Dashboard
-            </button>
+            <PrimaryButton onClick={() => router.push('/home?tab=marketing')} className="mt-2 w-full px-6">
+              Go to Dashboard →
+            </PrimaryButton>
           </div>
         </div>
       </div>
@@ -317,27 +398,28 @@ export default function MarketingOnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-capy-bg flex flex-col font-sans">
-      <header className="bg-white border-b border-capy-border flex-shrink-0 h-16 flex items-center px-6 justify-between">
-        <Link href="/">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/BelanLogo.png" alt="Belan" className="w-10 h-10 rounded-full object-cover" />
-        </Link>
-        <p className="text-xs text-capy-muted">Marketing Onboarding</p>
-      </header>
+    <div className="min-h-screen font-tektur relative overflow-x-hidden" style={{ background: '#fafafa' }}>
+      <GridBg />
+      <Header />
 
-      <div className="flex-1 flex items-start justify-center px-4 py-10">
+      <div className="relative z-10 flex items-start justify-center px-4 py-10">
         <div className="w-full max-w-lg">
           <div className="text-center mb-6">
-            <h1 className="text-capy-text text-2xl font-semibold">Set up your marketing account</h1>
-            <p className="text-capy-muted text-sm mt-1">Get your business RCS number for gamified SMS marketing.</p>
+            <span
+              className="inline-block border-2 border-black px-3 py-1.5 mb-4 text-xs font-bold uppercase tracking-widest"
+              style={{ background: ACCENT, transform: 'rotate(-1deg)' }}
+            >
+              Marketing AI
+            </span>
+            <h1 className="text-black text-3xl font-black leading-tight">Set up your marketing account</h1>
+            <p className="text-black/50 text-sm font-medium mt-2">Get your business RCS number for gamified SMS marketing.</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-8 shadow-sm border border-capy-border">
+          <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] p-6 sm:p-8">
             <StepIndicator step={step} />
 
             {error && (
-              <div className="mb-5 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+              <div className="mb-5 px-4 py-3 border-2 border-black text-black text-sm font-bold" style={{ background: '#fbc8d4' }}>
                 {error}
               </div>
             )}
@@ -375,7 +457,7 @@ export default function MarketingOnboardingPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(s => !s)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-capy-muted hover:text-capy-text"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-black/50 hover:text-black"
                     >
                       {showPassword ? (
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -399,18 +481,12 @@ export default function MarketingOnboardingPage() {
                     onChange={e => setConfirmPassword(e.target.value)}
                   />
                 </div>
-                <button
-                  onClick={handleStep1}
-                  disabled={isLoading}
-                  className="mt-2 h-11 w-full rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isLoading ? (
-                    <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Creating account…</>
-                  ) : 'Create Account & Continue'}
-                </button>
-                <p className="text-center text-xs text-capy-muted">
+                <PrimaryButton onClick={handleStep1} disabled={isLoading} className="mt-2 w-full px-6">
+                  {isLoading ? (<><Spinner />Creating account…</>) : 'Create Account & Continue'}
+                </PrimaryButton>
+                <p className="text-center text-xs font-medium text-black/50">
                   Already have an account?{' '}
-                  <Link href="/login" className="text-capy-brown-accent hover:underline font-medium">Sign in</Link>
+                  <Link href="/login" className="font-bold underline hover:text-black">Sign in</Link>
                 </p>
               </div>
             )}
@@ -425,7 +501,7 @@ export default function MarketingOnboardingPage() {
                     value={orgLegalName}
                     onChange={e => setOrgLegalName(e.target.value)}
                   />
-                  <p className="text-xs text-capy-muted mt-1">The exact legal name on your business registration.</p>
+                  <p className="text-xs font-medium text-black/50 mt-1">The exact legal name on your business registration.</p>
                 </div>
                 <div>
                   <Label>Brand Name</Label>
@@ -460,8 +536,8 @@ export default function MarketingOnboardingPage() {
                   />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <button onClick={() => { setError(''); setStep(1); }} className="h-11 flex-1 rounded-lg border border-capy-border text-capy-text font-semibold text-sm hover:bg-gray-50 transition-colors">Back</button>
-                  <button onClick={handleStep2} className="h-11 flex-1 rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors">Continue</button>
+                  <SecondaryButton onClick={() => { setError(''); setStep(1); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleStep2} className="flex-1">Continue</PrimaryButton>
                 </div>
               </div>
             )}
@@ -491,8 +567,8 @@ export default function MarketingOnboardingPage() {
                   <Input type="tel" placeholder="+1 (555) 000-0000" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <button onClick={() => { setError(''); setStep(2); }} className="h-11 flex-1 rounded-lg border border-capy-border text-capy-text font-semibold text-sm hover:bg-gray-50 transition-colors">Back</button>
-                  <button onClick={handleStep3} className="h-11 flex-1 rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors">Continue</button>
+                  <SecondaryButton onClick={() => { setError(''); setStep(2); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleStep3} className="flex-1">Continue</PrimaryButton>
                 </div>
               </div>
             )}
@@ -525,8 +601,8 @@ export default function MarketingOnboardingPage() {
                   <Input type="text" placeholder="75201" value={zipCode} onChange={e => setZipCode(e.target.value)} className="max-w-[160px]" />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <button onClick={() => { setError(''); setStep(3); }} className="h-11 flex-1 rounded-lg border border-capy-border text-capy-text font-semibold text-sm hover:bg-gray-50 transition-colors">Back</button>
-                  <button onClick={handleStep4} className="h-11 flex-1 rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors">Continue</button>
+                  <SecondaryButton onClick={() => { setError(''); setStep(3); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleStep4} className="flex-1">Continue</PrimaryButton>
                 </div>
               </div>
             )}
@@ -543,7 +619,7 @@ export default function MarketingOnboardingPage() {
                 <div>
                   <Label required>Store Phone Number</Label>
                   <Input type="tel" placeholder="+1 (555) 000-0000" value={storePhone} onChange={e => setStorePhone(e.target.value)} />
-                  <p className="text-xs text-capy-muted mt-1">The phone number customers call to reach your store.</p>
+                  <p className="text-xs font-medium text-black/50 mt-1">The phone number customers call to reach your store.</p>
                 </div>
                 <div>
                   <Label required>Store Email</Label>
@@ -554,26 +630,55 @@ export default function MarketingOnboardingPage() {
                   <Input type="url" placeholder="https://yourrestaurant.com" value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <button onClick={() => { setError(''); setStep(4); }} className="h-11 flex-1 rounded-lg border border-capy-border text-capy-text font-semibold text-sm hover:bg-gray-50 transition-colors">Back</button>
-                  <button
-                    onClick={handleStep5}
-                    disabled={isLoading}
-                    className="h-11 flex-1 rounded-lg bg-capy-brown-accent hover:bg-capy-brown-accent-dark text-white font-semibold text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? (
-                      <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Submitting…</>
-                    ) : 'Submit Application'}
-                  </button>
+                  <SecondaryButton onClick={() => { setError(''); setStep(4); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleStep5} className="flex-1">Continue</PrimaryButton>
                 </div>
+              </div>
+            )}
+
+            {step === 6 && (
+              <div className="flex flex-col gap-4">
+                <div className="border-2 border-black p-4" style={{ background: '#f5dda1' }}>
+                  <p className="text-sm font-bold text-black leading-snug">Connect your Clover POS</p>
+                  <p className="text-xs font-medium text-black/60 mt-1 leading-relaxed">
+                    Optional — connect Clover so prizes and orders sync to your POS automatically. You can skip this and add it later from your dashboard.
+                  </p>
+                </div>
+                <div>
+                  <Label>Clover Merchant ID</Label>
+                  <Input type="text" placeholder="ABC123XYZ456" value={cloverMerchantId} onChange={e => setCloverMerchantId(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Clover API Key</Label>
+                  <Input type="text" placeholder="Your Clover API access token" value={cloverApiKey} onChange={e => setCloverApiKey(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Clover Ecommerce API Key</Label>
+                  <Input type="text" placeholder="Your Clover ecommerce API token" value={cloverEcomApiKey} onChange={e => setCloverEcomApiKey(e.target.value)} />
+                  <p className="text-xs font-medium text-black/50 mt-1">Used to process payments. Find it in your Clover developer dashboard.</p>
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <SecondaryButton onClick={() => { setError(''); setStep(5); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleFinishWithClover} disabled={isLoading} className="flex-1">
+                    {isLoading ? (<><Spinner />Submitting…</>) : 'Finish'}
+                  </PrimaryButton>
+                </div>
+                <button
+                  onClick={() => submitApplication(false)}
+                  disabled={isLoading}
+                  className="text-center text-xs font-bold uppercase tracking-widest text-black/40 hover:text-black transition-colors disabled:opacity-50"
+                >
+                  Skip for now →
+                </button>
               </div>
             )}
           </div>
 
-          <p className="text-center text-xs text-capy-muted mt-6">
+          <p className="text-center text-xs font-medium text-black/40 mt-6">
             By submitting, you agree to Belan&apos;s{' '}
-            <Link href="/terms-of-service" className="hover:underline">Terms of Service</Link>{' '}
+            <Link href="/terms-of-service" className="font-bold underline hover:text-black">Terms of Service</Link>{' '}
             and{' '}
-            <Link href="/privacy-policy" className="hover:underline">Privacy Policy</Link>.
+            <Link href="/privacy-policy" className="font-bold underline hover:text-black">Privacy Policy</Link>.
           </p>
         </div>
       </div>
