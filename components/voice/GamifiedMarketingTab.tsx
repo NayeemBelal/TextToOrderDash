@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
-const API_BASE_URL = "http://0.0.0.0:8000";
+const API_BASE_URL =
+  "https://text-to-order-coffee-34770846162.us-central1.run.app"; // Replace with your actual backend URL
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
