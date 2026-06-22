@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { VoiceRevenueCard } from "@/components/voice/VoiceRevenueCard";
 import { IncomingCallsCard } from "@/components/voice/IncomingCallsCard";
 import { VoiceAnalyticsTab } from "@/components/voice/VoiceAnalyticsTab";
@@ -48,8 +49,11 @@ function SubNav({ activeTab, setActiveTab }: { activeTab: TabKey; setActiveTab: 
   );
 }
 
-export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('manage');
+function HomePageInner() {
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as TabKey | null);
+  const validInitial = SUB_TABS.some(t => t.key === initialTab) ? initialTab! : 'manage';
+  const [activeTab, setActiveTab] = useState<TabKey>(validInitial);
 
   return (
     <div className="h-full flex flex-col">
@@ -84,5 +88,13 @@ export default function HomePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense>
+      <HomePageInner />
+    </Suspense>
   );
 }

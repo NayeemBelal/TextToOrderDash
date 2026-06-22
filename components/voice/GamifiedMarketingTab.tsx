@@ -5,7 +5,8 @@ import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 const API_BASE_URL =
-  "https://text-to-order-coffee-34770846162.us-central1.run.app"; // Replace with your actual backend URL
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  "https://text-to-order-coffee-34770846162.us-central1.run.app";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -241,12 +242,31 @@ export function GamifiedMarketingTab() {
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
 
+  // Opt-in blast management
+  const [optinStatus, setOptinStatus] = useState<{
+    opted_in: number;
+    pending: number;
+    opted_out: number;
+    last_scan_at: string | null;
+  } | null>(null);
+  const [scanResult, setScanResult] = useState<{ new_customers: number } | null>(null);
+  const [scanLoading, setScanLoading] = useState(false);
+  const [blastLoading, setBlastLoading] = useState(false);
+  const [blastToast, setBlastToast] = useState<string | null>(null);
+
   const getDayTime = (day: string) =>
     `${dayHours[day] ?? "12"}:${dayMinutes[day] ?? "00"} ${dayAmPm[day] ?? "PM"}`;
 
   // Fetch opted-in customers and menu items on mount
   useEffect(() => {
-    const id = restaurantId ?? "a9d9fb45-34a7-4c63-b0d9-70add44b6275";
+    // New owners who just finished onboarding have no restaurant_id yet — Belan
+    // staff provisions their restaurant afterward. Until then we must NOT fetch
+    // anything, otherwise this component would surface another restaurant's data.
+    if (!restaurantId) {
+      setRosterLoading(false);
+      return;
+    }
+    const id = restaurantId;
 
     // Opted-in customers
     fetch(
@@ -272,7 +292,62 @@ export function GamifiedMarketingTab() {
       .then((d) => setMenuItems(d.items ?? []))
       .catch(() => setMenuItems([]))
       .finally(() => setMenuItemsLoading(false));
+
+    // Opt-in status
+    fetch(`${API_BASE_URL}/api/marketing/optin-status?restaurant_id=${id}`)
+      .then((r) => r.json())
+      .then((d) => setOptinStatus(d))
+      .catch(() => {});
   }, [restaurantId]);
+
+  const rid = restaurantId;
+
+  const handleScanClover = async () => {
+    if (!rid) return;
+    setScanLoading(true);
+    setScanResult(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/marketing/scan-clover`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurant_id: rid }),
+      });
+      const data = await res.json();
+      setScanResult({ new_customers: data.new_customers ?? 0 });
+    } catch {
+      setScanResult({ new_customers: 0 });
+    } finally {
+      setScanLoading(false);
+    }
+  };
+
+  const handleSendBlast = async () => {
+    if (!rid) return;
+    if (!scanResult || scanResult.new_customers === 0) return;
+    setBlastLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/marketing/send-optin-blast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ restaurant_id: rid }),
+      });
+      const data = await res.json();
+      const queued = data.queued ?? 0;
+      setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
+      setScanResult(null);
+      // Refresh status
+      fetch(`${API_BASE_URL}/api/marketing/optin-status?restaurant_id=${rid}`)
+        .then((r) => r.json())
+        .then((d) => setOptinStatus(d))
+        .catch(() => {});
+      setTimeout(() => setBlastToast(null), 4000);
+    } catch {
+      setBlastToast("Something went wrong. Please try again.");
+      setTimeout(() => setBlastToast(null), 4000);
+    } finally {
+      setBlastLoading(false);
+    }
+  };
 
   // Rebuild games + prizes when selected days change
   useEffect(() => {
@@ -335,6 +410,7 @@ export function GamifiedMarketingTab() {
   };
 
   const handleLaunch = async () => {
+    if (!restaurantId) return;
     const config: CampaignConfig = {
       selectedDays,
       dayTimes: Object.fromEntries(selectedDays.map((d) => [d, getDayTime(d)])),
@@ -350,7 +426,7 @@ export function GamifiedMarketingTab() {
     setPagePhase("active");
 
     // Persist campaign to backend
-    const rid = restaurantId ?? "a9d9fb45-34a7-4c63-b0d9-70add44b6275";
+    const rid = restaurantId;
     fetch(`${API_BASE_URL}/api/marketing/campaigns`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -398,10 +474,111 @@ export function GamifiedMarketingTab() {
 
   // ── Render ──────────────────────────────────────────────────────────────
 
+  /* ── SETTING UP (no restaurant provisioned yet) ─────────────────────────
+     Owners land here right after onboarding, before Belan staff connects
+     their restaurant. They have no restaurant_id, so there is nothing to
+     show — and we must never fall back to another restaurant's data. */
+  if (!restaurantId) {
+    return (
+      <div className="flex-1 min-h-0 flex items-center justify-center p-6">
+        <div className="max-w-md text-center flex flex-col items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-capy-green-light flex items-center justify-center">
+            <svg className="w-7 h-7 text-capy-green-dark animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+          <h2 className="text-capy-text text-xl font-semibold">We&apos;re setting up your page</h2>
+          <p className="text-capy-muted text-sm leading-relaxed">
+            Thanks for completing onboarding! Our team is provisioning your restaurant&apos;s
+            marketing dashboard and RCS number. This usually takes 1–2 business days — we&apos;ll
+            reach out as soon as it&apos;s ready.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */
     return (
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+
+        {/* Opt-In Blast Card (also visible on dashboard) */}
+        <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="card-heading text-sm">Opt-In Your Customer List</p>
+              <p className="text-xs text-capy-muted mt-0.5">
+                Send a compliant opt-in invite to your Clover contacts
+              </p>
+            </div>
+            {optinStatus && (
+              <div className="flex gap-3 text-xs text-right">
+                <div>
+                  <p className="font-semibold text-capy-green-dark">{optinStatus.opted_in}</p>
+                  <p className="text-capy-muted">opted in</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-600">{optinStatus.pending}</p>
+                  <p className="text-capy-muted">pending</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-400">{optinStatus.opted_out}</p>
+                  <p className="text-capy-muted">opted out</p>
+                </div>
+              </div>
+            )}
+          </div>
+          {optinStatus?.last_scan_at && !scanResult && (
+            <p className="text-xs text-capy-muted">
+              Last scan:{" "}
+              {new Date(optinStatus.last_scan_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </p>
+          )}
+          {scanResult !== null && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-capy-green-dark font-semibold">✓</span>
+              {scanResult.new_customers > 0 ? (
+                <span className="text-capy-text">
+                  {scanResult.new_customers} new customer{scanResult.new_customers !== 1 ? "s" : ""} ready to receive opt-in
+                </span>
+              ) : (
+                <span className="text-capy-muted">All Clover customers have already been contacted</span>
+              )}
+            </div>
+          )}
+          {blastToast && (
+            <div className="bg-capy-green-light text-capy-green-dark text-xs font-semibold px-3 py-2 rounded-xl">
+              {blastToast}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={handleScanClover}
+              disabled={scanLoading || blastLoading}
+              className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              {scanLoading ? "Scanning…" : "Scan Clover"}
+            </button>
+            {scanResult && scanResult.new_customers > 0 && (
+              <button
+                onClick={handleSendBlast}
+                disabled={blastLoading}
+                className="flex-1 py-2 px-3 rounded-xl bg-capy-green text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                {blastLoading
+                  ? "Sending…"
+                  : `Send 10% Off Opt-In to ${scanResult.new_customers} Customer${scanResult.new_customers !== 1 ? "s" : ""}`}
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -672,6 +849,86 @@ export function GamifiedMarketingTab() {
   /* ── SETUP WIZARD ───────────────────────────────────────────────────── */
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+
+      {/* ── Opt-In Blast Card ── */}
+      <div className="flex-shrink-0 mx-4 mt-4 bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="card-heading text-sm">Opt-In Your Customer List</p>
+            <p className="text-xs text-capy-muted mt-0.5">
+              Send a compliant opt-in invite to your Clover contacts
+            </p>
+          </div>
+          {optinStatus && (
+            <div className="flex gap-3 text-xs text-right">
+              <div>
+                <p className="font-semibold text-capy-green-dark">{optinStatus.opted_in}</p>
+                <p className="text-capy-muted">opted in</p>
+              </div>
+              <div>
+                <p className="font-semibold text-amber-600">{optinStatus.pending}</p>
+                <p className="text-capy-muted">pending</p>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-400">{optinStatus.opted_out}</p>
+                <p className="text-capy-muted">opted out</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {optinStatus?.last_scan_at && !scanResult && (
+          <p className="text-xs text-capy-muted">
+            Last scan:{" "}
+            {new Date(optinStatus.last_scan_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        )}
+
+        {scanResult !== null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-capy-green-dark font-semibold">✓</span>
+            {scanResult.new_customers > 0 ? (
+              <span className="text-capy-text">
+                {scanResult.new_customers} new customer{scanResult.new_customers !== 1 ? "s" : ""} ready to receive opt-in
+              </span>
+            ) : (
+              <span className="text-capy-muted">All Clover customers have already been contacted</span>
+            )}
+          </div>
+        )}
+
+        {blastToast && (
+          <div className="bg-capy-green-light text-capy-green-dark text-xs font-semibold px-3 py-2 rounded-xl">
+            {blastToast}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={handleScanClover}
+            disabled={scanLoading || blastLoading}
+            className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+          >
+            {scanLoading ? "Scanning…" : "Scan Clover"}
+          </button>
+          {scanResult && scanResult.new_customers > 0 && (
+            <button
+              onClick={handleSendBlast}
+              disabled={blastLoading}
+              className="flex-1 py-2 px-3 rounded-xl bg-capy-green text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {blastLoading
+                ? "Sending…"
+                : `Send 10% Off Opt-In to ${scanResult.new_customers} Customer${scanResult.new_customers !== 1 ? "s" : ""}`}
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Wizard header */}
       <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-capy-border">
         <div className="flex items-center justify-between mb-3">
