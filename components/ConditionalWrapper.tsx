@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ConditionalNav } from '@/components/voice/ConditionalNav';
 import { useAuth } from '@/lib/auth-context';
 
-const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/about', '/privacy-policy', '/terms-of-service', '/how-it-works', '/integrations', '/forgot-password', '/reset-password', '/prize'];
+const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/about', '/privacy-policy', '/terms-of-service', '/how-it-works', '/integrations', '/forgot-password', '/reset-password', '/prize', '/marketing/onboarding'];
 // Auth required but rendered without the app nav shell
 const NO_NAV_ROUTES = ['/onboarding'];
 
@@ -23,8 +23,9 @@ export function ConditionalWrapper({ children }: { children: React.ReactNode }) 
       router.replace('/login');
       return;
     }
-    // Send users with no restaurant to onboarding (unless already there)
-    if (!isNoNav && restaurantId === null) {
+    // Marketing-only users (no Clover POS) can access /home directly
+    const isMarketingUser = user?.user_metadata?.marketing_onboarding_complete === true;
+    if (!isNoNav && restaurantId === null && !isMarketingUser) {
       router.replace('/onboarding');
     }
   }, [isLoading, isFullPage, isNoNav, user, restaurantId, router]);
@@ -49,7 +50,8 @@ export function ConditionalWrapper({ children }: { children: React.ReactNode }) 
     return <>{children}</>;
   }
 
-  if (restaurantId === null) {
+  const isMarketingUser = user?.user_metadata?.marketing_onboarding_complete === true;
+  if (restaurantId === null && !isMarketingUser) {
     return null; // will redirect via useEffect
   }
 
