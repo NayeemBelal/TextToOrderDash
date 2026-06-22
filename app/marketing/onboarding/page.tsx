@@ -14,6 +14,24 @@ const STEP_LABELS = ['Account', 'Business', 'Contact', 'Verify', 'Brand', 'Clove
 
 const ACCENT = '#c4b5fd'; // Marketing AI purple — matches landing page
 
+// Upload an onboarding file directly to Supabase Storage (private bucket) and
+// return its object path. Done browser-side so large files never pass through
+// the Netlify function (which caps request bodies at ~6MB). Returns null when
+// there is no file. The signed-in onboarding user's RLS policy allows the insert.
+async function uploadOnboardingFile(file: File | null, kind: 'verification' | 'logo'): Promise<string | null> {
+  if (!file) return null;
+  const ext = file.name.includes('.') ? file.name.split('.').pop() : 'bin';
+  const path = `${crypto.randomUUID()}-${kind}.${ext}`;
+  const { error } = await supabase.storage
+    .from('onboarding-uploads')
+    .upload(path, file, { contentType: file.type || undefined, upsert: false });
+  if (error) {
+    const label = kind === 'logo' ? 'logo' : 'verification document';
+    throw new Error(`Could not upload your ${label}: ${error.message}`);
+  }
+  return path;
+}
+
 function StepIndicator({ step }: { step: Step }) {
   if (step === 'success') return null;
   const current = step as number;
@@ -291,34 +309,47 @@ export default function MarketingOnboardingPage() {
     setError('');
     setIsLoading(true);
     try {
-      const fd = new FormData();
-      fd.append('accountEmail', accountEmail);
-      fd.append('brandName', brandName);
-      fd.append('orgLegalName', orgLegalName);
-      fd.append('legalForm', legalForm);
-      fd.append('legalEntityType', legalEntityType);
-      fd.append('taxId', taxId);
-      fd.append('contactFirstName', contactFirstName);
-      fd.append('contactLastName', contactLastName);
-      fd.append('contactTitle', contactTitle);
-      fd.append('contactEmail', contactEmail);
-      fd.append('contactPhone', contactPhone);
-      fd.append('registeredAddress', registeredAddress);
-      fd.append('city', city);
-      fd.append('state', stateField);
-      fd.append('zipCode', zipCode);
-      fd.append('storePhone', storePhone);
-      fd.append('storeEmail', storeEmail);
-      fd.append('websiteUrl', websiteUrl);
-      if (includeClover) {
-        fd.append('cloverMerchantId', cloverMerchantId);
-        fd.append('cloverApiKey', cloverApiKey);
-        fd.append('cloverEcomApiKey', cloverEcomApiKey);
-      }
-      if (verificationDoc) fd.append('verificationDoc', verificationDoc);
-      if (logo) fd.append('logo', logo);
+      // Upload files straight to Supabase Storage from the browser. This bypasses
+      // the Netlify function entirely (its ~6MB request limit was 500ing real
+      // submissions). Only the resulting object paths are sent to the API route.
+      const [verificationDocPath, logoPath] = await Promise.all([
+        uploadOnboardingFile(verificationDoc, 'verification'),
+        uploadOnboardingFile(logo, 'logo'),
+      ]);
 
-      const res = await fetch('/api/marketing-onboarding', { method: 'POST', body: fd });
+      const payload = {
+        accountEmail,
+        brandName,
+        orgLegalName,
+        legalForm,
+        legalEntityType,
+        taxId,
+        contactFirstName,
+        contactLastName,
+        contactTitle,
+        contactEmail,
+        contactPhone,
+        registeredAddress,
+        city,
+        state: stateField,
+        zipCode,
+        storePhone,
+        storeEmail,
+        websiteUrl,
+        verificationDocPath,
+        verificationDocName: verificationDoc?.name ?? null,
+        logoPath,
+        logoName: logo?.name ?? null,
+        ...(includeClover
+          ? { cloverMerchantId, cloverApiKey, cloverEcomApiKey }
+          : {}),
+      };
+
+      const res = await fetch('/api/marketing-onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || 'Submission failed. Please try again.');

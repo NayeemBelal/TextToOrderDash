@@ -1,48 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js';
+
+const UPLOAD_BUCKET = 'onboarding-uploads';
+const SIGNED_URL_TTL = 60 * 60 * 24 * 30; // 30 days
 
 export async function POST(req: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
-    const formData = await req.formData();
+    // Files were uploaded browser-side to Supabase Storage; the client now sends
+    // a small JSON body with their object paths (never the file bytes — that was
+    // exceeding the Netlify function's ~6MB request limit and returning a 500).
+    const body = await req.json();
 
-    const brandName = formData.get('brandName') as string;
-    const orgLegalName = formData.get('orgLegalName') as string;
-    const legalForm = formData.get('legalForm') as string;
-    const legalEntityType = formData.get('legalEntityType') as string;
-    const taxId = formData.get('taxId') as string;
-    const contactFirstName = formData.get('contactFirstName') as string;
-    const contactLastName = formData.get('contactLastName') as string;
-    const contactTitle = formData.get('contactTitle') as string;
-    const contactEmail = formData.get('contactEmail') as string;
-    const contactPhone = formData.get('contactPhone') as string;
-    const registeredAddress = formData.get('registeredAddress') as string;
-    const city = formData.get('city') as string;
-    const state = formData.get('state') as string;
-    const zipCode = formData.get('zipCode') as string;
-    const storePhone = formData.get('storePhone') as string;
-    const storeEmail = formData.get('storeEmail') as string;
-    const websiteUrl = formData.get('websiteUrl') as string;
-    const accountEmail = formData.get('accountEmail') as string;
-    const cloverMerchantId = formData.get('cloverMerchantId') as string | null;
-    const cloverApiKey = formData.get('cloverApiKey') as string | null;
-    const cloverEcomApiKey = formData.get('cloverEcomApiKey') as string | null;
+    const {
+      brandName,
+      orgLegalName,
+      legalForm,
+      legalEntityType,
+      taxId,
+      contactFirstName,
+      contactLastName,
+      contactTitle,
+      contactEmail,
+      contactPhone,
+      registeredAddress,
+      city,
+      state,
+      zipCode,
+      storePhone,
+      storeEmail,
+      websiteUrl,
+      accountEmail,
+      cloverMerchantId,
+      cloverApiKey,
+      cloverEcomApiKey,
+      verificationDocPath,
+      verificationDocName,
+      logoPath,
+      logoName,
+    } = body;
+
     const hasClover = !!(cloverMerchantId || cloverApiKey || cloverEcomApiKey);
 
-    const verificationDoc = formData.get('verificationDoc') as File | null;
-    const logo = formData.get('logo') as File | null;
+    // Mint time-limited signed URLs for the uploaded files using the service role
+    // (the bucket is private, so these links let the ops team view/download them).
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
 
-    const attachments: { filename: string; content: Buffer }[] = [];
-
-    if (verificationDoc && verificationDoc.size > 0) {
-      const buffer = Buffer.from(await verificationDoc.arrayBuffer());
-      attachments.push({ filename: verificationDoc.name || 'verification_document', content: buffer });
+    async function signedUrlFor(path: string | null | undefined): Promise<string | null> {
+      if (!path) return null;
+      const { data, error } = await supabaseAdmin.storage
+        .from(UPLOAD_BUCKET)
+        .createSignedUrl(path, SIGNED_URL_TTL);
+      if (error) {
+        console.error(`Signed URL error for ${path}:`, error.message);
+        return null;
+      }
+      return data?.signedUrl ?? null;
     }
 
-    if (logo && logo.size > 0) {
-      const buffer = Buffer.from(await logo.arrayBuffer());
-      attachments.push({ filename: logo.name || 'logo', content: buffer });
-    }
+    const [verificationDocUrl, logoUrl] = await Promise.all([
+      signedUrlFor(verificationDocPath),
+      signedUrlFor(logoPath),
+    ]);
+
+    const fileCell = (name: string | null | undefined, url: string | null) =>
+      url
+        ? `<a href="${url}">${name || 'Download'}</a> <span style="color:#94a3b8">(link valid 30 days)</span>`
+        : 'Not provided';
 
     const html = `
 <!DOCTYPE html>
@@ -131,10 +160,10 @@ export async function POST(req: NextRequest) {
       </div>
 
       <div class="section">
-        <div class="section-title">Attachments</div>
+        <div class="section-title">Uploaded Files</div>
         <table>
-          <tr><td>Verification Document</td><td>${verificationDoc && verificationDoc.size > 0 ? verificationDoc.name : 'Not provided'}</td></tr>
-          <tr><td>Logo</td><td>${logo && logo.size > 0 ? logo.name : 'Not provided'}</td></tr>
+          <tr><td>Verification Document</td><td>${fileCell(verificationDocName, verificationDocUrl)}</td></tr>
+          <tr><td>Logo</td><td>${fileCell(logoName, logoUrl)}</td></tr>
         </table>
       </div>
 
@@ -149,7 +178,6 @@ export async function POST(req: NextRequest) {
       to: 'belal.nayeem1@gmail.com',
       subject: `New Marketing Onboarding — ${brandName}`,
       html,
-      attachments,
     });
 
     if (sendError) {
