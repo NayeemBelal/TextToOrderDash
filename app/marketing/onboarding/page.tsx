@@ -1,17 +1,32 @@
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 'success';
+// Merged onboarding:
+//   account → link (pick unclaimed restaurant + setup code) → branch
+//     → [skip to dashboard]  OR  [set up marketing number → RCS steps → success]
+type Step =
+  | 'account'
+  | 'link'
+  | 'branch'
+  | 'business'
+  | 'contact'
+  | 'verify'
+  | 'brand'
+  | 'clover'
+  | 'success';
+
+// The optional RCS (marketing number) portion — shown after the restaurant is linked.
+const RCS_STEPS: Step[] = ['business', 'contact', 'verify', 'brand', 'clover'];
+const RCS_LABELS = ['Business', 'Contact', 'Verify', 'Brand', 'Clover'];
 
 const LEGAL_FORMS = ['Public', 'Private', 'Government', 'Non-profit', 'Sole Proprietor'];
 const LEGAL_ENTITY_TYPES = ['LLC', 'Sole Proprietorship', 'Partnership', 'Corporation', 'S Corporation'];
 
-const STEP_LABELS = ['Account', 'Business', 'Contact', 'Verify', 'Brand', 'Clover'];
-
+const SESSION_KEY = 'sb_session_active';
 const ACCENT = '#c4b5fd'; // Marketing AI purple — matches landing page
 
 // Upload an onboarding file directly to Supabase Storage (private bucket) and
@@ -32,17 +47,15 @@ async function uploadOnboardingFile(file: File | null, kind: 'verification' | 'l
   return path;
 }
 
-function StepIndicator({ step }: { step: Step }) {
-  if (step === 'success') return null;
-  const current = step as number;
+function StepIndicator({ currentIndex }: { currentIndex: number }) {
+  if (currentIndex < 0) return null;
   return (
     <div className="flex items-center justify-center gap-1 sm:gap-1.5 mb-8">
-      {STEP_LABELS.map((label, i) => {
-        const n = i + 1;
-        const done = n < current;
-        const active = n === current;
+      {RCS_LABELS.map((label, i) => {
+        const done = i < currentIndex;
+        const active = i === currentIndex;
         return (
-          <div key={n} className="flex items-center gap-1 sm:gap-1.5">
+          <div key={label} className="flex items-center gap-1 sm:gap-1.5">
             <div className="flex flex-col items-center gap-1.5">
               <div
                 className="w-7 h-7 sm:w-8 sm:h-8 border-2 border-black flex items-center justify-center text-xs font-black"
@@ -56,7 +69,7 @@ function StepIndicator({ step }: { step: Step }) {
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                ) : n}
+                ) : i + 1}
               </div>
               <span
                 className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest"
@@ -65,7 +78,7 @@ function StepIndicator({ step }: { step: Step }) {
                 {label}
               </span>
             </div>
-            {i < STEP_LABELS.length - 1 && (
+            {i < RCS_LABELS.length - 1 && (
               <div className="w-3 sm:w-5 h-0.5 mb-4 bg-black" style={{ opacity: done ? 1 : 0.2 }} />
             )}
           </div>
@@ -190,53 +203,86 @@ function FileUploadBox({
   );
 }
 
+type ClaimableRestaurant = { id: string; name: string };
+
 export default function MarketingOnboardingPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>('account');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Step 1
+  // Account step
   const [accountEmail, setAccountEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Step 2
+  // Link step
+  const [restaurants, setRestaurants] = useState<ClaimableRestaurant[]>([]);
+  const [restaurantsLoading, setRestaurantsLoading] = useState(false);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState('');
+  const [setupCode, setSetupCode] = useState('');
+  const [linkedRestaurantName, setLinkedRestaurantName] = useState('');
+
+  // Business step
   const [brandName, setBrandName] = useState('');
   const [orgLegalName, setOrgLegalName] = useState('');
   const [legalForm, setLegalForm] = useState('');
   const [legalEntityType, setLegalEntityType] = useState('');
   const [taxId, setTaxId] = useState('');
 
-  // Step 3
+  // Contact step
   const [contactFirstName, setContactFirstName] = useState('');
   const [contactLastName, setContactLastName] = useState('');
   const [contactTitle, setContactTitle] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
 
-  // Step 4
+  // Verify step
   const [verificationDoc, setVerificationDoc] = useState<File | null>(null);
   const [registeredAddress, setRegisteredAddress] = useState('');
   const [city, setCity] = useState('');
   const [stateField, setStateField] = useState('');
   const [zipCode, setZipCode] = useState('');
 
-  // Step 5
+  // Brand step
   const [logo, setLogo] = useState<File | null>(null);
   const [storePhone, setStorePhone] = useState('');
   const [storeEmail, setStoreEmail] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
 
-  // Step 6 — Clover (optional)
+  // Clover step (optional)
   const [cloverMerchantId, setCloverMerchantId] = useState('');
   const [cloverApiKey, setCloverApiKey] = useState('');
   const [cloverEcomApiKey, setCloverEcomApiKey] = useState('');
 
-  async function handleStep1() {
+  // Load the list of claimable restaurants when the owner reaches the link step.
+  useEffect(() => {
+    if (step !== 'link' || restaurants.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      setRestaurantsLoading(true);
+      setError('');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Your session expired. Please start again.');
+        const res = await fetch('/api/marketing-onboarding/claimable-restaurants', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || 'Could not load restaurants.');
+        if (!cancelled) setRestaurants(body.restaurants ?? []);
+      } catch (err: unknown) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Could not load restaurants.');
+      } finally {
+        if (!cancelled) setRestaurantsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [step, restaurants.length]);
+
+  async function handleAccount() {
     setError('');
-    if (!brandName.trim()) return setError('Restaurant name is required.');
     if (!accountEmail.trim()) return setError('Email is required.');
     if (password.length < 8) return setError('Password must be at least 8 characters.');
     if (password !== confirmPassword) return setError('Passwords do not match.');
@@ -247,20 +293,24 @@ export default function MarketingOnboardingPage() {
       const res = await fetch('/api/marketing-onboarding/create-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accountEmail, password, brandName }),
+        body: JSON.stringify({ email: accountEmail, password }),
       });
 
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Account creation failed.');
 
-      // Sign in immediately since the account is pre-confirmed
+      // Sign in immediately since the account is pre-confirmed.
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: accountEmail,
         password,
       });
       if (signInError) throw signInError;
 
-      setStep(2);
+      // Mark the session active so a page reload doesn't sign the owner out
+      // (auth-context requires this flag; mirrors the login page).
+      sessionStorage.setItem(SESSION_KEY, '1');
+
+      setStep('link');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -268,40 +318,76 @@ export default function MarketingOnboardingPage() {
     }
   }
 
-  function handleStep2() {
+  async function handleLink() {
+    setError('');
+    if (!selectedRestaurantId) return setError('Please select your restaurant.');
+    if (!setupCode.trim()) return setError('Please enter your setup code.');
+
+    setIsLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your session expired. Please start again.');
+
+      const res = await fetch('/api/marketing-onboarding/link-restaurant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ restaurantId: selectedRestaurantId, setupCode: setupCode.trim() }),
+      });
+
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Could not link your restaurant.');
+
+      // Refresh the session so the new user_metadata.restaurant_id is in the token
+      // — the whole dashboard keys off it.
+      await supabase.auth.refreshSession();
+
+      setLinkedRestaurantName(body.restaurantName);
+      setBrandName(body.restaurantName); // prefill the (optional) RCS business step
+      setStep('branch');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleBusiness() {
     setError('');
     if (!orgLegalName.trim()) return setError('Organization legal name is required.');
     if (!legalForm) return setError('Please select a legal form.');
     if (!legalEntityType) return setError('Please select a legal entity type.');
     if (!taxId.trim()) return setError('Tax ID / EIN is required.');
-    setStep(3);
+    setStep('contact');
   }
 
-  function handleStep3() {
+  function handleContact() {
     setError('');
     if (!contactFirstName.trim()) return setError('First name is required.');
     if (!contactLastName.trim()) return setError('Last name is required.');
     if (!contactTitle.trim()) return setError('Title is required.');
     if (!contactEmail.trim()) return setError('Business email is required.');
     if (!contactPhone.trim()) return setError('Phone number is required.');
-    setStep(4);
+    setStep('verify');
   }
 
-  function handleStep4() {
+  function handleVerify() {
     setError('');
     if (!verificationDoc) return setError('Please upload a business verification document.');
     if (!registeredAddress.trim()) return setError('Registered address is required.');
     if (!city.trim()) return setError('City is required.');
     if (!stateField.trim()) return setError('State is required.');
     if (!zipCode.trim()) return setError('ZIP code is required.');
-    setStep(5);
+    setStep('brand');
   }
 
-  function handleStep5() {
+  function handleBrand() {
     setError('');
     if (!storePhone.trim()) return setError('Store phone number is required.');
     if (!storeEmail.trim()) return setError('Store email is required.');
-    setStep(6);
+    setStep('clover');
   }
 
   // Final submission — `includeClover` is false when the owner skips the Clover step.
@@ -428,6 +514,19 @@ export default function MarketingOnboardingPage() {
     );
   }
 
+  const titleForStep = () => {
+    if (step === 'account') return 'Create your account';
+    if (step === 'link') return 'Link your restaurant';
+    if (step === 'branch') return 'Restaurant linked';
+    return 'Set up your marketing number';
+  };
+  const subtitleForStep = () => {
+    if (step === 'account') return 'One login for your whole Belan dashboard.';
+    if (step === 'link') return 'Select your restaurant and enter the setup code from Belan.';
+    if (step === 'branch') return 'You can start using your dashboard now.';
+    return 'Get your business RCS number for gamified SMS marketing.';
+  };
+
   return (
     <div className="min-h-screen font-tektur relative overflow-x-hidden" style={{ background: '#fafafa' }}>
       <GridBg />
@@ -442,12 +541,12 @@ export default function MarketingOnboardingPage() {
             >
               Marketing AI
             </span>
-            <h1 className="text-black text-3xl font-black leading-tight">Set up your marketing account</h1>
-            <p className="text-black/50 text-sm font-medium mt-2">Get your business RCS number for gamified SMS marketing.</p>
+            <h1 className="text-black text-3xl font-black leading-tight">{titleForStep()}</h1>
+            <p className="text-black/50 text-sm font-medium mt-2">{subtitleForStep()}</p>
           </div>
 
           <div className="bg-white border-2 border-black shadow-[6px_6px_0px_#000] p-6 sm:p-8">
-            <StepIndicator step={step} />
+            <StepIndicator currentIndex={RCS_STEPS.indexOf(step)} />
 
             {error && (
               <div className="mb-5 px-4 py-3 border-2 border-black text-black text-sm font-bold" style={{ background: '#fbc8d4' }}>
@@ -455,17 +554,8 @@ export default function MarketingOnboardingPage() {
               </div>
             )}
 
-            {step === 1 && (
+            {step === 'account' && (
               <div className="flex flex-col gap-4">
-                <div>
-                  <Label required>Restaurant / Brand Name</Label>
-                  <Input
-                    type="text"
-                    placeholder="Lime N Dime"
-                    value={brandName}
-                    onChange={e => setBrandName(e.target.value)}
-                  />
-                </div>
                 <div>
                   <Label required>Email Address</Label>
                   <Input
@@ -512,7 +602,7 @@ export default function MarketingOnboardingPage() {
                     onChange={e => setConfirmPassword(e.target.value)}
                   />
                 </div>
-                <PrimaryButton onClick={handleStep1} disabled={isLoading} className="mt-2 w-full px-6">
+                <PrimaryButton onClick={handleAccount} disabled={isLoading} className="mt-2 w-full px-6">
                   {isLoading ? (<><Spinner />Creating account…</>) : 'Create Account & Continue'}
                 </PrimaryButton>
                 <p className="text-center text-xs font-medium text-black/50">
@@ -522,7 +612,98 @@ export default function MarketingOnboardingPage() {
               </div>
             )}
 
-            {step === 2 && (
+            {step === 'link' && (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <Label required>Your Restaurant</Label>
+                  {restaurantsLoading ? (
+                    <div className="flex items-center gap-2 py-4 text-black/50 text-sm font-bold">
+                      <Spinner />Loading restaurants…
+                    </div>
+                  ) : restaurants.length === 0 ? (
+                    <div className="border-2 border-black p-4 text-sm font-medium text-black/70" style={{ background: '#f5dda1' }}>
+                      No restaurants are available to link yet. Please contact Belan to get your restaurant set up.
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                      {restaurants.map(r => {
+                        const selected = selectedRestaurantId === r.id;
+                        return (
+                          <button
+                            type="button"
+                            key={r.id}
+                            onClick={() => setSelectedRestaurantId(r.id)}
+                            className="text-left px-4 py-3 border-2 flex items-center gap-3 transition-all"
+                            style={{
+                              borderColor: selected ? '#000' : 'rgba(0,0,0,0.15)',
+                              background: selected ? ACCENT : '#fff',
+                              boxShadow: selected ? '3px 3px 0px #000' : 'none',
+                            }}
+                          >
+                            <span
+                              className="w-4 h-4 rounded-full border-2 border-black flex-shrink-0 flex items-center justify-center"
+                              style={{ background: selected ? '#000' : '#fff' }}
+                            >
+                              {selected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </span>
+                            <span className="font-bold text-sm text-black">{r.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label required>Setup Code</Label>
+                  <Input
+                    type="text"
+                    placeholder="e.g. MEDINA-8843"
+                    value={setupCode}
+                    onChange={e => setSetupCode(e.target.value)}
+                    autoCapitalize="characters"
+                  />
+                  <p className="text-xs font-medium text-black/50 mt-1">The code Belan gave you for your restaurant.</p>
+                </div>
+                <PrimaryButton
+                  onClick={handleLink}
+                  disabled={isLoading || restaurantsLoading || restaurants.length === 0}
+                  className="mt-2 w-full px-6"
+                >
+                  {isLoading ? (<><Spinner />Linking…</>) : 'Link Restaurant'}
+                </PrimaryButton>
+              </div>
+            )}
+
+            {step === 'branch' && (
+              <div className="flex flex-col gap-5">
+                <div className="border-2 border-black p-4 flex items-center gap-3" style={{ background: '#a1dfc5' }}>
+                  <div className="w-10 h-10 border-2 border-black flex items-center justify-center flex-shrink-0" style={{ background: '#2fb67d' }}>
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-black leading-tight">Linked to {linkedRestaurantName}</p>
+                    <p className="text-xs font-medium text-black/60 mt-0.5">Your dashboard is ready to use.</p>
+                  </div>
+                </div>
+                <div className="border-2 border-black p-4" style={{ background: '#f5dda1' }}>
+                  <p className="text-sm font-bold text-black leading-snug">Want gamified SMS marketing?</p>
+                  <p className="text-xs font-medium text-black/60 mt-1 leading-relaxed">
+                    To send marketing texts we need to register a business RCS number for you. It takes a few
+                    minutes now and 1–2 business days to activate. You can also do this later from your dashboard.
+                  </p>
+                </div>
+                <PrimaryButton onClick={() => { setError(''); setStep('business'); }} className="w-full px-6">
+                  Set up marketing number →
+                </PrimaryButton>
+                <SecondaryButton onClick={() => router.push('/home')} className="w-full px-6">
+                  Skip to dashboard →
+                </SecondaryButton>
+              </div>
+            )}
+
+            {step === 'business' && (
               <div className="flex flex-col gap-4">
                 <div>
                   <Label required>Organization Legal Name</Label>
@@ -567,13 +748,13 @@ export default function MarketingOnboardingPage() {
                   />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <SecondaryButton onClick={() => { setError(''); setStep(1); }} className="flex-1">Back</SecondaryButton>
-                  <PrimaryButton onClick={handleStep2} className="flex-1">Continue</PrimaryButton>
+                  <SecondaryButton onClick={() => { setError(''); setStep('branch'); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleBusiness} className="flex-1">Continue</PrimaryButton>
                 </div>
               </div>
             )}
 
-            {step === 3 && (
+            {step === 'contact' && (
               <div className="flex flex-col gap-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -598,13 +779,13 @@ export default function MarketingOnboardingPage() {
                   <Input type="tel" placeholder="+1 (555) 000-0000" value={contactPhone} onChange={e => setContactPhone(e.target.value)} />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <SecondaryButton onClick={() => { setError(''); setStep(2); }} className="flex-1">Back</SecondaryButton>
-                  <PrimaryButton onClick={handleStep3} className="flex-1">Continue</PrimaryButton>
+                  <SecondaryButton onClick={() => { setError(''); setStep('business'); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleContact} className="flex-1">Continue</PrimaryButton>
                 </div>
               </div>
             )}
 
-            {step === 4 && (
+            {step === 'verify' && (
               <div className="flex flex-col gap-4">
                 <FileUploadBox
                   label="Business Verification Document *"
@@ -632,13 +813,13 @@ export default function MarketingOnboardingPage() {
                   <Input type="text" placeholder="75201" value={zipCode} onChange={e => setZipCode(e.target.value)} className="max-w-[160px]" />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <SecondaryButton onClick={() => { setError(''); setStep(3); }} className="flex-1">Back</SecondaryButton>
-                  <PrimaryButton onClick={handleStep4} className="flex-1">Continue</PrimaryButton>
+                  <SecondaryButton onClick={() => { setError(''); setStep('contact'); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleVerify} className="flex-1">Continue</PrimaryButton>
                 </div>
               </div>
             )}
 
-            {step === 5 && (
+            {step === 'brand' && (
               <div className="flex flex-col gap-4">
                 <FileUploadBox
                   label="Business Logo"
@@ -661,13 +842,13 @@ export default function MarketingOnboardingPage() {
                   <Input type="url" placeholder="https://yourrestaurant.com" value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} />
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <SecondaryButton onClick={() => { setError(''); setStep(4); }} className="flex-1">Back</SecondaryButton>
-                  <PrimaryButton onClick={handleStep5} className="flex-1">Continue</PrimaryButton>
+                  <SecondaryButton onClick={() => { setError(''); setStep('verify'); }} className="flex-1">Back</SecondaryButton>
+                  <PrimaryButton onClick={handleBrand} className="flex-1">Continue</PrimaryButton>
                 </div>
               </div>
             )}
 
-            {step === 6 && (
+            {step === 'clover' && (
               <div className="flex flex-col gap-4">
                 <div className="border-2 border-black p-4" style={{ background: '#f5dda1' }}>
                   <p className="text-sm font-bold text-black leading-snug">Connect your Clover POS</p>
@@ -689,7 +870,7 @@ export default function MarketingOnboardingPage() {
                   <p className="text-xs font-medium text-black/50 mt-1">Used to process payments. Find it in your Clover developer dashboard.</p>
                 </div>
                 <div className="flex gap-3 mt-2">
-                  <SecondaryButton onClick={() => { setError(''); setStep(5); }} className="flex-1">Back</SecondaryButton>
+                  <SecondaryButton onClick={() => { setError(''); setStep('brand'); }} className="flex-1">Back</SecondaryButton>
                   <PrimaryButton onClick={handleFinishWithClover} disabled={isLoading} className="flex-1">
                     {isLoading ? (<><Spinner />Submitting…</>) : 'Finish'}
                   </PrimaryButton>
