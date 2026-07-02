@@ -1,12 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "https://text-to-order-coffee-34770846162.us-central1.run.app";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

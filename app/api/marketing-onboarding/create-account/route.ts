@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const { email, password, brandName } = await req.json();
 
-    if (!email || !password || !brandName) {
+    if (!email || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       password,
       email_confirm: true,
       user_metadata: {
-        restaurant_name: brandName,
+        restaurant_name: brandName ?? null,
         restaurant_id: null,
         marketing_onboarding_complete: false,
       },
