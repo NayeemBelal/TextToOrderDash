@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { API_BASE_URL } from "@/lib/api";
+import { MARKETING_API_BASE_URL } from "@/lib/api";
 
 /* ── games (mirror the real product's GAME_DEFINITIONS) ── */
 type GameType = "pick-number" | "trivia" | "guess-letter" | "roll-dice";
@@ -72,7 +72,7 @@ export default function MarketingDemo() {
       if (pollCount.current > 60) { if (pollRef.current) clearInterval(pollRef.current); return; }
       try {
         const r = await fetch(
-          `${API_BASE_URL}/api/marketing/demo/status?phone_number=${encodeURIComponent(phoneNumber)}`,
+          `${MARKETING_API_BASE_URL}/api/marketing/demo/status?phone_number=${encodeURIComponent(phoneNumber)}`,
         );
         const d: DemoStatus = await r.json();
         setStatus(d);
@@ -92,7 +92,7 @@ export default function MarketingDemo() {
     setError("");
     setStatus(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/marketing/demo/send-game`, {
+      const res = await fetch(`${MARKETING_API_BASE_URL}/api/marketing/demo/send-game`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
