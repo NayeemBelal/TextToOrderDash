@@ -775,7 +775,7 @@ export default function MarketingOnboardingPage() {
                 <PrimaryButton onClick={() => { setError(''); setStep('business'); }} className="w-full px-6">
                   Set up marketing number →
                 </PrimaryButton>
-                <SecondaryButton onClick={() => router.push('/home')} className="w-full px-6">
+                <SecondaryButton onClick={() => setStep('payment')} className="w-full px-6">
                   Skip to dashboard →
                 </SecondaryButton>
               </div>
