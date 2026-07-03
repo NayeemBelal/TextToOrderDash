@@ -1,5 +1,4 @@
-import { fdatasyncSync, fstat } from "fs";
-import { setDefaultCACertificates } from "tls";
+import { supabase } from '@/lib/supabase';
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -13,15 +12,39 @@ export const MARKETING_API_BASE_URL =
   process.env.NEXT_PUBLIC_MARKETING_BACKEND_URL ||
   'https://belan-marketing-backend-34770846162.us-central1.run.app';
 
-// Standalone marketing campaign dashboard (belan-marketing-frontend on Netlify).
-export const MARKETING_DASHBOARD_URL =
-  process.env.NEXT_PUBLIC_MARKETING_DASHBOARD_URL ||
-  'https://marketing.belan.tech/dashboard';
-
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+  });
+  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+  return res.json() as Promise<T>;
+}
+
+/**
+ * Fetch helper for the decoupled marketing backend.
+ *
+ * Attaches `Authorization: Bearer <supabase access_token>` to every request —
+ * all dashboard-scoped marketing endpoints require a Supabase JWT whose
+ * `user_metadata.restaurant_id` must match the requested restaurant.
+ * Throws on any non-OK response.
+ */
+export async function marketingApiFetch<T = unknown>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const res = await fetch(`${MARKETING_API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
   });
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
   return res.json() as Promise<T>;

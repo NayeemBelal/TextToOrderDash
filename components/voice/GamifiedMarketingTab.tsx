@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch, API_BASE_URL } from "@/lib/api";
+import { marketingApiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import {
+  GAME_DEFINITIONS,
+  DEFAULT_GAME_ORDER,
+  type GameType,
+} from "@/components/voice/games";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type GameType = "pick-number" | "trivia" | "guess-letter" | "roll-dice";
 type PrizeType = "free-item" | "percent-off";
 type ScheduleDay = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
@@ -55,104 +59,43 @@ const DAYS_OF_WEEK: ScheduleDay[] = [
   "Sun",
 ];
 
-const GAME_DEFINITIONS: Record<
-  GameType,
-  { label: string; emoji: string; template: string }
-> = {
-  "pick-number": {
-    label: "Pick a Number 1–100",
-    emoji: "🎲",
-    template:
-      "🎲 Pick a number between 1–100 for your chance to win [PRIZE]! Reply with your number.",
-  },
-  trivia: {
-    label: "Food Trivia",
-    emoji: "🍕",
-    template:
-      "🍕 Trivia time! [QUESTION] Reply A, B, or C. Get it right and win [PRIZE]!",
-  },
-  "guess-letter": {
-    label: "Guess the Letter A–Z",
-    emoji: "🔤",
-    template:
-      "🔤 Guess a letter between A–Z for your chance to win [PRIZE]! Reply with your letter.",
-  },
-  "roll-dice": {
-    label: "Roll the Dice",
-    emoji: "🎰",
-    template:
-      "🎰 Text a number 1–6. If it matches our roll, you win [PRIZE]. Everyone gets something though!",
-  },
+interface TopCustomerRow {
+  rank: number;
+  phone: string;
+  name: string;
+  games_played: number;
+  redeemed: number;
+}
+interface PerGameStats {
+  game_type: string;
+  sent: number;
+  played: number;
+  won: number;
+  discounts: number;
+}
+interface CampaignStats {
+  opted_in: number;
+  played: number;
+  redeemed: number;
+  campaign_score: number;
+  top_customers: TopCustomerRow[];
+  per_game: PerGameStats[];
+}
+interface OptinStatus {
+  opted_in: number;
+  pending: number;
+  opted_out: number;
+  last_scan_at: string | null;
+}
+
+const EMPTY_STATS: CampaignStats = {
+  opted_in: 0,
+  played: 0,
+  redeemed: 0,
+  campaign_score: 0,
+  top_customers: [],
+  per_game: [],
 };
-
-const DEFAULT_GAME_ORDER: GameType[] = [
-  "pick-number",
-  "roll-dice",
-  "trivia",
-  "guess-letter",
-];
-
-const MOCK_OPTED_IN: MockCustomer[] = [
-  { id: "1", phone: "+1 (555) 234-5678", name: "Alex Rivera" },
-  { id: "2", phone: "+1 (555) 876-5432", name: "Sam Chen" },
-  { id: "3", phone: "+1 (555) 345-6789", name: "Jordan Lee" },
-  { id: "4", phone: "+1 (555) 567-8901", name: "Taylor Kim" },
-  { id: "5", phone: "+1 (555) 678-9012", name: "Morgan Patel" },
-  { id: "6", phone: "+1 (555) 789-0123", name: "Casey Johnson" },
-  { id: "7", phone: "+1 (555) 890-1234", name: "Riley Nguyen" },
-  { id: "8", phone: "+1 (555) 901-2345", name: "Drew Martinez" },
-];
-
-const MOCK_NOT_OPTED_IN_COUNT = 42;
-
-const MOCK_STATS = {
-  optedIn: 184,
-  played: 127,
-  redeemed: 89,
-  campaignScore: 74,
-  topCustomers: [
-    {
-      rank: 1,
-      phone: "+1 (555) ***-1234",
-      gamesPlayed: 8,
-      redeemed: 5,
-      returnVisits: 6,
-    },
-    {
-      rank: 2,
-      phone: "+1 (555) ***-5678",
-      gamesPlayed: 7,
-      redeemed: 4,
-      returnVisits: 5,
-    },
-    {
-      rank: 3,
-      phone: "+1 (555) ***-9012",
-      gamesPlayed: 6,
-      redeemed: 3,
-      returnVisits: 4,
-    },
-    {
-      rank: 4,
-      phone: "+1 (555) ***-3456",
-      gamesPlayed: 5,
-      redeemed: 3,
-      returnVisits: 3,
-    },
-    {
-      rank: 5,
-      phone: "+1 (555) ***-7890",
-      gamesPlayed: 4,
-      redeemed: 2,
-      returnVisits: 2,
-    },
-  ],
-};
-
-const MOCK_PER_GAME = [
-  { sent: 184, played: 127, won: 1, discounts: 89 },
-  { sent: 184, played: 110, won: 1, discounts: 72 },
-];
 
 const WIZARD_STEPS = [
   { id: 1, label: "Roster" },
@@ -187,6 +130,24 @@ function buildMessagePreview(game: GameConfig, prize: PrizeConfig): string {
       ? `Free ${prize.itemName ?? "item"}`
       : `${prize.percent ?? 0}% off your order`;
   return GAME_DEFINITIONS[game.type].template.replace("[PRIZE]", prizeLabel);
+}
+
+function aggregatePerGame(
+  perGame: PerGameStats[],
+  gameType: GameType,
+): PerGameStats {
+  return perGame
+    .filter((p) => p.game_type === gameType)
+    .reduce(
+      (acc, p) => ({
+        game_type: gameType,
+        sent: acc.sent + p.sent,
+        played: acc.played + p.played,
+        won: acc.won + p.won,
+        discounts: acc.discounts + p.discounts,
+      }),
+      { game_type: gameType, sent: 0, played: 0, won: 0, discounts: 0 },
+    );
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -237,14 +198,10 @@ export function GamifiedMarketingTab() {
   );
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [stats, setStats] = useState<CampaignStats>(EMPTY_STATS);
 
   // Opt-in blast management
-  const [optinStatus, setOptinStatus] = useState<{
-    opted_in: number;
-    pending: number;
-    opted_out: number;
-    last_scan_at: string | null;
-  } | null>(null);
+  const [optinStatus, setOptinStatus] = useState<OptinStatus | null>(null);
   const [scanResult, setScanResult] = useState<{ new_customers: number } | null>(null);
   const [scanLoading, setScanLoading] = useState(false);
   const [blastLoading, setBlastLoading] = useState(false);
@@ -265,10 +222,9 @@ export function GamifiedMarketingTab() {
     const id = restaurantId;
 
     // Opted-in customers
-    fetch(
-      `${API_BASE_URL}/api/marketing/opted-in-customers?restaurant_id=${id}`,
+    marketingApiFetch<{ customers: MockCustomer[]; timezone?: string }>(
+      `/api/marketing/opted-in-customers?restaurant_id=${id}`,
     )
-      .then((r) => r.json())
       .then((d) => {
         const customers = d.customers ?? [];
         setOptedInCustomers(customers);
@@ -283,18 +239,51 @@ export function GamifiedMarketingTab() {
     // Menu items for prize selection
     setMenuItemsLoading(true);
     const params = new URLSearchParams({ restaurant_id: id, limit: "100" });
-    fetch(`${API_BASE_URL}/api/marketing/items?${params}`)
-      .then((r) => r.json())
+    marketingApiFetch<{ items: MarketingMenuItem[] }>(`/api/marketing/items?${params}`)
       .then((d) => setMenuItems(d.items ?? []))
       .catch(() => setMenuItems([]))
       .finally(() => setMenuItemsLoading(false));
 
     // Opt-in status
-    fetch(`${API_BASE_URL}/api/marketing/optin-status?restaurant_id=${id}`)
-      .then((r) => r.json())
+    marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${id}`)
       .then((d) => setOptinStatus(d))
       .catch(() => {});
+
+    // Restore an existing active/paused campaign so a page refresh
+    // doesn't lose dashboard state.
+    marketingApiFetch<{
+      campaign: {
+        id: string;
+        status: "active" | "paused";
+        config: CampaignConfig;
+      } | null;
+    }>(`/api/marketing/campaigns?restaurant_id=${id}`)
+      .then((d) => {
+        if (d.campaign) {
+          setCampaignId(d.campaign.id);
+          setLaunchedConfig(d.campaign.config);
+          setPagePhase(d.campaign.status === "paused" ? "paused" : "active");
+        }
+      })
+      .catch(() => {});
   }, [restaurantId]);
+
+  // Load real campaign stats whenever we have a campaign
+  useEffect(() => {
+    if (!campaignId) return;
+    marketingApiFetch<CampaignStats>(`/api/marketing/campaigns/${campaignId}/stats`)
+      .then((d) =>
+        setStats({
+          opted_in: d.opted_in ?? 0,
+          played: d.played ?? 0,
+          redeemed: d.redeemed ?? 0,
+          campaign_score: d.campaign_score ?? 0,
+          top_customers: d.top_customers ?? [],
+          per_game: d.per_game ?? [],
+        }),
+      )
+      .catch(() => setStats(EMPTY_STATS));
+  }, [campaignId]);
 
   const rid = restaurantId;
 
@@ -303,12 +292,13 @@ export function GamifiedMarketingTab() {
     setScanLoading(true);
     setScanResult(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/marketing/scan-clover`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurant_id: rid }),
-      });
-      const data = await res.json();
+      const data = await marketingApiFetch<{ new_customers?: number }>(
+        "/api/marketing/scan-clover",
+        {
+          method: "POST",
+          body: JSON.stringify({ restaurant_id: rid }),
+        },
+      );
       setScanResult({ new_customers: data.new_customers ?? 0 });
     } catch {
       setScanResult({ new_customers: 0 });
@@ -322,18 +312,18 @@ export function GamifiedMarketingTab() {
     if (!scanResult || scanResult.new_customers === 0) return;
     setBlastLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/marketing/send-optin-blast`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ restaurant_id: rid }),
-      });
-      const data = await res.json();
+      const data = await marketingApiFetch<{ queued?: number }>(
+        "/api/marketing/send-optin-blast",
+        {
+          method: "POST",
+          body: JSON.stringify({ restaurant_id: rid }),
+        },
+      );
       const queued = data.queued ?? 0;
       setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
       setScanResult(null);
       // Refresh status
-      fetch(`${API_BASE_URL}/api/marketing/optin-status?restaurant_id=${rid}`)
-        .then((r) => r.json())
+      marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${rid}`)
         .then((d) => setOptinStatus(d))
         .catch(() => {});
       setTimeout(() => setBlastToast(null), 4000);
@@ -423,12 +413,10 @@ export function GamifiedMarketingTab() {
 
     // Persist campaign to backend
     const rid = restaurantId;
-    fetch(`${API_BASE_URL}/api/marketing/campaigns`, {
+    marketingApiFetch<{ campaign_id?: string }>("/api/marketing/campaigns", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restaurant_id: rid, config }),
     })
-      .then((r) => r.json())
       .then((d) => {
         if (d.campaign_id) setCampaignId(d.campaign_id);
       })
@@ -602,9 +590,8 @@ export function GamifiedMarketingTab() {
               const next = pagePhase === "active" ? "paused" : "active";
               setPagePhase(next);
               if (campaignId) {
-                fetch(`${API_BASE_URL}/api/marketing/campaigns/${campaignId}`, {
+                marketingApiFetch(`/api/marketing/campaigns/${campaignId}`, {
                   method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ status: next }),
                 }).catch((err) =>
                   console.error("Failed to update campaign status:", err),
@@ -625,9 +612,9 @@ export function GamifiedMarketingTab() {
         {/* Metrics */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Opted In", value: MOCK_STATS.optedIn },
-            { label: "Played", value: MOCK_STATS.played },
-            { label: "Redeemed", value: MOCK_STATS.redeemed },
+            { label: "Opted In", value: stats.opted_in },
+            { label: "Played", value: stats.played },
+            { label: "Redeemed", value: stats.redeemed },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -651,7 +638,7 @@ export function GamifiedMarketingTab() {
               className="text-xl font-bold text-capy-green-dark"
               style={{ fontFamily: "Tektur, sans-serif" }}
             >
-              {MOCK_STATS.campaignScore}
+              {stats.campaign_score}
             </span>
           </div>
           <div className="flex-1">
@@ -662,7 +649,7 @@ export function GamifiedMarketingTab() {
             <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2.5 overflow-hidden">
               <div
                 className="h-full bg-capy-green rounded-full"
-                style={{ width: `${MOCK_STATS.campaignScore}%` }}
+                style={{ width: `${stats.campaign_score}%` }}
               />
             </div>
           </div>
@@ -693,33 +680,42 @@ export function GamifiedMarketingTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-capy-border/60">
-                {MOCK_STATS.topCustomers.map((row) => (
-                  <tr
-                    key={row.rank}
-                    className="hover:bg-slate-50/50 transition-colors"
-                  >
-                    <td className="px-4 py-2.5">
-                      <span
-                        className="w-5 h-5 rounded-full bg-capy-text text-white text-xs font-bold flex items-center justify-center"
-                        style={{ fontFamily: "Tektur, sans-serif" }}
-                      >
-                        {row.rank}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text font-mono">
-                      {row.phone}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">
-                      {row.gamesPlayed}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">
-                      {row.redeemed}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">
-                      {row.returnVisits}
+                {stats.top_customers.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="px-4 py-6 text-center text-xs text-capy-muted"
+                    >
+                      No plays yet — stats appear after your first game round.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  stats.top_customers.map((row) => (
+                    <tr
+                      key={row.rank}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
+                      <td className="px-4 py-2.5">
+                        <span
+                          className="w-5 h-5 rounded-full bg-capy-text text-white text-xs font-bold flex items-center justify-center"
+                          style={{ fontFamily: "Tektur, sans-serif" }}
+                        >
+                          {row.rank}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-capy-text font-mono">
+                        {row.phone}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-capy-text">
+                        {row.games_played}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-capy-text">
+                        {row.redeemed}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-capy-text">—</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -748,15 +744,15 @@ export function GamifiedMarketingTab() {
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { label: "Sent", value: MOCK_PER_GAME[i]?.sent ?? 0 },
-                    { label: "Played", value: MOCK_PER_GAME[i]?.played ?? 0 },
-                    { label: "Won", value: MOCK_PER_GAME[i]?.won ?? 0 },
-                    {
-                      label: "Discounts",
-                      value: MOCK_PER_GAME[i]?.discounts ?? 0,
-                    },
-                  ].map((s) => (
+                  {(() => {
+                    const g = aggregatePerGame(stats.per_game, game.type);
+                    return [
+                      { label: "Sent", value: g.sent },
+                      { label: "Played", value: g.played },
+                      { label: "Won", value: g.won },
+                      { label: "Discounts", value: g.discounts },
+                    ];
+                  })().map((s) => (
                     <div key={s.label}>
                       <p className="section-label">{s.label}</p>
                       <p
@@ -1184,7 +1180,7 @@ export function GamifiedMarketingTab() {
                 </p>
               </div>
               <span className="text-xs font-semibold text-capy-muted bg-slate-100 px-2.5 py-1 rounded-full">
-                {MOCK_NOT_OPTED_IN_COUNT} customers
+                {optinStatus?.pending ?? 0} customers
               </span>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiFetch, type RestaurantConfig } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { AIGreetingCard } from '@/components/voice/AIGreetingCard';
@@ -55,9 +56,17 @@ function SubNav({ activeTab, setActiveTab }: { activeTab: TabKey; setActiveTab: 
 }
 
 export default function ConfigurePage() {
-  const { restaurantId } = useAuth();
+  const router = useRouter();
+  const { restaurantId, user, isLoading, hasSubscription } = useAuth();
   const [activeTab, setActiveTab] = useState<TabKey>('configure');
   const [config, setConfig] = useState<RestaurantConfig | null>(null);
+
+  // Configure is part of the ordering product — send accounts without an
+  // 'ordering' subscription (e.g. marketing-only owners) back to /home.
+  const lacksOrdering = !isLoading && !!user && !hasSubscription('ordering');
+  useEffect(() => {
+    if (lacksOrdering) router.replace('/home');
+  }, [lacksOrdering, router]);
 
   const fetchConfig = useCallback(() => {
     if (!restaurantId) return;
@@ -99,6 +108,8 @@ export default function ConfigurePage() {
     });
     fetchConfig();
   };
+
+  if (lacksOrdering) return null;
 
   return (
     <div className="h-full flex flex-col">
