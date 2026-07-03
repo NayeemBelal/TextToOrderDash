@@ -38,6 +38,17 @@ cp .env.local.example .env.local
 
 Edit `.env.local` with your Supabase credentials.
 
+Environment variables:
+
+| Variable | Where it runs | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | client + server | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | client + server | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | server | Service role key for API routes (account creation, restaurant claims, payment confirmation) |
+| `STRIPE_SECRET_KEY_BELAN` | server | Belan's own Stripe secret key — SaaS subscription billing for marketing onboarding (NOT the per-restaurant Stripe config for order payments) |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_BELAN` | client | Belan's Stripe publishable key for the embedded checkout form |
+| `STRIPE_MARKETING_PRICE_ID` | server | Recurring price id for the Gamified Marketing Monthly Subscription ($200/mo) |
+
 3. Run the development server:
 ```bash
 npm run dev
