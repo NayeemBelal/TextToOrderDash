@@ -17,6 +17,15 @@ const GAMES: { type: GameType; label: string; emoji: string; hint: string }[] = 
 const ease = [0.22, 1, 0.36, 1] as const;
 const ACCENT = "#c4b5fd"; // Marketing AI purple
 
+/* Trivia content — must mirror the backend's DEFAULT_TRIVIA
+   (belan-marketing-backend services/campaign_scheduler.py) */
+const TRIVIA_QUESTION = "What's the most ordered food in America?";
+const TRIVIA_CHOICES: { key: "A" | "B" | "C"; label: string }[] = [
+  { key: "A", label: "Pizza" },
+  { key: "B", label: "Burgers" },
+  { key: "C", label: "Tacos" },
+];
+
 /* ── status shape from GET /api/marketing/demo/status ── */
 interface DemoStatus {
   found: boolean;
@@ -49,6 +58,7 @@ export default function MarketingDemo() {
   const [game, setGame] = useState<GameType>("pick-number");
   const [percent, setPercent] = useState(20);
   const [consent, setConsent] = useState(false);
+  const [triviaAnswer, setTriviaAnswer] = useState<"A" | "B" | "C">("A");
 
   const [phase, setPhase] = useState<"idle" | "sending" | "sent" | "answered">("idle");
   const [error, setError] = useState("");
@@ -101,6 +111,7 @@ export default function MarketingDemo() {
           prize_type: "percent-off",
           prize_percent: percent,
           consent,
+          ...(game === "trivia" ? { winning_answer: triviaAnswer } : {}),
         }),
       });
       const data = await res.json();
@@ -182,6 +193,38 @@ export default function MarketingDemo() {
             );
           })}
         </div>
+
+        {/* trivia winning answer */}
+        {game === "trivia" && (
+          <>
+            <label className="block text-xs font-black uppercase tracking-widest text-black mt-6 mb-2">
+              Winning answer
+            </label>
+            <p className="text-sm font-bold text-black/60 mb-2">
+              &ldquo;{TRIVIA_QUESTION}&rdquo; — pick which choice wins:
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {TRIVIA_CHOICES.map((c) => {
+                const active = triviaAnswer === c.key;
+                return (
+                  <button
+                    key={c.key}
+                    onClick={() => setTriviaAnswer(c.key)}
+                    disabled={phase === "sending"}
+                    className={`border-2 border-black px-3 py-2.5 text-left transition-all disabled:opacity-50 ${
+                      active ? "shadow-[3px_3px_0px_#000] -translate-x-px -translate-y-px" : "hover:bg-black/5"
+                    }`}
+                    style={active ? { background: ACCENT } : undefined}
+                  >
+                    <span className="block font-black text-sm text-black leading-tight">
+                      {c.key}) {c.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {/* prize */}
         <label className="block text-xs font-black uppercase tracking-widest text-black mt-6 mb-2">
