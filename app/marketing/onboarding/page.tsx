@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { MARKETING_DASHBOARD_URL } from '@/lib/api';
 
 // Merged onboarding:
 //   account → link (pick unclaimed restaurant + setup code) → branch
@@ -505,7 +506,7 @@ export default function MarketingOnboardingPage() {
                 Thanks for signing up. We&apos;re processing your information and getting your business RCS number set up. This usually takes 1–2 business days. We&apos;ll reach out once you&apos;re ready to go.
               </p>
             </div>
-            <PrimaryButton onClick={() => router.push('/home?tab=marketing')} className="mt-2 w-full px-6">
+            <PrimaryButton onClick={() => { window.location.href = MARKETING_DASHBOARD_URL; }} className="mt-2 w-full px-6">
               Go to Dashboard →
             </PrimaryButton>
           </div>

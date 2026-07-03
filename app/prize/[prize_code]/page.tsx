@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { API_BASE_URL } from "@/lib/api";
+import { MARKETING_API_BASE_URL } from "@/lib/api";
 
 type PrizeState = "loading" | "pending" | "active" | "expired" | "not_found";
 
@@ -30,7 +30,7 @@ export default function PrizePage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/prize/${prize_code}`)
+    fetch(`${MARKETING_API_BASE_URL}/api/prize/${prize_code}`)
       .then((r) => {
         if (r.status === 404) { setPageState("not_found"); return null; }
         return r.json();
@@ -72,7 +72,7 @@ export default function PrizePage() {
     setRedeeming(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/api/prize/${prize_code}/redeem`, {
+      const res = await fetch(`${MARKETING_API_BASE_URL}/api/prize/${prize_code}/redeem`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
