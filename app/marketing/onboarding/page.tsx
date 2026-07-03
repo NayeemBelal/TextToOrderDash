@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect, ChangeEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { loadStripe } from '@stripe/stripe-js';
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { supabase } from '@/lib/supabase';
 
 // Merged onboarding:
 //   account → link (pick unclaimed restaurant + setup code) → branch
-//     → [skip to dashboard]  OR  [set up marketing number → RCS steps → success]
+//     → [skip to dashboard]  OR  [set up marketing number → RCS steps → payment → success]
 type Step =
   | 'account'
   | 'link'
@@ -17,6 +19,7 @@ type Step =
   | 'verify'
   | 'brand'
   | 'clover'
+  | 'payment'
   | 'success';
 
 // The optional RCS (marketing number) portion — shown after the restaurant is linked.
@@ -28,6 +31,12 @@ const LEGAL_ENTITY_TYPES = ['LLC', 'Sole Proprietorship', 'Partnership', 'Corpor
 
 const SESSION_KEY = 'sb_session_active';
 const ACCENT = '#c4b5fd'; // Marketing AI purple — matches landing page
+
+// Belan's own Stripe account (SaaS billing) — NOT the per-restaurant Stripe
+// config used for customer order payments. loadStripe is called once at module
+// scope so the Stripe.js instance is shared across renders.
+const STRIPE_PK = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_BELAN;
+const stripePromise = STRIPE_PK ? loadStripe(STRIPE_PK) : null;
 
 // Upload an onboarding file directly to Supabase Storage (private bucket) and
 // return its object path. Done browser-side so large files never pass through
@@ -256,6 +265,14 @@ export default function MarketingOnboardingPage() {
   const [cloverApiKey, setCloverApiKey] = useState('');
   const [cloverEcomApiKey, setCloverEcomApiKey] = useState('');
 
+  // Payment step (Stripe Embedded Checkout)
+  const [checkoutClientSecret, setCheckoutClientSecret] = useState('');
+  const [checkoutSessionId, setCheckoutSessionId] = useState('');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState('');
+
   // Load the list of claimable restaurants when the owner reaches the link step.
   useEffect(() => {
     if (step !== 'link' || restaurants.length > 0) return;
@@ -280,6 +297,63 @@ export default function MarketingOnboardingPage() {
     })();
     return () => { cancelled = true; };
   }, [step, restaurants.length]);
+
+  // Create the Stripe Embedded Checkout session when the owner reaches the
+  // payment step (also re-invoked by the retry button after a failure).
+  const startCheckout = useCallback(async () => {
+    setCheckoutLoading(true);
+    setCheckoutError('');
+    setConfirmError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your session expired. Please sign in and try again.');
+      const res = await fetch('/api/marketing-onboarding/checkout-session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Could not start checkout.');
+      setCheckoutSessionId(body.sessionId);
+      setCheckoutClientSecret(body.clientSecret);
+    } catch (err: unknown) {
+      setCheckoutError(err instanceof Error ? err.message : 'Could not start checkout.');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (step !== 'payment' || !STRIPE_PK) return;
+    if (checkoutClientSecret || checkoutLoading || checkoutError) return;
+    startCheckout();
+  }, [step, checkoutClientSecret, checkoutLoading, checkoutError, startCheckout]);
+
+  // Stripe's onComplete fires when checkout finishes inside the embedded form.
+  // The server re-verifies the session with Stripe before marking the account
+  // paid — only then do we advance to the success screen.
+  const handleCheckoutComplete = useCallback(async () => {
+    setConfirmError('');
+    setIsConfirming(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your session expired. Please sign in and try again.');
+      const res = await fetch('/api/marketing-onboarding/confirm-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ session_id: checkoutSessionId }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || 'Could not confirm your payment.');
+      setStep('success');
+    } catch (err: unknown) {
+      setConfirmError(err instanceof Error ? err.message : 'Could not confirm your payment.');
+    } finally {
+      setIsConfirming(false);
+    }
+  }, [checkoutSessionId]);
 
   async function handleAccount() {
     setError('');
@@ -445,7 +519,9 @@ export default function MarketingOnboardingPage() {
         data: { marketing_onboarding_complete: true },
       });
 
-      setStep('success');
+      // Application submitted — collect the subscription payment before the
+      // success screen.
+      setStep('payment');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -502,7 +578,7 @@ export default function MarketingOnboardingPage() {
             <div>
               <h1 className="text-black text-3xl font-black mb-2">You&apos;re all set!</h1>
               <p className="text-black/60 text-sm font-medium leading-relaxed">
-                Thanks for signing up. We&apos;re processing your information and getting your business RCS number set up. This usually takes 1–2 business days. We&apos;ll reach out once you&apos;re ready to go.
+                Your subscription is active. We&apos;re processing your information and getting your business RCS number set up — this usually takes 1–2 business days. We&apos;ll reach out once you&apos;re ready to go.
               </p>
             </div>
             <PrimaryButton onClick={() => router.push('/home?tab=marketing')} className="mt-2 w-full px-6">
@@ -518,12 +594,14 @@ export default function MarketingOnboardingPage() {
     if (step === 'account') return 'Create your account';
     if (step === 'link') return 'Link your restaurant';
     if (step === 'branch') return 'Restaurant linked';
+    if (step === 'payment') return 'Activate your subscription';
     return 'Set up your marketing number';
   };
   const subtitleForStep = () => {
     if (step === 'account') return 'One login for your whole Belan dashboard.';
     if (step === 'link') return 'Select your restaurant and enter the setup code from Belan.';
     if (step === 'branch') return 'You can start using your dashboard now.';
+    if (step === 'payment') return 'Gamified Marketing — $200/month. Cancel anytime.';
     return 'Get your business RCS number for gamified SMS marketing.';
   };
 
@@ -882,6 +960,62 @@ export default function MarketingOnboardingPage() {
                 >
                   Skip for now →
                 </button>
+              </div>
+            )}
+
+            {step === 'payment' && (
+              <div className="flex flex-col gap-4">
+                <div className="border-2 border-black p-4" style={{ background: '#f5dda1' }}>
+                  <p className="text-sm font-bold text-black leading-snug">Gamified Marketing Monthly Subscription</p>
+                  <p className="text-xs font-medium text-black/60 mt-1 leading-relaxed">
+                    $200/month, billed monthly. Have a promo code? Apply it inside the payment form below.
+                  </p>
+                </div>
+
+                {!STRIPE_PK ? (
+                  <div className="border-2 border-black px-4 py-3 text-black text-sm font-bold" style={{ background: '#fbc8d4' }}>
+                    Payment is not configured. Please contact Belan support.
+                  </div>
+                ) : checkoutError ? (
+                  <div className="flex flex-col gap-3">
+                    <div className="border-2 border-black px-4 py-3 text-black text-sm font-bold" style={{ background: '#fbc8d4' }}>
+                      {checkoutError}
+                    </div>
+                    <PrimaryButton onClick={startCheckout} className="w-full px-6">
+                      Try again
+                    </PrimaryButton>
+                  </div>
+                ) : !checkoutClientSecret ? (
+                  <div className="flex items-center justify-center gap-2 py-10 text-black/50 text-sm font-bold">
+                    <Spinner />Loading secure checkout…
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    <div className="border-2 border-black bg-white shadow-[6px_6px_0px_#000] p-2 sm:p-3">
+                      <EmbeddedCheckoutProvider
+                        stripe={stripePromise}
+                        options={{ clientSecret: checkoutClientSecret, onComplete: handleCheckoutComplete }}
+                      >
+                        <EmbeddedCheckout />
+                      </EmbeddedCheckoutProvider>
+                    </div>
+                    {isConfirming && (
+                      <div className="flex items-center justify-center gap-2 py-2 text-black/50 text-sm font-bold">
+                        <Spinner />Confirming your payment…
+                      </div>
+                    )}
+                    {confirmError && (
+                      <div className="flex flex-col gap-3">
+                        <div className="border-2 border-black px-4 py-3 text-black text-sm font-bold" style={{ background: '#fbc8d4' }}>
+                          {confirmError}
+                        </div>
+                        <PrimaryButton onClick={handleCheckoutComplete} disabled={isConfirming} className="w-full px-6">
+                          {isConfirming ? (<><Spinner />Confirming…</>) : 'Retry confirmation'}
+                        </PrimaryButton>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
