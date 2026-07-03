@@ -6,7 +6,10 @@ import { useAuth } from "@/lib/auth-context";
 import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
+  DEFAULT_TRIVIA,
+  buildTriviaMessage,
   type GameType,
+  type TriviaConfig,
 } from "@/components/voice/games";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -23,6 +26,7 @@ interface GameConfig {
   type: GameType;
   day: ScheduleDay;
   time: string;
+  trivia?: TriviaConfig;
 }
 interface PrizeConfig {
   type: PrizeType;
@@ -107,15 +111,23 @@ const WIZARD_STEPS = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+function cloneDefaultTrivia(): TriviaConfig {
+  return { ...DEFAULT_TRIVIA, choices: { ...DEFAULT_TRIVIA.choices } };
+}
+
 function buildDefaultGames(
   days: ScheduleDay[],
   times: Record<string, string>,
 ): GameConfig[] {
-  return days.map((day, i) => ({
-    type: DEFAULT_GAME_ORDER[i % DEFAULT_GAME_ORDER.length],
-    day,
-    time: times[day] ?? "12:00 PM",
-  }));
+  return days.map((day, i) => {
+    const type = DEFAULT_GAME_ORDER[i % DEFAULT_GAME_ORDER.length];
+    return {
+      type,
+      day,
+      time: times[day] ?? "12:00 PM",
+      ...(type === "trivia" ? { trivia: cloneDefaultTrivia() } : {}),
+    };
+  });
 }
 
 function buildDefaultPrizes(count: number): PrizeConfig[] {
@@ -129,7 +141,11 @@ function buildMessagePreview(game: GameConfig, prize: PrizeConfig): string {
     prize.type === "free-item"
       ? `Free ${prize.itemName ?? "item"}`
       : `${prize.percent ?? 0}% off your order`;
-  return GAME_DEFINITIONS[game.type].template.replace("[PRIZE]", prizeLabel);
+  const template =
+    game.type === "trivia"
+      ? buildTriviaMessage(game.trivia ?? DEFAULT_TRIVIA)
+      : GAME_DEFINITIONS[game.type].template;
+  return template.replace("[PRIZE]", prizeLabel);
 }
 
 function aggregatePerGame(
@@ -359,7 +375,37 @@ export function GamifiedMarketingTab() {
   };
 
   const updateGame = (index: number, type: GameType) => {
-    setGames((prev) => prev.map((g, i) => (i === index ? { ...g, type } : g)));
+    setGames((prev) =>
+      prev.map((g, i) => {
+        if (i !== index) return g;
+        const next: GameConfig = { ...g, type };
+        // Seed a customizable trivia config the first time a game becomes trivia.
+        if (type === "trivia" && !next.trivia) next.trivia = cloneDefaultTrivia();
+        return next;
+      }),
+    );
+  };
+
+  const updateTrivia = (
+    index: number,
+    patch: Partial<Pick<TriviaConfig, "question" | "answer">> & {
+      choices?: Partial<TriviaConfig["choices"]>;
+    },
+  ) => {
+    setGames((prev) =>
+      prev.map((g, i) => {
+        if (i !== index) return g;
+        const base = g.trivia ?? cloneDefaultTrivia();
+        return {
+          ...g,
+          trivia: {
+            ...base,
+            ...patch,
+            choices: { ...base.choices, ...(patch.choices ?? {}) },
+          },
+        };
+      }),
+    );
   };
 
   const updatePrizeType = (index: number, type: PrizeType) => {
@@ -1373,8 +1419,12 @@ export function GamifiedMarketingTab() {
                           {GAME_DEFINITIONS[game.type].label}
                         </span>
                       </div>
-                      <p className="text-xs text-capy-muted italic leading-relaxed">
-                        &ldquo;{GAME_DEFINITIONS[game.type].template}&rdquo;
+                      <p className="text-xs text-capy-muted italic leading-relaxed whitespace-pre-line">
+                        &ldquo;
+                        {game.type === "trivia"
+                          ? buildTriviaMessage(game.trivia ?? DEFAULT_TRIVIA)
+                          : GAME_DEFINITIONS[game.type].template}
+                        &rdquo;
                       </p>
                     </div>
                     <button
@@ -1418,6 +1468,58 @@ export function GamifiedMarketingTab() {
                             </button>
                           ),
                         )}
+                      </div>
+                    </div>
+                  )}
+                  {game.type === "trivia" && (
+                    <div className="px-4 pb-4 border-t border-capy-border pt-3 space-y-2">
+                      <p className="section-label">Customize Trivia</p>
+                      <input
+                        type="text"
+                        value={(game.trivia ?? DEFAULT_TRIVIA).question}
+                        onChange={(e) =>
+                          updateTrivia(i, { question: e.target.value })
+                        }
+                        placeholder="Trivia question"
+                        className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                      />
+                      {(["A", "B", "C"] as const).map((letter) => (
+                        <div key={letter} className="flex items-center gap-2">
+                          <span className="w-4 text-xs font-semibold text-capy-muted shrink-0">
+                            {letter})
+                          </span>
+                          <input
+                            type="text"
+                            value={
+                              (game.trivia ?? DEFAULT_TRIVIA).choices[letter]
+                            }
+                            onChange={(e) =>
+                              updateTrivia(i, {
+                                choices: { [letter]: e.target.value },
+                              })
+                            }
+                            placeholder={`Choice ${letter}`}
+                            className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                          />
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-xs font-medium text-capy-text">
+                          Winning answer:
+                        </span>
+                        {(["A", "B", "C"] as const).map((letter) => (
+                          <button
+                            key={letter}
+                            onClick={() => updateTrivia(i, { answer: letter })}
+                            className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
+                              (game.trivia ?? DEFAULT_TRIVIA).answer === letter
+                                ? "bg-capy-green text-white"
+                                : "border border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark"
+                            }`}
+                          >
+                            {letter}
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
