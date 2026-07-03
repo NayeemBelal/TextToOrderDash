@@ -18,7 +18,7 @@ export const GAME_DEFINITIONS: Record<
     label: "Food Trivia",
     emoji: "🍕",
     template:
-      "🍕 Trivia time! [QUESTION] Reply A, B, or C. Get it right and win [PRIZE]!",
+      "🍕 Trivia time! What's the most ordered food in America?\nA) Pizza\nB) Burgers\nC) Tacos\nReply A, B, or C — get it right and win [PRIZE]!",
   },
   "guess-letter": {
     label: "Guess the Letter A–Z",

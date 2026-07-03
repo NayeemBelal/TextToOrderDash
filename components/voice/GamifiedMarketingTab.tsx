@@ -1677,7 +1677,7 @@ export function GamifiedMarketingTab() {
                           </span>
                         </div>
                         <div className="bg-white border border-capy-border rounded-2xl rounded-tl-sm px-3 py-2.5 max-w-[85%] shadow-sm">
-                          <p className="text-xs text-capy-text leading-relaxed">
+                          <p className="text-xs text-capy-text leading-relaxed whitespace-pre-line">
                             {preview}
                           </p>
                         </div>
