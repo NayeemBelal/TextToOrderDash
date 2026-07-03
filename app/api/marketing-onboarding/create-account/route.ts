@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
         restaurant_name: brandName ?? null,
         restaurant_id: null,
         marketing_onboarding_complete: false,
+        subscriptions: ['marketing'],
       },
     });
 

@@ -12,10 +12,16 @@ const TABS = [
 
 export function VoiceTopNav() {
   const pathname = usePathname();
-  const { signOut } = useAuth();
+  const { signOut, hasSubscription } = useAuth();
   const [hoverState, setHoverState] = useState<
     Record<string, "hovering" | "leaving" | null>
   >({});
+
+  // Configure is part of the ordering product — hide it for accounts
+  // without an 'ordering' subscription (e.g. marketing-only owners).
+  const visibleTabs = TABS.filter(
+    (tab) => tab.href !== "/configure" || hasSubscription("ordering"),
+  );
 
   const isActive = (href: string) => {
     if (href === "/home") return pathname === "/home";
@@ -34,7 +40,7 @@ export function VoiceTopNav() {
         {/* Left — tabs flush to left edge */}
         <div className="flex-1 flex items-center justify-start">
           <nav className="flex items-center gap-1">
-            {TABS.map((tab) => {
+            {visibleTabs.map((tab) => {
               const active = isActive(tab.href);
               const hover = hoverState[tab.href];
               return (
