@@ -44,6 +44,12 @@ interface CampaignConfig {
   optedInCount: number;
   targetCustomerIds: string[];
 }
+interface OptinStatus {
+  opted_in: number;
+  pending: number;
+  opted_out: number;
+  last_scan_at: string | null;
+}
 interface MarketingMenuItem {
   clover_id: string;
   name: string;
@@ -219,6 +225,7 @@ export function GamifiedMarketingTab() {
   // Opt-in blast management
   const [optinStatus, setOptinStatus] = useState<OptinStatus | null>(null);
   const [scanResult, setScanResult] = useState<{ new_customers: number } | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [scanLoading, setScanLoading] = useState(false);
   const [blastLoading, setBlastLoading] = useState(false);
   const [blastToast, setBlastToast] = useState<string | null>(null);
@@ -307,6 +314,7 @@ export function GamifiedMarketingTab() {
     if (!rid) return;
     setScanLoading(true);
     setScanResult(null);
+    setScanError(null);
     try {
       const data = await marketingApiFetch<{ new_customers?: number }>(
         "/api/marketing/scan-clover",
@@ -317,7 +325,9 @@ export function GamifiedMarketingTab() {
       );
       setScanResult({ new_customers: data.new_customers ?? 0 });
     } catch {
-      setScanResult({ new_customers: 0 });
+      // Surface the failure instead of masking it as "0 new customers /
+      // already contacted" — marketingApiFetch throws on any non-OK response.
+      setScanError("Scan failed. Check the Clover connection and try again.");
     } finally {
       setScanLoading(false);
     }
@@ -569,6 +579,12 @@ export function GamifiedMarketingTab() {
                 year: "numeric",
               })}
             </p>
+          )}
+          {scanError && (
+            <div className="flex items-center gap-2 text-sm text-red-600">
+              <span className="font-semibold">!</span>
+              <span>{scanError}</span>
+            </div>
           )}
           {scanResult !== null && (
             <div className="flex items-center gap-2 text-sm">
@@ -926,6 +942,12 @@ export function GamifiedMarketingTab() {
           </p>
         )}
 
+        {scanError && (
+          <div className="flex items-center gap-2 text-sm text-red-600">
+            <span className="font-semibold">!</span>
+            <span>{scanError}</span>
+          </div>
+        )}
         {scanResult !== null && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-capy-green-dark font-semibold">✓</span>
