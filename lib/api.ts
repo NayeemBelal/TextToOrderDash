@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '@/lib/supabase';
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
