@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch, API_BASE_URL } from "@/lib/api";
+import { apiFetch, authFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -246,6 +246,7 @@ export function GamifiedMarketingTab() {
     last_scan_at: string | null;
   } | null>(null);
   const [scanResult, setScanResult] = useState<{ new_customers: number } | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [scanLoading, setScanLoading] = useState(false);
   const [blastLoading, setBlastLoading] = useState(false);
   const [blastToast, setBlastToast] = useState<string | null>(null);
@@ -265,9 +266,7 @@ export function GamifiedMarketingTab() {
     const id = restaurantId;
 
     // Opted-in customers
-    fetch(
-      `${API_BASE_URL}/api/marketing/opted-in-customers?restaurant_id=${id}`,
-    )
+    authFetch(`/api/marketing/opted-in-customers?restaurant_id=${id}`)
       .then((r) => r.json())
       .then((d) => {
         const customers = d.customers ?? [];
@@ -283,14 +282,14 @@ export function GamifiedMarketingTab() {
     // Menu items for prize selection
     setMenuItemsLoading(true);
     const params = new URLSearchParams({ restaurant_id: id, limit: "100" });
-    fetch(`${API_BASE_URL}/api/marketing/items?${params}`)
+    authFetch(`/api/marketing/items?${params}`)
       .then((r) => r.json())
       .then((d) => setMenuItems(d.items ?? []))
       .catch(() => setMenuItems([]))
       .finally(() => setMenuItemsLoading(false));
 
     // Opt-in status
-    fetch(`${API_BASE_URL}/api/marketing/optin-status?restaurant_id=${id}`)
+    authFetch(`/api/marketing/optin-status?restaurant_id=${id}`)
       .then((r) => r.json())
       .then((d) => setOptinStatus(d))
       .catch(() => {});
@@ -302,16 +301,24 @@ export function GamifiedMarketingTab() {
     if (!rid) return;
     setScanLoading(true);
     setScanResult(null);
+    setScanError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/marketing/scan-clover`, {
+      const res = await authFetch(`/api/marketing/scan-clover`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurant_id: rid }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // Surface the real failure instead of masking it as "0 new customers".
+        setScanError(
+          data.detail ||
+            `Scan failed (${res.status}). Please try again or contact support.`,
+        );
+        return;
+      }
       setScanResult({ new_customers: data.new_customers ?? 0 });
     } catch {
-      setScanResult({ new_customers: 0 });
+      setScanError("Couldn't reach the server. Please try again.");
     } finally {
       setScanLoading(false);
     }
@@ -322,17 +329,23 @@ export function GamifiedMarketingTab() {
     if (!scanResult || scanResult.new_customers === 0) return;
     setBlastLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/marketing/send-optin-blast`, {
+      const res = await authFetch(`/api/marketing/send-optin-blast`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ restaurant_id: rid }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setBlastToast(
+          data.detail || "Something went wrong. Please try again.",
+        );
+        setTimeout(() => setBlastToast(null), 4000);
+        return;
+      }
       const queued = data.queued ?? 0;
       setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
       setScanResult(null);
       // Refresh status
-      fetch(`${API_BASE_URL}/api/marketing/optin-status?restaurant_id=${rid}`)
+      authFetch(`/api/marketing/optin-status?restaurant_id=${rid}`)
         .then((r) => r.json())
         .then((d) => setOptinStatus(d))
         .catch(() => {});
@@ -423,9 +436,8 @@ export function GamifiedMarketingTab() {
 
     // Persist campaign to backend
     const rid = restaurantId;
-    fetch(`${API_BASE_URL}/api/marketing/campaigns`, {
+    authFetch(`/api/marketing/campaigns`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ restaurant_id: rid, config }),
     })
       .then((r) => r.json())
@@ -536,6 +548,12 @@ export function GamifiedMarketingTab() {
               })}
             </p>
           )}
+          {scanError && (
+            <div className="flex items-center gap-2 text-sm text-red-600">
+              <span className="font-semibold">!</span>
+              <span>{scanError}</span>
+            </div>
+          )}
           {scanResult !== null && (
             <div className="flex items-center gap-2 text-sm">
               <span className="text-capy-green-dark font-semibold">✓</span>
@@ -602,9 +620,8 @@ export function GamifiedMarketingTab() {
               const next = pagePhase === "active" ? "paused" : "active";
               setPagePhase(next);
               if (campaignId) {
-                fetch(`${API_BASE_URL}/api/marketing/campaigns/${campaignId}`, {
+                authFetch(`/api/marketing/campaigns/${campaignId}`, {
                   method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ status: next }),
                 }).catch((err) =>
                   console.error("Failed to update campaign status:", err),
@@ -884,6 +901,12 @@ export function GamifiedMarketingTab() {
           </p>
         )}
 
+        {scanError && (
+          <div className="flex items-center gap-2 text-sm text-red-600">
+            <span className="font-semibold">!</span>
+            <span>{scanError}</span>
+          </div>
+        )}
         {scanResult !== null && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-capy-green-dark font-semibold">✓</span>

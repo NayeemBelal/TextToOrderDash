@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -11,6 +12,29 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
   return res.json() as Promise<T>;
+}
+
+/**
+ * fetch() wrapper for the dashboard-scoped marketing backend, which requires a
+ * Supabase JWT (Authorization: Bearer) whose user_metadata.restaurant_id matches
+ * the restaurant being acted on. Without this header every marketing endpoint
+ * returns 401 "Missing bearer token". Mirrors the pattern in the onboarding pages.
+ *
+ * Returns the raw Response so callers can inspect res.ok / status codes.
+ */
+export async function authFetch(path: string, init?: RequestInit): Promise<Response> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  return fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.headers ?? {}),
+    },
+  });
 }
 
 export interface Call {
