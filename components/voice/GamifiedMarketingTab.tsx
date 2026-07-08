@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch, authFetch } from "@/lib/api";
+import { marketingApiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -35,6 +35,12 @@ interface CampaignConfig {
   loserDiscountCap: number;
   optedInCount: number;
   targetCustomerIds: string[];
+}
+interface OptinStatus {
+  opted_in: number;
+  pending: number;
+  opted_out: number;
+  last_scan_at: string | null;
 }
 interface MarketingMenuItem {
   clover_id: string;
@@ -266,8 +272,9 @@ export function GamifiedMarketingTab() {
     const id = restaurantId;
 
     // Opted-in customers
-    authFetch(`/api/marketing/opted-in-customers?restaurant_id=${id}`)
-      .then((r) => r.json())
+    marketingApiFetch<{ customers: MockCustomer[]; timezone?: string }>(
+      `/api/marketing/opted-in-customers?restaurant_id=${id}`,
+    )
       .then((d) => {
         const customers = d.customers ?? [];
         setOptedInCustomers(customers);
@@ -282,15 +289,17 @@ export function GamifiedMarketingTab() {
     // Menu items for prize selection
     setMenuItemsLoading(true);
     const params = new URLSearchParams({ restaurant_id: id, limit: "100" });
-    authFetch(`/api/marketing/items?${params}`)
-      .then((r) => r.json())
+    marketingApiFetch<{ items: MarketingMenuItem[] }>(
+      `/api/marketing/items?${params}`,
+    )
       .then((d) => setMenuItems(d.items ?? []))
       .catch(() => setMenuItems([]))
       .finally(() => setMenuItemsLoading(false));
 
     // Opt-in status
-    authFetch(`/api/marketing/optin-status?restaurant_id=${id}`)
-      .then((r) => r.json())
+    marketingApiFetch<OptinStatus>(
+      `/api/marketing/optin-status?restaurant_id=${id}`,
+    )
       .then((d) => setOptinStatus(d))
       .catch(() => {});
   }, [restaurantId]);
@@ -303,22 +312,18 @@ export function GamifiedMarketingTab() {
     setScanResult(null);
     setScanError(null);
     try {
-      const res = await authFetch(`/api/marketing/scan-clover`, {
-        method: "POST",
-        body: JSON.stringify({ restaurant_id: rid }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        // Surface the real failure instead of masking it as "0 new customers".
-        setScanError(
-          data.detail ||
-            `Scan failed (${res.status}). Please try again or contact support.`,
-        );
-        return;
-      }
+      const data = await marketingApiFetch<{ new_customers?: number }>(
+        "/api/marketing/scan-clover",
+        {
+          method: "POST",
+          body: JSON.stringify({ restaurant_id: rid }),
+        },
+      );
       setScanResult({ new_customers: data.new_customers ?? 0 });
     } catch {
-      setScanError("Couldn't reach the server. Please try again.");
+      // Surface the failure instead of masking it as "0 new customers /
+      // already contacted" — marketingApiFetch throws on any non-OK response.
+      setScanError("Scan failed. Check the Clover connection and try again.");
     } finally {
       setScanLoading(false);
     }
@@ -329,24 +334,20 @@ export function GamifiedMarketingTab() {
     if (!scanResult || scanResult.new_customers === 0) return;
     setBlastLoading(true);
     try {
-      const res = await authFetch(`/api/marketing/send-optin-blast`, {
-        method: "POST",
-        body: JSON.stringify({ restaurant_id: rid }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setBlastToast(
-          data.detail || "Something went wrong. Please try again.",
-        );
-        setTimeout(() => setBlastToast(null), 4000);
-        return;
-      }
+      const data = await marketingApiFetch<{ queued?: number }>(
+        "/api/marketing/send-optin-blast",
+        {
+          method: "POST",
+          body: JSON.stringify({ restaurant_id: rid }),
+        },
+      );
       const queued = data.queued ?? 0;
       setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
       setScanResult(null);
       // Refresh status
-      authFetch(`/api/marketing/optin-status?restaurant_id=${rid}`)
-        .then((r) => r.json())
+      marketingApiFetch<OptinStatus>(
+        `/api/marketing/optin-status?restaurant_id=${rid}`,
+      )
         .then((d) => setOptinStatus(d))
         .catch(() => {});
       setTimeout(() => setBlastToast(null), 4000);
@@ -436,11 +437,10 @@ export function GamifiedMarketingTab() {
 
     // Persist campaign to backend
     const rid = restaurantId;
-    authFetch(`/api/marketing/campaigns`, {
+    marketingApiFetch<{ campaign_id?: string }>("/api/marketing/campaigns", {
       method: "POST",
       body: JSON.stringify({ restaurant_id: rid, config }),
     })
-      .then((r) => r.json())
       .then((d) => {
         if (d.campaign_id) setCampaignId(d.campaign_id);
       })
@@ -620,7 +620,7 @@ export function GamifiedMarketingTab() {
               const next = pagePhase === "active" ? "paused" : "active";
               setPagePhase(next);
               if (campaignId) {
-                authFetch(`/api/marketing/campaigns/${campaignId}`, {
+                marketingApiFetch(`/api/marketing/campaigns/${campaignId}`, {
                   method: "PATCH",
                   body: JSON.stringify({ status: next }),
                 }).catch((err) =>

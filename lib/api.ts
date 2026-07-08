@@ -5,6 +5,13 @@ export const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   'https://text-to-order-coffee-34770846162.us-central1.run.app';
 
+// Decoupled marketing backend (belan-marketing-backend on Cloud Run).
+// Serves /api/marketing/* and /api/prize/* — used by the public marketing
+// demo and prize pages that remain in this app.
+export const MARKETING_API_BASE_URL =
+  process.env.NEXT_PUBLIC_MARKETING_BACKEND_URL ||
+  'https://belan-marketing-backend-34770846162.us-central1.run.app';
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -15,19 +22,23 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 }
 
 /**
- * fetch() wrapper for the dashboard-scoped marketing backend, which requires a
- * Supabase JWT (Authorization: Bearer) whose user_metadata.restaurant_id matches
- * the restaurant being acted on. Without this header every marketing endpoint
- * returns 401 "Missing bearer token". Mirrors the pattern in the onboarding pages.
+ * Fetch helper for the decoupled marketing backend.
  *
- * Returns the raw Response so callers can inspect res.ok / status codes.
+ * Attaches `Authorization: Bearer <supabase access_token>` to every request —
+ * all dashboard-scoped marketing endpoints require a Supabase JWT whose
+ * `user_metadata.restaurant_id` must match the requested restaurant.
+ * Throws on any non-OK response.
  */
-export async function authFetch(path: string, init?: RequestInit): Promise<Response> {
+export async function marketingApiFetch<T = unknown>(
+  path: string,
+  init?: RequestInit,
+): Promise<T> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
   const token = session?.access_token;
-  return fetch(`${API_BASE_URL}${path}`, {
+
+  const res = await fetch(`${MARKETING_API_BASE_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -35,6 +46,8 @@ export async function authFetch(path: string, init?: RequestInit): Promise<Respo
       ...(init?.headers ?? {}),
     },
   });
+  if (!res.ok) throw new Error(`API ${res.status}: ${path}`);
+  return res.json() as Promise<T>;
 }
 
 export interface Call {
