@@ -289,17 +289,13 @@ export function GamifiedMarketingTab() {
     // Menu items for prize selection
     setMenuItemsLoading(true);
     const params = new URLSearchParams({ restaurant_id: id, limit: "100" });
-    marketingApiFetch<{ items: MarketingMenuItem[] }>(
-      `/api/marketing/items?${params}`,
-    )
+    marketingApiFetch<{ items: MarketingMenuItem[] }>(`/api/marketing/items?${params}`)
       .then((d) => setMenuItems(d.items ?? []))
       .catch(() => setMenuItems([]))
       .finally(() => setMenuItemsLoading(false));
 
     // Opt-in status
-    marketingApiFetch<OptinStatus>(
-      `/api/marketing/optin-status?restaurant_id=${id}`,
-    )
+    marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${id}`)
       .then((d) => setOptinStatus(d))
       .catch(() => {});
   }, [restaurantId]);
@@ -345,9 +341,7 @@ export function GamifiedMarketingTab() {
       setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
       setScanResult(null);
       // Refresh status
-      marketingApiFetch<OptinStatus>(
-        `/api/marketing/optin-status?restaurant_id=${rid}`,
-      )
+      marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${rid}`)
         .then((d) => setOptinStatus(d))
         .catch(() => {});
       setTimeout(() => setBlastToast(null), 4000);
