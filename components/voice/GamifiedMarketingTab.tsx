@@ -48,6 +48,29 @@ interface MarketingMenuItem {
   price: number;
   category: string | null;
 }
+interface CampaignTopCustomer {
+  rank: number;
+  phone: string;
+  name?: string;
+  games_played: number;
+  redeemed: number;
+}
+interface CampaignPerGame {
+  game_type: GameType;
+  sent: number;
+  played: number;
+  won: number;
+  discounts: number;
+  rounds: number;
+}
+interface CampaignStats {
+  opted_in: number;
+  played: number;
+  redeemed: number;
+  campaign_score: number;
+  top_customers: CampaignTopCustomer[];
+  per_game: CampaignPerGame[];
+}
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -110,55 +133,6 @@ const MOCK_OPTED_IN: MockCustomer[] = [
 ];
 
 const MOCK_NOT_OPTED_IN_COUNT = 42;
-
-const MOCK_STATS = {
-  optedIn: 184,
-  played: 127,
-  redeemed: 89,
-  campaignScore: 74,
-  topCustomers: [
-    {
-      rank: 1,
-      phone: "+1 (555) ***-1234",
-      gamesPlayed: 8,
-      redeemed: 5,
-      returnVisits: 6,
-    },
-    {
-      rank: 2,
-      phone: "+1 (555) ***-5678",
-      gamesPlayed: 7,
-      redeemed: 4,
-      returnVisits: 5,
-    },
-    {
-      rank: 3,
-      phone: "+1 (555) ***-9012",
-      gamesPlayed: 6,
-      redeemed: 3,
-      returnVisits: 4,
-    },
-    {
-      rank: 4,
-      phone: "+1 (555) ***-3456",
-      gamesPlayed: 5,
-      redeemed: 3,
-      returnVisits: 3,
-    },
-    {
-      rank: 5,
-      phone: "+1 (555) ***-7890",
-      gamesPlayed: 4,
-      redeemed: 2,
-      returnVisits: 2,
-    },
-  ],
-};
-
-const MOCK_PER_GAME = [
-  { sent: 184, played: 127, won: 1, discounts: 89 },
-  { sent: 184, played: 110, won: 1, discounts: 72 },
-];
 
 const WIZARD_STEPS = [
   { id: 1, label: "Roster" },
@@ -243,6 +217,8 @@ export function GamifiedMarketingTab() {
   );
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [stats, setStats] = useState<CampaignStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // Opt-in blast management
   const [optinStatus, setOptinStatus] = useState<{
@@ -259,6 +235,14 @@ export function GamifiedMarketingTab() {
 
   const getDayTime = (day: string) =>
     `${dayHours[day] ?? "12"}:${dayMinutes[day] ?? "00"} ${dayAmPm[day] ?? "PM"}`;
+
+  const fetchStats = (id: string) => {
+    setStatsLoading(true);
+    marketingApiFetch<CampaignStats>(`/api/marketing/campaigns/${id}/stats`)
+      .then(setStats)
+      .catch(() => {})
+      .finally(() => setStatsLoading(false));
+  };
 
   // Fetch opted-in customers and menu items on mount
   useEffect(() => {
@@ -298,7 +282,27 @@ export function GamifiedMarketingTab() {
     marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${id}`)
       .then((d) => setOptinStatus(d))
       .catch(() => {});
-  }, [restaurantId]);
+
+    // Restore an already-running campaign so returning owners land on the live
+    // dashboard (with real stats) instead of the setup wizard.
+    marketingApiFetch<{
+      campaign: {
+        id: string;
+        status: "active" | "paused" | "ended";
+        config: CampaignConfig;
+      } | null;
+    }>(`/api/marketing/campaigns?restaurant_id=${id}`)
+      .then((d) => {
+        const c = d.campaign;
+        if (c && (c.status === "active" || c.status === "paused")) {
+          setLaunchedConfig(c.config);
+          setCampaignId(c.id);
+          setPagePhase(c.status);
+          fetchStats(c.id);
+        }
+      })
+      .catch(() => {});
+  }, [restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rid = restaurantId;
 
@@ -436,7 +440,10 @@ export function GamifiedMarketingTab() {
       body: JSON.stringify({ restaurant_id: rid, config }),
     })
       .then((d) => {
-        if (d.campaign_id) setCampaignId(d.campaign_id);
+        if (d.campaign_id) {
+          setCampaignId(d.campaign_id);
+          fetchStats(d.campaign_id);
+        }
       })
       .catch((err) => console.error("Failed to persist campaign:", err));
   };
@@ -503,6 +510,11 @@ export function GamifiedMarketingTab() {
 
   if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */
+    // Per-game stats come aggregated by game type from the backend; index them
+    // by type so each configured game card can look up its own totals.
+    const perGameByType = new Map(
+      (stats?.per_game ?? []).map((g) => [g.game_type, g]),
+    );
     return (
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
 
@@ -636,9 +648,9 @@ export function GamifiedMarketingTab() {
         {/* Metrics */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Opted In", value: MOCK_STATS.optedIn },
-            { label: "Played", value: MOCK_STATS.played },
-            { label: "Redeemed", value: MOCK_STATS.redeemed },
+            { label: "Opted In", value: stats?.opted_in ?? 0 },
+            { label: "Played", value: stats?.played ?? 0 },
+            { label: "Redeemed", value: stats?.redeemed ?? 0 },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -649,7 +661,7 @@ export function GamifiedMarketingTab() {
                 className="text-2xl font-bold text-capy-text mt-1"
                 style={{ fontFamily: "Tektur, sans-serif" }}
               >
-                {stat.value.toLocaleString()}
+                {statsLoading && !stats ? "—" : stat.value.toLocaleString()}
               </p>
             </div>
           ))}
@@ -662,78 +674,81 @@ export function GamifiedMarketingTab() {
               className="text-xl font-bold text-capy-green-dark"
               style={{ fontFamily: "Tektur, sans-serif" }}
             >
-              {MOCK_STATS.campaignScore}
+              {stats?.campaign_score ?? 0}
             </span>
           </div>
           <div className="flex-1">
             <p className="card-heading">Campaign Score</p>
             <p className="text-xs text-capy-muted mt-0.5">
-              Redemption rate × return visits
+              Redemptions ÷ games played
             </p>
             <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2.5 overflow-hidden">
               <div
                 className="h-full bg-capy-green rounded-full"
-                style={{ width: `${MOCK_STATS.campaignScore}%` }}
+                style={{ width: `${stats?.campaign_score ?? 0}%` }}
               />
             </div>
           </div>
         </div>
 
-        {/* Top 5 Returning Customers */}
+        {/* Top 5 Most Engaged Customers */}
         <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-capy-border">
-            <p className="card-heading">Top 5 Returning Customers</p>
+            <p className="card-heading">Top 5 Most Engaged Customers</p>
             <p className="text-xs text-capy-muted mt-0.5">
-              Returned within 30 days of redeeming
+              Ranked by games played
             </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50">
-                  {["Rank", "Customer", "Played", "Redeemed", "Returns"].map(
-                    (col) => (
+          {(stats?.top_customers?.length ?? 0) === 0 ? (
+            <p className="text-xs text-capy-muted text-center py-6">
+              {statsLoading
+                ? "Loading…"
+                : "No plays yet — stats appear once customers start playing."}
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50">
+                    {["Rank", "Customer", "Played", "Redeemed"].map((col) => (
                       <th
                         key={col}
                         className="px-4 py-2.5 text-left section-label"
                       >
                         {col}
                       </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-capy-border/60">
-                {MOCK_STATS.topCustomers.map((row) => (
-                  <tr
-                    key={row.rank}
-                    className="hover:bg-slate-50/50 transition-colors"
-                  >
-                    <td className="px-4 py-2.5">
-                      <span
-                        className="w-5 h-5 rounded-full bg-capy-text text-white text-xs font-bold flex items-center justify-center"
-                        style={{ fontFamily: "Tektur, sans-serif" }}
-                      >
-                        {row.rank}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text font-mono">
-                      {row.phone}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">
-                      {row.gamesPlayed}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">
-                      {row.redeemed}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-capy-text">
-                      {row.returnVisits}
-                    </td>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-capy-border/60">
+                  {(stats?.top_customers ?? []).map((row) => (
+                    <tr
+                      key={row.rank}
+                      className="hover:bg-slate-50/50 transition-colors"
+                    >
+                      <td className="px-4 py-2.5">
+                        <span
+                          className="w-5 h-5 rounded-full bg-capy-text text-white text-xs font-bold flex items-center justify-center"
+                          style={{ fontFamily: "Tektur, sans-serif" }}
+                        >
+                          {row.rank}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-capy-text font-mono">
+                        {row.name || row.phone}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-capy-text">
+                        {row.games_played}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-capy-text">
+                        {row.redeemed}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Per-Game Breakdown */}
@@ -759,15 +774,15 @@ export function GamifiedMarketingTab() {
                   </div>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {[
-                    { label: "Sent", value: MOCK_PER_GAME[i]?.sent ?? 0 },
-                    { label: "Played", value: MOCK_PER_GAME[i]?.played ?? 0 },
-                    { label: "Won", value: MOCK_PER_GAME[i]?.won ?? 0 },
-                    {
-                      label: "Discounts",
-                      value: MOCK_PER_GAME[i]?.discounts ?? 0,
-                    },
-                  ].map((s) => (
+                  {(() => {
+                    const g = perGameByType.get(game.type);
+                    return [
+                      { label: "Sent", value: g?.sent ?? 0 },
+                      { label: "Played", value: g?.played ?? 0 },
+                      { label: "Won", value: g?.won ?? 0 },
+                      { label: "Discounts", value: g?.discounts ?? 0 },
+                    ];
+                  })().map((s) => (
                     <div key={s.label}>
                       <p className="section-label">{s.label}</p>
                       <p
