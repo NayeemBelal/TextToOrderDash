@@ -15,6 +15,33 @@ interface PrizeData {
   redemption_expires_at: string | null;
   restaurant_name: string;
   discount_name: string;
+  logo_url: string | null;
+  brand_color: string | null;
+}
+
+// Neutral, professional fallback when a restaurant hasn't set a brand color.
+const DEFAULT_BRAND = "#1e293b"; // slate-800
+
+// Darken a #rrggbb hex by `amount` (0..1) for a subtle header gradient.
+function darken(hex: string, amount = 0.18): string {
+  const h = hex.replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return hex;
+  const n = parseInt(h, 16);
+  const r = Math.max(0, Math.round(((n >> 16) & 0xff) * (1 - amount)));
+  const g = Math.max(0, Math.round(((n >> 8) & 0xff) * (1 - amount)));
+  const b = Math.max(0, Math.round((n & 0xff) * (1 - amount)));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+// Pick readable text color (black/white) for a given background hex.
+function textOn(hex: string): string {
+  const h = hex.replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return "#ffffff";
+  const n = parseInt(h, 16);
+  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+  // Relative luminance
+  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return L > 0.6 ? "#111827" : "#ffffff";
 }
 
 export default function PrizePage() {
@@ -108,37 +135,49 @@ export default function PrizePage() {
     return "Thanks for playing!";
   };
 
-  const gradientClass = data?.is_winner
-    ? "from-pink-400 to-rose-500"
-    : "from-indigo-400 to-purple-600";
-
-  const pillClass = data?.is_winner
-    ? "bg-yellow-50 text-yellow-800 border border-yellow-200"
-    : "bg-green-50 text-green-800 border border-green-200";
+  // ── Branding ──────────────────────────────────────────────────────────────
+  const brand = (data?.brand_color && /^#?[0-9a-fA-F]{6}$/.test(data.brand_color))
+    ? (data.brand_color.startsWith("#") ? data.brand_color : `#${data.brand_color}`)
+    : DEFAULT_BRAND;
+  const headerBg =
+    pageState === "expired"
+      ? "linear-gradient(135deg, #64748b, #475569)"
+      : `linear-gradient(135deg, ${brand}, ${darken(brand)})`;
+  const onBrand = textOn(brand);
+  const logo = data?.logo_url || null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-400 to-purple-600 flex items-start justify-center p-5">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-slate-100 flex items-start justify-center p-5">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden">
 
         {/* Header */}
-        <div className={`bg-gradient-to-br ${pageState === "expired" ? "from-slate-400 to-slate-600" : gradientClass} text-white px-6 py-8 text-center`}>
-          <div className="text-5xl mb-3">
-            {pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}
+        <div className="px-6 py-8 text-center" style={{ backgroundImage: headerBg, color: onBrand }}>
+          {/* Logo badge (falls back to an emoji when no logo is set) */}
+          <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden">
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
+            ) : (
+              <span className="text-3xl">{pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}</span>
+            )}
           </div>
-          <h1 className="text-xl font-bold mb-1">
+          <h1 className="text-lg font-bold leading-tight">{data?.restaurant_name ?? ""}</h1>
+          <p className="text-sm mt-0.5" style={{ opacity: 0.85 }}>
             {pageState === "expired"
-              ? "Prize Expired"
+              ? "Offer expired"
               : data?.is_winner
-              ? "You Won!"
-              : "Your Discount"}
-          </h1>
-          <p className="text-sm opacity-90">{data?.restaurant_name ?? ""}</p>
+              ? "You won a reward!"
+              : "A reward for you"}
+          </p>
         </div>
 
         {/* Prize summary — shown when not expired */}
         {pageState !== "expired" && pageState !== "loading" && pageState !== "not_found" && data && (
           <div className="px-6 py-5 border-b border-gray-100 text-center">
-            <span className={`inline-block rounded-full px-5 py-2 text-sm font-semibold ${pillClass}`}>
+            <span
+              className="inline-block rounded-full px-5 py-2 text-sm font-semibold"
+              style={{ backgroundColor: `${brand}14`, color: darken(brand, 0.1) }}
+            >
               {prizeLabel()}
             </span>
             <p className="text-xs text-gray-400 mt-2">{prizeSubtitle()}</p>
@@ -147,15 +186,15 @@ export default function PrizePage() {
 
         {/* Loading */}
         {pageState === "loading" && (
-          <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading your prize…</div>
+          <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading your reward…</div>
         )}
 
         {/* Not found */}
         {pageState === "not_found" && (
           <div className="px-6 py-10 text-center">
             <div className="text-4xl mb-4">🤔</div>
-            <p className="font-semibold text-gray-700 mb-2">Prize Not Found</p>
-            <p className="text-sm text-gray-400">This prize link doesn&apos;t exist or has been removed.</p>
+            <p className="font-semibold text-gray-700 mb-2">Reward Not Found</p>
+            <p className="text-sm text-gray-400">This link doesn&apos;t exist or has been removed.</p>
           </div>
         )}
 
@@ -163,13 +202,14 @@ export default function PrizePage() {
         {pageState === "pending" && (
           <div className="px-6 py-6 space-y-4">
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 text-center leading-relaxed">
-              ⏱ Once you tap <strong>Redeem</strong>, you&apos;ll have <strong>30 minutes</strong> to use your prize in store.
+              ⏱ Once you tap <strong>Redeem</strong>, you&apos;ll have <strong>30 minutes</strong> to use this in store.
               <br />Only tap when you&apos;re ready at the register!
             </div>
             <button
               onClick={handleRedeem}
               disabled={redeeming}
-              className={`w-full text-white font-bold text-base rounded-xl py-4 transition-opacity bg-gradient-to-r ${gradientClass} disabled:opacity-50`}
+              className="w-full font-bold text-base rounded-xl py-4 transition-opacity disabled:opacity-50"
+              style={{ backgroundColor: brand, color: onBrand }}
             >
               {redeeming ? "Creating discount…" : "Redeem in Store Now"}
             </button>
@@ -183,7 +223,10 @@ export default function PrizePage() {
         {pageState === "active" && (
           <div className="px-6 py-6 space-y-4 text-center">
             <p className="text-sm text-gray-500">Show this screen to the cashier and ask them to apply:</p>
-            <div className="border-2 border-dashed border-indigo-300 rounded-xl p-4 bg-indigo-50 text-indigo-800 font-bold text-lg break-all">
+            <div
+              className="border-2 border-dashed rounded-xl p-4 font-bold text-lg break-all"
+              style={{ borderColor: `${brand}55`, backgroundColor: `${brand}0f`, color: darken(brand, 0.15) }}
+            >
               {discountName}
             </div>
             <p className="text-xs text-gray-400">
@@ -201,10 +244,10 @@ export default function PrizePage() {
         {/* Expired */}
         {pageState === "expired" && (
           <div className="px-6 py-10 text-center space-y-3">
-            <p className="font-semibold text-gray-700">This prize has expired</p>
+            <p className="font-semibold text-gray-700">This offer has expired</p>
             <p className="text-sm text-gray-400 leading-relaxed">
               The 30-minute redemption window has passed.<br />
-              Play the next game for another chance to win!
+              Keep an eye out for the next one!
             </p>
           </div>
         )}
