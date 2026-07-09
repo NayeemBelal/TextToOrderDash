@@ -49,6 +49,13 @@ interface OptinStatus {
   pending: number;
   opted_out: number;
   last_scan_at: string | null;
+  // Sent-cohort counts — how many customers we actually texted the opt-in blast
+  // to (blast_sent), and how that cohort has responded so far. blast_opted_in +
+  // blast_pending + blast_opted_out === blast_sent.
+  blast_sent: number;
+  blast_opted_in: number;
+  blast_pending: number;
+  blast_opted_out: number;
 }
 interface MarketingMenuItem {
   clover_id: string;
@@ -90,12 +97,6 @@ interface CampaignStats {
   campaign_score: number;
   top_customers: TopCustomerRow[];
   per_game: PerGameStats[];
-}
-interface OptinStatus {
-  opted_in: number;
-  pending: number;
-  opted_out: number;
-  last_scan_at: string | null;
 }
 
 const EMPTY_STATS: CampaignStats = {
@@ -229,6 +230,17 @@ export function GamifiedMarketingTab() {
   const [scanLoading, setScanLoading] = useState(false);
   const [blastLoading, setBlastLoading] = useState(false);
   const [blastToast, setBlastToast] = useState<string | null>(null);
+  const [optinRefreshing, setOptinRefreshing] = useState(false);
+
+  const refreshOptinStatus = (id: string) => {
+    setOptinRefreshing(true);
+    marketingApiFetch<OptinStatus>(
+      `/api/marketing/optin-status?restaurant_id=${id}`,
+    )
+      .then((d) => setOptinStatus(d))
+      .catch(() => {})
+      .finally(() => setOptinRefreshing(false));
+  };
 
   const getDayTime = (day: string) =>
     `${dayHours[day] ?? "12"}:${dayMinutes[day] ?? "00"} ${dayAmPm[day] ?? "PM"}`;
@@ -268,9 +280,7 @@ export function GamifiedMarketingTab() {
       .finally(() => setMenuItemsLoading(false));
 
     // Opt-in status
-    marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${id}`)
-      .then((d) => setOptinStatus(d))
-      .catch(() => {});
+    refreshOptinStatus(id);
 
     // Restore an existing active/paused campaign so a page refresh
     // doesn't lose dashboard state.
@@ -349,9 +359,7 @@ export function GamifiedMarketingTab() {
       setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
       setScanResult(null);
       // Refresh status
-      marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${rid}`)
-        .then((d) => setOptinStatus(d))
-        .catch(() => {});
+      refreshOptinStatus(rid);
       setTimeout(() => setBlastToast(null), 4000);
     } catch {
       setBlastToast("Something went wrong. Please try again.");
@@ -512,6 +520,214 @@ export function GamifiedMarketingTab() {
     }
   })();
 
+  /* ── Opt-In card ──────────────────────────────────────────────────────────
+     Rendered identically on the dashboard and inside the setup wizard, so it
+     lives in one helper. Before any blast has gone out it's a scan/send call to
+     action; once we've texted anyone (blast_sent > 0) it flips into a progress
+     tracker (Sent → Opted In + funnel), with scan/send demoted to a secondary
+     "send to new customers" action. */
+  const renderOptInCard = (wrapperClassName = "") => {
+    const hasBlasted = (optinStatus?.blast_sent ?? 0) > 0;
+    const conversion =
+      optinStatus && optinStatus.blast_sent > 0
+        ? Math.round(
+            (optinStatus.blast_opted_in / optinStatus.blast_sent) * 100,
+          )
+        : 0;
+    const newCustomers = scanResult?.new_customers ?? 0;
+
+    return (
+      <div
+        className={`bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3 ${wrapperClassName}`}
+      >
+        {hasBlasted && optinStatus ? (
+          /* ── Progress tracker ── */
+          <>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="card-heading text-sm">Opt-In Progress</p>
+                <p className="text-xs text-capy-muted mt-0.5">
+                  How your opt-in blast is converting
+                </p>
+              </div>
+              <button
+                onClick={() => rid && refreshOptinStatus(rid)}
+                disabled={optinRefreshing}
+                title="Refresh"
+                className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              >
+                <svg
+                  className={`w-4 h-4 ${optinRefreshing ? "animate-spin" : ""}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Headline stats */}
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="section-label">Sent</p>
+                <p
+                  className="text-2xl font-bold text-capy-text mt-0.5"
+                  style={{ fontFamily: "Tektur, sans-serif" }}
+                >
+                  {optinStatus.blast_sent.toLocaleString()}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="section-label">Opted In</p>
+                <p
+                  className="text-2xl font-bold text-capy-green-dark mt-0.5"
+                  style={{ fontFamily: "Tektur, sans-serif" }}
+                >
+                  {optinStatus.blast_opted_in.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Conversion progress bar */}
+            <div>
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-capy-green rounded-full transition-all"
+                  style={{ width: `${conversion}%` }}
+                />
+              </div>
+              <p className="text-xs text-capy-muted mt-1">
+                {conversion}% opted in
+              </p>
+            </div>
+
+            {/* Funnel legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-capy-green" />
+                <span className="font-semibold text-capy-text">
+                  {optinStatus.blast_opted_in}
+                </span>
+                <span className="text-capy-muted">opted in</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="font-semibold text-capy-text">
+                  {optinStatus.blast_pending}
+                </span>
+                <span className="text-capy-muted">awaiting reply</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <span className="font-semibold text-capy-text">
+                  {optinStatus.blast_opted_out}
+                </span>
+                <span className="text-capy-muted">declined</span>
+              </span>
+            </div>
+          </>
+        ) : (
+          /* ── Pre-blast call to action ── */
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="card-heading text-sm">Opt-In Your Customer List</p>
+              <p className="text-xs text-capy-muted mt-0.5">
+                Send a compliant opt-in invite to your Clover contacts
+              </p>
+            </div>
+            {optinStatus && (
+              <div className="flex gap-3 text-xs text-right">
+                <div>
+                  <p className="font-semibold text-capy-green-dark">
+                    {optinStatus.opted_in}
+                  </p>
+                  <p className="text-capy-muted">opted in</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-amber-600">
+                    {optinStatus.pending}
+                  </p>
+                  <p className="text-capy-muted">pending</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-400">
+                    {optinStatus.opted_out}
+                  </p>
+                  <p className="text-capy-muted">opted out</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {optinStatus?.last_scan_at && !scanResult && (
+          <p className="text-xs text-capy-muted">
+            Last scan:{" "}
+            {new Date(optinStatus.last_scan_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        )}
+        {scanError && (
+          <div className="flex items-center gap-2 text-sm text-red-600">
+            <span className="font-semibold">!</span>
+            <span>{scanError}</span>
+          </div>
+        )}
+        {scanResult !== null && (
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-capy-green-dark font-semibold">✓</span>
+            {newCustomers > 0 ? (
+              <span className="text-capy-text">
+                {newCustomers} new customer{newCustomers !== 1 ? "s" : ""} ready
+                to receive opt-in
+              </span>
+            ) : (
+              <span className="text-capy-muted">
+                All Clover customers have already been contacted
+              </span>
+            )}
+          </div>
+        )}
+        {blastToast && (
+          <div className="bg-capy-green-light text-capy-green-dark text-xs font-semibold px-3 py-2 rounded-xl">
+            {blastToast}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <button
+            onClick={handleScanClover}
+            disabled={scanLoading || blastLoading}
+            className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+          >
+            {scanLoading ? "Scanning…" : "Scan Clover"}
+          </button>
+          {newCustomers > 0 && (
+            <button
+              onClick={handleSendBlast}
+              disabled={blastLoading}
+              className="flex-1 py-2 px-3 rounded-xl bg-capy-green text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {blastLoading
+                ? "Sending…"
+                : hasBlasted
+                  ? `Send opt-in to ${newCustomers} new`
+                  : `Send 10% Off Opt-In to ${newCustomers} Customer${newCustomers !== 1 ? "s" : ""}`}
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // ── Render ──────────────────────────────────────────────────────────────
 
   /* ── SETTING UP (no restaurant provisioned yet) ─────────────────────────
@@ -544,86 +760,8 @@ export function GamifiedMarketingTab() {
     return (
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
 
-        {/* Opt-In Blast Card (also visible on dashboard) */}
-        <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="card-heading text-sm">Opt-In Your Customer List</p>
-              <p className="text-xs text-capy-muted mt-0.5">
-                Send a compliant opt-in invite to your Clover contacts
-              </p>
-            </div>
-            {optinStatus && (
-              <div className="flex gap-3 text-xs text-right">
-                <div>
-                  <p className="font-semibold text-capy-green-dark">{optinStatus.opted_in}</p>
-                  <p className="text-capy-muted">opted in</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-amber-600">{optinStatus.pending}</p>
-                  <p className="text-capy-muted">pending</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-400">{optinStatus.opted_out}</p>
-                  <p className="text-capy-muted">opted out</p>
-                </div>
-              </div>
-            )}
-          </div>
-          {optinStatus?.last_scan_at && !scanResult && (
-            <p className="text-xs text-capy-muted">
-              Last scan:{" "}
-              {new Date(optinStatus.last_scan_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
-          )}
-          {scanError && (
-            <div className="flex items-center gap-2 text-sm text-red-600">
-              <span className="font-semibold">!</span>
-              <span>{scanError}</span>
-            </div>
-          )}
-          {scanResult !== null && (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-capy-green-dark font-semibold">✓</span>
-              {scanResult.new_customers > 0 ? (
-                <span className="text-capy-text">
-                  {scanResult.new_customers} new customer{scanResult.new_customers !== 1 ? "s" : ""} ready to receive opt-in
-                </span>
-              ) : (
-                <span className="text-capy-muted">All Clover customers have already been contacted</span>
-              )}
-            </div>
-          )}
-          {blastToast && (
-            <div className="bg-capy-green-light text-capy-green-dark text-xs font-semibold px-3 py-2 rounded-xl">
-              {blastToast}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <button
-              onClick={handleScanClover}
-              disabled={scanLoading || blastLoading}
-              className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
-            >
-              {scanLoading ? "Scanning…" : "Scan Clover"}
-            </button>
-            {scanResult && scanResult.new_customers > 0 && (
-              <button
-                onClick={handleSendBlast}
-                disabled={blastLoading}
-                className="flex-1 py-2 px-3 rounded-xl bg-capy-green text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
-                {blastLoading
-                  ? "Sending…"
-                  : `Send 10% Off Opt-In to ${scanResult.new_customers} Customer${scanResult.new_customers !== 1 ? "s" : ""}`}
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Opt-In card (also visible on dashboard) */}
+        {renderOptInCard()}
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -904,90 +1042,8 @@ export function GamifiedMarketingTab() {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
 
-      {/* ── Opt-In Blast Card ── */}
-      <div className="flex-shrink-0 mx-4 mt-4 bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="card-heading text-sm">Opt-In Your Customer List</p>
-            <p className="text-xs text-capy-muted mt-0.5">
-              Send a compliant opt-in invite to your Clover contacts
-            </p>
-          </div>
-          {optinStatus && (
-            <div className="flex gap-3 text-xs text-right">
-              <div>
-                <p className="font-semibold text-capy-green-dark">{optinStatus.opted_in}</p>
-                <p className="text-capy-muted">opted in</p>
-              </div>
-              <div>
-                <p className="font-semibold text-amber-600">{optinStatus.pending}</p>
-                <p className="text-capy-muted">pending</p>
-              </div>
-              <div>
-                <p className="font-semibold text-slate-400">{optinStatus.opted_out}</p>
-                <p className="text-capy-muted">opted out</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {optinStatus?.last_scan_at && !scanResult && (
-          <p className="text-xs text-capy-muted">
-            Last scan:{" "}
-            {new Date(optinStatus.last_scan_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        )}
-
-        {scanError && (
-          <div className="flex items-center gap-2 text-sm text-red-600">
-            <span className="font-semibold">!</span>
-            <span>{scanError}</span>
-          </div>
-        )}
-        {scanResult !== null && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-capy-green-dark font-semibold">✓</span>
-            {scanResult.new_customers > 0 ? (
-              <span className="text-capy-text">
-                {scanResult.new_customers} new customer{scanResult.new_customers !== 1 ? "s" : ""} ready to receive opt-in
-              </span>
-            ) : (
-              <span className="text-capy-muted">All Clover customers have already been contacted</span>
-            )}
-          </div>
-        )}
-
-        {blastToast && (
-          <div className="bg-capy-green-light text-capy-green-dark text-xs font-semibold px-3 py-2 rounded-xl">
-            {blastToast}
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <button
-            onClick={handleScanClover}
-            disabled={scanLoading || blastLoading}
-            className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
-          >
-            {scanLoading ? "Scanning…" : "Scan Clover"}
-          </button>
-          {scanResult && scanResult.new_customers > 0 && (
-            <button
-              onClick={handleSendBlast}
-              disabled={blastLoading}
-              className="flex-1 py-2 px-3 rounded-xl bg-capy-green text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              {blastLoading
-                ? "Sending…"
-                : `Send 10% Off Opt-In to ${scanResult.new_customers} Customer${scanResult.new_customers !== 1 ? "s" : ""}`}
-            </button>
-          )}
-        </div>
-      </div>
+      {/* ── Opt-In card ── */}
+      {renderOptInCard("flex-shrink-0 mx-4 mt-4")}
 
       {/* Wizard header */}
       <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-capy-border">
