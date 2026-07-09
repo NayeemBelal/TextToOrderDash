@@ -10,6 +10,17 @@ import { useParams, useSearchParams } from "next/navigation";
 
 type PrizeState = "pending" | "active" | "expired";
 
+// Mirror the real prize page: show hours while the window is long, MM:SS in the
+// final hour. The coupon is valid for up to 24h.
+function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 export default function DemoPrizePage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-gradient-to-br from-indigo-400 to-purple-600" />}>
@@ -28,7 +39,7 @@ function DemoPrizeContent() {
 
   const [pageState, setPageState] = useState<PrizeState>("pending");
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
-  const [countdown, setCountdown] = useState("30:00");
+  const [countdown, setCountdown] = useState("24h 00m");
   const [isUrgent, setIsUrgent] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -39,10 +50,8 @@ function DemoPrizeContent() {
     if (pageState !== "active" || !expiresAt) return;
     timerRef.current = setInterval(() => {
       const remaining = Math.max(0, expiresAt.getTime() - Date.now());
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      setCountdown(`${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`);
-      setIsUrgent(remaining < 300000);
+      setCountdown(formatRemaining(remaining));
+      setIsUrgent(remaining < 900000); // last 15 minutes
       if (remaining <= 0) {
         if (timerRef.current) clearInterval(timerRef.current);
         setPageState("expired");
@@ -53,9 +62,11 @@ function DemoPrizeContent() {
 
   function handleRedeem() {
     setRedeeming(true);
-    // Mock: pretend to create the discount, then start the 30-min window.
+    // Mock: pretend to create the discount, then start the 24-hour window.
     setTimeout(() => {
-      setExpiresAt(new Date(Date.now() + 30 * 60 * 1000));
+      const exp = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      setExpiresAt(exp);
+      setCountdown(formatRemaining(exp.getTime() - Date.now()));
       setPageState("active");
       setRedeeming(false);
     }, 700);
@@ -102,8 +113,8 @@ function DemoPrizeContent() {
         {pageState === "pending" && (
           <div className="px-6 py-6 space-y-4">
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 text-center leading-relaxed">
-              ⏱ Once you tap <strong>Redeem</strong>, you&apos;ll have <strong>30 minutes</strong> to use your prize in store.
-              <br />Only tap when you&apos;re ready at the register!
+              ⏱ This offer is valid for <strong>24 hours</strong> from when you received it.
+              <br />Tap <strong>Redeem</strong> when you&apos;re ready at the register!
             </div>
             <button
               onClick={handleRedeem}
@@ -140,7 +151,7 @@ function DemoPrizeContent() {
           <div className="px-6 py-10 text-center space-y-3">
             <p className="font-semibold text-gray-700">This prize has expired</p>
             <p className="text-sm text-gray-400 leading-relaxed">
-              The 30-minute redemption window has passed.<br />
+              The 24-hour redemption window has passed.<br />
               Play the next game for another chance to win!
             </p>
           </div>
