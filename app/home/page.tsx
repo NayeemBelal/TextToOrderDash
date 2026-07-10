@@ -97,7 +97,11 @@ function HomePageInner() {
 
   return (
     <div className="h-full flex flex-col">
-      <SubNav tabs={allowedTabs} activeTab={activeTab} setActiveTab={setSelectedTab} />
+      {/* Hide the sub-tab bar when there's only one product (e.g. marketing-only
+          accounts): a lone "Marketing" tab is redundant above its own sub-nav. */}
+      {allowedTabs.length > 1 && (
+        <SubNav tabs={allowedTabs} activeTab={activeTab} setActiveTab={setSelectedTab} />
+      )}
 
       {activeTab === 'manage' && (
         <div className="flex-1 min-h-0 p-4 gap-3 flex flex-col overflow-y-auto md:flex-row md:overflow-hidden">
