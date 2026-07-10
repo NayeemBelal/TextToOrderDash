@@ -5,8 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { VoiceRevenueCard } from "@/components/voice/VoiceRevenueCard";
 import { IncomingCallsCard } from "@/components/voice/IncomingCallsCard";
 import { VoiceAnalyticsTab } from "@/components/voice/VoiceAnalyticsTab";
-import { GamifiedMarketingTab } from "@/components/voice/GamifiedMarketingTab";
 import { SalesAITab } from "@/components/voice/SalesAITab";
+import { MarketingSection } from "@/components/marketing/MarketingSection";
 import { useAuth } from '@/lib/auth-context';
 import { type SubscriptionKey } from '@/lib/subscriptions';
 
@@ -122,11 +122,7 @@ function HomePageInner() {
         </div>
       )}
 
-      {activeTab === 'marketing' && (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <GamifiedMarketingTab />
-        </div>
-      )}
+      {activeTab === 'marketing' && <MarketingSection />}
     </div>
   );
 }
