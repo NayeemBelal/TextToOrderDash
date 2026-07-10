@@ -51,7 +51,7 @@ export function RevenueAnalyticsTab() {
   const totals = summary?.totals;
 
   return (
-    <div className="h-full overflow-y-auto p-4">
+    <div className="p-4">
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>

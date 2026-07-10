@@ -4,11 +4,44 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useMarketingView, type MarketingView } from "@/lib/marketing-view-context";
 
 const TABS = [
   { label: "Home", href: "/home" },
   { label: "Configure", href: "/configure" },
 ];
+
+const MARKETING_TABS: { key: MarketingView; label: string }[] = [
+  { key: "campaign", label: "Campaign" },
+  { key: "revenue", label: "Revenue" },
+];
+
+/**
+ * Campaign/Revenue toggle rendered in the header's left slot for marketing-only
+ * accounts, so it sits on the same row as the logo instead of in a separate bar.
+ */
+function MarketingHeaderTabs() {
+  const { view, setView } = useMarketingView();
+  return (
+    <nav className="flex items-center gap-1">
+      {MARKETING_TABS.map((tab) => {
+        const active = view === tab.key;
+        return (
+          <button
+            key={tab.key}
+            onClick={() => setView(tab.key)}
+            className={`nav-tab-bar relative px-4 pt-1.5 pb-0.5 text-base transition-colors duration-150 ${
+              active ? "nav-tab-active text-capy-text" : "text-capy-muted hover:text-capy-text"
+            }`}
+            style={{ fontFamily: "Tektur, sans-serif", fontWeight: 600 }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
 export function VoiceTopNav() {
   const pathname = usePathname();
@@ -22,6 +55,9 @@ export function VoiceTopNav() {
   const visibleTabs = TABS.filter(
     (tab) => tab.href !== "/configure" || hasSubscription("ordering"),
   );
+  // Marketing-only accounts (no ordering product) get the Campaign/Revenue toggle
+  // in the header instead of a redundant "Home" tab.
+  const marketingOnly = !hasSubscription("ordering");
 
   const isActive = (href: string) => {
     if (href === "/home") return pathname === "/home";
@@ -37,10 +73,15 @@ export function VoiceTopNav() {
       style={{  }}
     >
       <div className="flex items-center h-16 px-6">
-        {/* Left — tabs flush to left edge */}
+        {/* Left — tabs flush to left edge. Marketing-only accounts have no
+            second destination, so instead of a lone "Home" we surface the
+            Campaign/Revenue toggle here, aligned with the logo. */}
         <div className="flex-1 flex items-center justify-start">
+          {marketingOnly && pathname === "/home" ? (
+            <MarketingHeaderTabs />
+          ) : (
           <nav className="flex items-center gap-1">
-            {visibleTabs.map((tab) => {
+            {visibleTabs.length > 1 && visibleTabs.map((tab) => {
               const active = isActive(tab.href);
               const hover = hoverState[tab.href];
               return (
@@ -69,6 +110,7 @@ export function VoiceTopNav() {
               );
             })}
           </nav>
+          )}
         </div>
 
         {/* Right — sign out + logo */}

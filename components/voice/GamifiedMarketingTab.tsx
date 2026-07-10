@@ -736,7 +736,7 @@ export function GamifiedMarketingTab() {
      show — and we must never fall back to another restaurant's data. */
   if (!restaurantId) {
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center p-6">
+      <div className="min-h-[60vh] flex items-center justify-center p-6">
         <div className="max-w-md text-center flex flex-col items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-capy-green-light flex items-center justify-center">
             <svg className="w-7 h-7 text-capy-green-dark animate-spin" fill="none" viewBox="0 0 24 24">
@@ -758,7 +758,7 @@ export function GamifiedMarketingTab() {
   if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */
     return (
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+      <div className="p-4 space-y-4">
 
         {/* Opt-In card (also visible on dashboard) */}
         {renderOptInCard()}
@@ -1040,7 +1040,7 @@ export function GamifiedMarketingTab() {
 
   /* ── SETUP WIZARD ───────────────────────────────────────────────────── */
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+    <div className="flex flex-col">
 
       {/* ── Opt-In card ── */}
       {renderOptInCard("flex-shrink-0 mx-4 mt-4")}
@@ -1116,8 +1116,8 @@ export function GamifiedMarketingTab() {
         </div>
       </div>
 
-      {/* Step content — scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
+      {/* Step content — grows with the page (page scrolls at the section level) */}
+      <div className="px-4 py-4">
         {/* ── Step 1: Roster ── */}
         {wizardStep === 1 && (
           <div className="space-y-4">
@@ -1872,7 +1872,7 @@ export function GamifiedMarketingTab() {
       </div>
 
       {/* Wizard footer navigation */}
-      <div className="flex-shrink-0 px-4 py-4 border-t border-capy-border flex items-center justify-between bg-white">
+      <div className="sticky bottom-0 z-10 px-4 py-4 border-t border-capy-border flex items-center justify-between bg-white">
         <button
           onClick={handleBack}
           disabled={wizardStep === 1}
