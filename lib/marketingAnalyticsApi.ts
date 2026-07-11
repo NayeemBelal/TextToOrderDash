@@ -56,6 +56,11 @@ export interface OrdersPage {
 }
 
 export interface OrderDetail extends OrderListItem {
+  // Money breakdown (integer cents), computed by the backend so that
+  // subtotal - discount + tax = total. Display these directly — do NOT reconstruct.
+  subtotal_cents: number;
+  tax_cents: number;
+  flagged: boolean; // >1 marketing coupon applied to this order (register misuse)
   clover_discount_id: string | null;
   order_state: string | null;
   ordered_at: string | null;
@@ -68,7 +73,14 @@ export interface CloverOrderSnapshot {
   id?: string;
   total?: number;
   currency?: string;
-  lineItems?: { elements?: Array<{ name?: string; price?: number; unitQty?: number }> };
+  lineItems?: {
+    elements?: Array<{
+      name?: string;
+      price?: number;
+      unitQty?: number;
+      modifications?: { elements?: Array<{ name?: string; amount?: number }> };
+    }>;
+  };
   payments?: { elements?: Array<{ amount?: number; result?: string; createdTime?: number }> };
   [k: string]: unknown;
 }
