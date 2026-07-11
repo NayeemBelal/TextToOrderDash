@@ -4,11 +4,11 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
 
-type PrizeState = "loading" | "pending" | "active" | "expired" | "not_found";
+type PrizeState = "loading" | "pending" | "active" | "expired" | "used" | "not_found";
 
 interface PrizeData {
   prize_code: string;
-  state: "pending" | "active" | "expired";
+  state: "pending" | "active" | "expired" | "used";
   is_winner: boolean;
   prize_config: { type?: string; itemName?: string; percent?: number };
   loser_discount: number;
@@ -77,7 +77,9 @@ export default function PrizePage() {
       .then((d: PrizeData | null) => {
         if (!d) return;
         setData(d);
-        if (d.state === "active" && d.redemption_expires_at) {
+        if (d.state === "used") {
+          setPageState("used");
+        } else if (d.state === "active" && d.redemption_expires_at) {
           const exp = new Date(d.redemption_expires_at);
           setDiscountName(d.discount_name);
           setExpiresAt(exp);
@@ -156,6 +158,8 @@ export default function PrizePage() {
   const headerBg =
     pageState === "expired"
       ? "linear-gradient(135deg, #64748b, #475569)"
+      : pageState === "used"
+      ? "linear-gradient(135deg, #16a34a, #15803d)"
       : `linear-gradient(135deg, ${brand}, ${darken(brand)})`;
   const onBrand = textOn(brand);
   const logo = data?.logo_url || null;
@@ -168,16 +172,20 @@ export default function PrizePage() {
         <div className="px-6 py-8 text-center" style={{ backgroundImage: headerBg, color: onBrand }}>
           {/* Logo badge (falls back to an emoji when no logo is set) */}
           <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden">
-            {logo ? (
+            {logo && pageState !== "used" ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
             ) : (
-              <span className="text-3xl">{pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}</span>
+              <span className="text-3xl">
+                {pageState === "used" ? "✅" : pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}
+              </span>
             )}
           </div>
           <h1 className="text-lg font-bold leading-tight">{data?.restaurant_name ?? ""}</h1>
           <p className="text-sm mt-0.5" style={{ opacity: 0.85 }}>
-            {pageState === "expired"
+            {pageState === "used"
+              ? "Coupon used"
+              : pageState === "expired"
               ? "Offer expired"
               : data?.is_winner
               ? "You won a reward!"
@@ -185,8 +193,8 @@ export default function PrizePage() {
           </p>
         </div>
 
-        {/* Prize summary — shown when not expired */}
-        {pageState !== "expired" && pageState !== "loading" && pageState !== "not_found" && data && (
+        {/* Prize summary — shown while the coupon is still claimable/active */}
+        {pageState !== "expired" && pageState !== "used" && pageState !== "loading" && pageState !== "not_found" && data && (
           <div className="px-6 py-5 border-b border-gray-100 text-center">
             <span
               className="inline-block rounded-full px-5 py-2 text-sm font-semibold"
@@ -252,6 +260,18 @@ export default function PrizePage() {
                 {countdown}
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Used — coupon was applied to an order and retired */}
+        {pageState === "used" && (
+          <div className="px-6 py-10 text-center space-y-3">
+            <div className="text-4xl mb-1">🎉</div>
+            <p className="font-semibold text-gray-700">This coupon has been used</p>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Thanks for stopping by! This reward has been redeemed and can&apos;t be used again.<br />
+              <strong className="text-gray-600">Look out for your next coupon in your messages!</strong>
+            </p>
           </div>
         )}
 
