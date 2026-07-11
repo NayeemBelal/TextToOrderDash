@@ -23,11 +23,16 @@ interface LineItem {
 
 function readLineItems(detail: OrderDetail): LineItem[] {
   const els = detail.order_snapshot?.lineItems?.elements ?? [];
-  return els.map((e) => ({
-    name: e.name || "Item",
-    qty: e.unitQty ? Math.max(1, Math.round(e.unitQty / 1)) : 1,
-    priceCents: e.price || 0,
-  }));
+  return els.map((e) => {
+    // Fold size/add-on modifiers into the line price so the Items list sums to the
+    // Subtotal (the backend computes subtotal the same way: base price + modifiers).
+    const mods = (e.modifications?.elements ?? []).reduce((s, m) => s + (m.amount || 0), 0);
+    return {
+      name: e.name || "Item",
+      qty: e.unitQty ? Math.max(1, Math.round(e.unitQty / 1)) : 1,
+      priceCents: (e.price || 0) + mods,
+    };
+  });
 }
 
 function paymentMethod(detail: OrderDetail): string | null {
@@ -74,7 +79,6 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
 
   const cust = detail ? customerLabel(detail.customers ?? detail.customer) : null;
   const items = detail ? readLineItems(detail) : [];
-  const subtotalCents = detail ? detail.order_total_cents + detail.discount_amount_cents : 0;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -114,6 +118,11 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
                     Paid {new Date(detail.paid_at).toLocaleString("en-US")}
                   </p>
                 )}
+                {detail.flagged && (
+                  <p className="mt-2 text-xs px-2 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                    ⚠ More than one marketing coupon was applied to this order — review at the register.
+                  </p>
+                )}
               </section>
 
               <section className="border-t border-capy-border pt-4">
@@ -136,8 +145,9 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
               </section>
 
               <section className="border-t border-capy-border pt-4">
-                <Row label="Subtotal" value={formatUSD(subtotalCents)} />
+                <Row label="Subtotal" value={formatUSD(detail.subtotal_cents)} />
                 <Row label="Discount" value={`-${formatUSD(detail.discount_amount_cents)}`} />
+                {detail.tax_cents > 0 && <Row label="Tax" value={formatUSD(detail.tax_cents)} />}
                 <Row label="Total collected" value={formatUSD(detail.order_total_cents)} strong />
                 {paymentMethod(detail) && (
                   <p className="text-xs text-capy-muted mt-2">Paid via {paymentMethod(detail)}</p>
