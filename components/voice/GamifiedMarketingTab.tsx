@@ -4,12 +4,19 @@ import { useState, useEffect } from "react";
 import { marketingApiFetch } from "@/lib/api";
 import { countSegments } from "@/lib/smsSegments";
 import { getOptinConfig } from "@/lib/optinConfigApi";
+import {
+  getCampaignConfig,
+  type CampaignMessageDefaults,
+} from "@/lib/campaignConfigApi";
 import { useAuth } from "@/lib/auth-context";
 import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
   DEFAULT_TRIVIA,
-  buildTriviaMessage,
+  FALLBACK_GAME_MESSAGES,
+  FALLBACK_WINNER_MESSAGE,
+  FALLBACK_LOSER_MESSAGE,
+  buildTriviaChoices,
   type GameType,
   type TriviaConfig,
 } from "@/components/voice/games";
@@ -24,11 +31,19 @@ interface MockCustomer {
   phone: string;
   name: string;
 }
+// Per-slot editable SMS copy, sent to the backend inside each game's config.
+// Placeholders match the backend renderer (services/campaign_templates.py).
+interface GameMessages {
+  game?: string; // {restaurant_name} {prize}; trivia also {question} {choices}
+  winner?: string; // {first_name} {prize} {code} {link} {expiry}
+  loser?: string; // {first_name} {discount} {code} {link} {expiry}
+}
 interface GameConfig {
   type: GameType;
   day: ScheduleDay;
   time: string;
   trivia?: TriviaConfig;
+  messages?: GameMessages;
 }
 interface PrizeConfig {
   type: PrizeType;
@@ -43,6 +58,11 @@ interface CampaignConfig {
   prizes: PrizeConfig[];
   loserDiscount: number;
   loserDiscountCap: number;
+  // Coupon validity for winner + loser prizes: N days after playing, at a
+  // restaurant-local time of day ("HH:MM" 24h). Backend falls back to the
+  // rolling 24h default when absent (old campaigns).
+  couponExpiryDays?: number | null;
+  couponExpiryTime?: string | null;
   optedInCount: number;
   targetCustomerIds: string[];
 }
@@ -141,9 +161,22 @@ function to24h(hour: string, minute: string, ampm: string): string {
   return `${String(h).padStart(2, "0")}:${minute.padStart(2, "0")}`;
 }
 
+// Default (server-provided, else fallback) message set for a game type.
+function seedMessages(
+  type: GameType,
+  defaults: CampaignMessageDefaults | null,
+): Required<GameMessages> {
+  return {
+    game: defaults?.game_messages?.[type] ?? FALLBACK_GAME_MESSAGES[type],
+    winner: defaults?.winner_messages?.[type] ?? FALLBACK_WINNER_MESSAGE,
+    loser: defaults?.loser_messages?.[type] ?? FALLBACK_LOSER_MESSAGE,
+  };
+}
+
 function buildDefaultGames(
   days: ScheduleDay[],
   times: Record<string, string>,
+  defaults: CampaignMessageDefaults | null,
 ): GameConfig[] {
   return days.map((day, i) => {
     const type = DEFAULT_GAME_ORDER[i % DEFAULT_GAME_ORDER.length];
@@ -151,6 +184,7 @@ function buildDefaultGames(
       type,
       day,
       time: times[day] ?? "12:00 PM",
+      messages: seedMessages(type, defaults),
       ...(type === "trivia" ? { trivia: cloneDefaultTrivia() } : {}),
     };
   });
@@ -162,16 +196,22 @@ function buildDefaultPrizes(count: number): PrizeConfig[] {
   }));
 }
 
-function buildMessagePreview(game: GameConfig, prize: PrizeConfig): string {
-  const prizeLabel =
-    prize.type === "free-item"
-      ? `Free ${prize.itemName ?? "item"}`
-      : `${prize.percent ?? 0}% off your order`;
-  const template =
-    game.type === "trivia"
-      ? buildTriviaMessage(game.trivia ?? DEFAULT_TRIVIA)
-      : GAME_DEFINITIONS[game.type].template;
-  return template.replace("[PRIZE]", prizeLabel);
+// Substitute {placeholder}s the way the backend renderer does (.replace, not
+// format, so stray braces in owner text are harmless).
+function renderTemplate(
+  template: string,
+  vars: Record<string, string>,
+): string {
+  return Object.entries(vars).reduce(
+    (acc, [key, value]) => acc.split(`{${key}}`).join(value),
+    template,
+  );
+}
+
+function buildPrizeLabel(prize?: PrizeConfig): string {
+  if (!prize) return "your prize";
+  if (prize.type === "free-item") return `Free ${prize.itemName ?? "item"}`;
+  return prize.percent ? `${prize.percent}% off your order` : "your prize";
 }
 
 function aggregatePerGame(
@@ -261,6 +301,19 @@ export function GamifiedMarketingTab() {
   const [optinExpiryMinute, setOptinExpiryMinute] = useState("00");
   const [optinExpiryAmPm, setOptinExpiryAmPm] = useState("PM");
 
+  // Campaign message config (per-slot editable copy + coupon expiry)
+  const [campaignDefaults, setCampaignDefaults] =
+    useState<CampaignMessageDefaults | null>(null);
+  const [openMessageEditor, setOpenMessageEditor] = useState<number | null>(
+    null,
+  );
+  const [copiedAllToast, setCopiedAllToast] = useState(false);
+  const [showReplyPreviews, setShowReplyPreviews] = useState(false);
+  const [campaignExpiryDays, setCampaignExpiryDays] = useState(1);
+  const [campaignExpiryHour, setCampaignExpiryHour] = useState("11");
+  const [campaignExpiryMinute, setCampaignExpiryMinute] = useState("00");
+  const [campaignExpiryAmPm, setCampaignExpiryAmPm] = useState("PM");
+
   const refreshOptinStatus = (id: string) => {
     setOptinRefreshing(true);
     marketingApiFetch<OptinStatus>(
@@ -322,6 +375,20 @@ export function GamifiedMarketingTab() {
         setOptinExpiryHour(t.hour);
         setOptinExpiryMinute(t.minute);
         setOptinExpiryAmPm(t.ampm);
+      })
+      .catch(() => {});
+
+    // Campaign message config — prefill the wizard's per-game message editors
+    // and the coupon-expiry control. On failure the FALLBACK_* templates in
+    // games.ts keep the editors usable.
+    getCampaignConfig(id)
+      .then((c) => {
+        setCampaignDefaults(c);
+        if (c.expiry_days) setCampaignExpiryDays(c.expiry_days);
+        const t = from24h(c.expiry_time);
+        setCampaignExpiryHour(t.hour);
+        setCampaignExpiryMinute(t.minute);
+        setCampaignExpiryAmPm(t.ampm);
       })
       .catch(() => {});
 
@@ -429,9 +496,35 @@ export function GamifiedMarketingTab() {
     selectedDays.forEach((day) => {
       times[day] = getDayTime(day);
     });
-    setGames(buildDefaultGames(selectedDays, times));
+    setGames(buildDefaultGames(selectedDays, times, campaignDefaults));
     setPrizes(buildDefaultPrizes(selectedDays.length));
   }, [selectedDays]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // If the campaign-config prefill resolves after games were already built,
+  // re-seed each slot's messages — but only fields the user hasn't edited
+  // (i.e. still equal to the offline fallback they were seeded with).
+  useEffect(() => {
+    if (!campaignDefaults) return;
+    setGames((prev) =>
+      prev.map((g) => {
+        const fallback = seedMessages(g.type, null);
+        const seeded = seedMessages(g.type, campaignDefaults);
+        const m = g.messages ?? {};
+        return {
+          ...g,
+          messages: {
+            game: !m.game || m.game === fallback.game ? seeded.game : m.game,
+            winner:
+              !m.winner || m.winner === fallback.winner
+                ? seeded.winner
+                : m.winner,
+            loser:
+              !m.loser || m.loser === fallback.loser ? seeded.loser : m.loser,
+          },
+        };
+      }),
+    );
+  }, [campaignDefaults]);
 
   const handleDayToggle = (day: ScheduleDay) => {
     setSelectedDays((prev) => {
@@ -445,12 +538,68 @@ export function GamifiedMarketingTab() {
     setGames((prev) =>
       prev.map((g, i) => {
         if (i !== index) return g;
-        const next: GameConfig = { ...g, type };
+        // Re-seed messages for the new game type, but keep any the user has
+        // edited (no longer equal to the old type's seeds).
+        const oldSeed = seedMessages(g.type, campaignDefaults);
+        const newSeed = seedMessages(type, campaignDefaults);
+        const m = g.messages ?? {};
+        const next: GameConfig = {
+          ...g,
+          type,
+          messages: {
+            game: !m.game || m.game === oldSeed.game ? newSeed.game : m.game,
+            winner:
+              !m.winner || m.winner === oldSeed.winner
+                ? newSeed.winner
+                : m.winner,
+            loser:
+              !m.loser || m.loser === oldSeed.loser ? newSeed.loser : m.loser,
+          },
+        };
         // Seed a customizable trivia config the first time a game becomes trivia.
         if (type === "trivia" && !next.trivia) next.trivia = cloneDefaultTrivia();
         return next;
       }),
     );
+  };
+
+  const updateGameMessage = (
+    index: number,
+    key: keyof GameMessages,
+    value: string,
+  ) => {
+    setGames((prev) =>
+      prev.map((g, i) =>
+        i === index
+          ? { ...g, messages: { ...(g.messages ?? {}), [key]: value } }
+          : g,
+      ),
+    );
+  };
+
+  // "Copy to all": winner/loser replies copy verbatim; the game text only
+  // copies to slots of the SAME game type (a pick-number script would read
+  // wrong on trivia) — other types re-seed their own default.
+  const copyMessagesToAll = () => {
+    setGames((prev) => {
+      const first = prev[0];
+      if (!first) return prev;
+      const fm = { ...seedMessages(first.type, campaignDefaults), ...first.messages };
+      return prev.map((g, i) => {
+        if (i === 0) return g;
+        const seed = seedMessages(g.type, campaignDefaults);
+        return {
+          ...g,
+          messages: {
+            game: g.type === first.type ? fm.game : seed.game,
+            winner: fm.winner,
+            loser: fm.loser,
+          },
+        };
+      });
+    });
+    setCopiedAllToast(true);
+    setTimeout(() => setCopiedAllToast(false), 2500);
   };
 
   const updateTrivia = (
@@ -518,6 +667,12 @@ export function GamifiedMarketingTab() {
       prizes,
       loserDiscount,
       loserDiscountCap,
+      couponExpiryDays: campaignExpiryDays,
+      couponExpiryTime: to24h(
+        campaignExpiryHour,
+        campaignExpiryMinute,
+        campaignExpiryAmPm,
+      ),
       optedInCount: selectedCustomerIds.size,
       targetCustomerIds: Array.from(selectedCustomerIds),
     };
@@ -568,6 +723,70 @@ export function GamifiedMarketingTab() {
         return true;
     }
   })();
+
+  // ── Campaign message preview helpers ─────────────────────────────────────
+  // Previews and segment counts are computed on the RENDERED message
+  // (placeholders substituted), so they match what actually sends.
+  const campaignRestaurantName =
+    campaignDefaults?.restaurant_name || optinRestaurantName || "Your Restaurant";
+  const campaignExpiryText = `valid for ${campaignExpiryDays} day${campaignExpiryDays !== 1 ? "s" : ""}`;
+
+  const gamePreviewVars = (
+    g: GameConfig,
+    prize?: PrizeConfig,
+  ): Record<string, string> => {
+    const trivia = g.trivia ?? campaignDefaults?.default_trivia ?? DEFAULT_TRIVIA;
+    return {
+      restaurant_name: campaignRestaurantName,
+      prize: buildPrizeLabel(prize),
+      question: trivia.question,
+      choices: buildTriviaChoices(trivia),
+    };
+  };
+
+  const replyPreviewVars = (prize?: PrizeConfig): Record<string, string> => ({
+    first_name: "Alex",
+    prize: buildPrizeLabel(prize),
+    discount: String(loserDiscount),
+    code: "WIN-7GK2QX",
+    link: "https://belan.tech/prize/WIN-7GK2QX",
+    expiry: campaignExpiryText,
+  });
+
+  const slotMessages = (g: GameConfig): Required<GameMessages> => ({
+    ...seedMessages(g.type, campaignDefaults),
+    ...Object.fromEntries(
+      Object.entries(g.messages ?? {}).filter(([, v]) => v != null),
+    ),
+  });
+
+  const renderMessageEditor = (
+    label: string,
+    value: string,
+    onChange: (v: string) => void,
+    vars: Record<string, string>,
+    placeholders: string,
+  ) => {
+    const seg = countSegments(renderTemplate(value, vars));
+    return (
+      <div>
+        <p className="section-label mb-1">{label}</p>
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          className="w-full bg-slate-50 border border-capy-border rounded-xl px-3 py-2 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
+        />
+        <div className="flex items-center justify-between gap-2 text-[11px] text-capy-muted mt-1">
+          <span className="shrink-0">
+            {seg.chars} char{seg.chars !== 1 ? "s" : ""} · {seg.segments} SMS
+            segment{seg.segments !== 1 ? "s" : ""} · {seg.encoding}
+          </span>
+          <span className="font-mono truncate">{placeholders}</span>
+        </div>
+      </div>
+    );
+  };
 
   /* ── Opt-In card ──────────────────────────────────────────────────────────
      Rendered identically on the dashboard and inside the setup wizard, so it
@@ -1660,9 +1879,10 @@ export function GamifiedMarketingTab() {
                       </div>
                       <p className="text-xs text-capy-muted italic leading-relaxed whitespace-pre-line">
                         &ldquo;
-                        {game.type === "trivia"
-                          ? buildTriviaMessage(game.trivia ?? DEFAULT_TRIVIA)
-                          : GAME_DEFINITIONS[game.type].template}
+                        {renderTemplate(
+                          slotMessages(game).game,
+                          gamePreviewVars(game, prizes[i]),
+                        )}
                         &rdquo;
                       </p>
                     </div>
@@ -1762,6 +1982,71 @@ export function GamifiedMarketingTab() {
                       </div>
                     </div>
                   )}
+                  {/* ── Customize messages (game text + winner/loser replies) ── */}
+                  <div className="px-4 pb-4 border-t border-capy-border pt-3">
+                    <button
+                      onClick={() =>
+                        setOpenMessageEditor(openMessageEditor === i ? null : i)
+                      }
+                      className="flex items-center justify-between w-full text-xs font-semibold text-capy-text"
+                    >
+                      <span>⚙ Customize messages</span>
+                      <svg
+                        className={`w-3.5 h-3.5 text-capy-muted transition-transform ${openMessageEditor === i ? "rotate-180" : ""}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {openMessageEditor === i && (
+                      <div className="space-y-3 mt-3">
+                        {renderMessageEditor(
+                          "Game text",
+                          slotMessages(game).game,
+                          (v) => updateGameMessage(i, "game", v),
+                          gamePreviewVars(game, prizes[i]),
+                          game.type === "trivia"
+                            ? "{restaurant_name} {prize} {question} {choices}"
+                            : "{restaurant_name} {prize}",
+                        )}
+                        {renderMessageEditor(
+                          "Winner reply",
+                          slotMessages(game).winner,
+                          (v) => updateGameMessage(i, "winner", v),
+                          replyPreviewVars(prizes[i]),
+                          "{first_name} {prize} {code} {link} {expiry}",
+                        )}
+                        {renderMessageEditor(
+                          "Loser reply",
+                          slotMessages(game).loser,
+                          (v) => updateGameMessage(i, "loser", v),
+                          replyPreviewVars(prizes[i]),
+                          "{first_name} {discount} {code} {link} {expiry}",
+                        )}
+                        {i === 0 && games.length > 1 && (
+                          <button
+                            onClick={copyMessagesToAll}
+                            className={`w-full py-2 px-3 rounded-xl border text-xs font-semibold transition-colors ${
+                              copiedAllToast
+                                ? "border-capy-green/30 bg-capy-green-light text-capy-green-dark"
+                                : "border-capy-border text-capy-text hover:bg-slate-50"
+                            }`}
+                          >
+                            {copiedAllToast
+                              ? "Applied to all games ✓"
+                              : "Copy these messages to all games"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))
             )}
@@ -1933,6 +2218,55 @@ export function GamifiedMarketingTab() {
                 </div>
               </div>
             </div>
+
+            {/* Coupon Expiry */}
+            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <p className="card-heading mb-0.5">Coupon Expiry</p>
+              <p className="text-xs text-capy-muted mb-3">
+                Applies to winner and loser coupons — restaurant local time.
+              </p>
+              <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
+                <select
+                  value={campaignExpiryDays}
+                  onChange={(e) => setCampaignExpiryDays(Number(e.target.value))}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+                <span className="text-capy-muted">
+                  day{campaignExpiryDays !== 1 ? "s" : ""} after playing, at
+                </span>
+                <select
+                  value={campaignExpiryHour}
+                  onChange={(e) => setCampaignExpiryHour(e.target.value)}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <option key={h} value={String(h)}>{h}</option>
+                  ))}
+                </select>
+                <span className="text-capy-muted">:</span>
+                <select
+                  value={campaignExpiryMinute}
+                  onChange={(e) => setCampaignExpiryMinute(e.target.value)}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  {["00", "15", "30", "45"].map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <select
+                  value={campaignExpiryAmPm}
+                  onChange={(e) => setCampaignExpiryAmPm(e.target.value)}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  <option>AM</option>
+                  <option>PM</option>
+                </select>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1978,6 +2312,11 @@ export function GamifiedMarketingTab() {
                 Loser&apos;s discount: {loserDiscount}% off (cap:{" "}
                 {loserDiscountCap})
               </p>
+              <p className="text-xs text-capy-muted mt-1">
+                Coupons expire {campaignExpiryDays} day
+                {campaignExpiryDays !== 1 ? "s" : ""} after playing at{" "}
+                {campaignExpiryHour}:{campaignExpiryMinute} {campaignExpiryAmPm}
+              </p>
             </div>
             <div className="p-3.5 bg-slate-50 rounded-xl border border-capy-border">
               <p className="section-label mb-1">Customers</p>
@@ -1994,9 +2333,9 @@ export function GamifiedMarketingTab() {
               </p>
               <div className="space-y-3">
                 {games.map((g, i) => {
-                  const preview = buildMessagePreview(
-                    g,
-                    prizes[i] ?? { type: "percent-off", percent: 0 },
+                  const preview = renderTemplate(
+                    slotMessages(g).game,
+                    gamePreviewVars(g, prizes[i]),
                   );
                   return (
                     <div
@@ -2023,10 +2362,37 @@ export function GamifiedMarketingTab() {
                           </p>
                         </div>
                       </div>
+                      {showReplyPreviews && (
+                        <div className="mt-2 ml-9 space-y-1.5">
+                          {(["winner", "loser"] as const).map((kind) => (
+                            <div key={kind} className="flex items-start gap-2">
+                              <span className="section-label text-capy-muted w-11 shrink-0 mt-1.5">
+                                {kind === "winner" ? "Win" : "Lose"}
+                              </span>
+                              <div className="bg-white border border-capy-border rounded-2xl rounded-tl-sm px-3 py-2 max-w-[85%] shadow-sm">
+                                <p className="text-xs text-capy-text leading-relaxed whitespace-pre-line">
+                                  {renderTemplate(
+                                    slotMessages(g)[kind],
+                                    replyPreviewVars(prizes[i]),
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
+              <button
+                onClick={() => setShowReplyPreviews((s) => !s)}
+                className="mt-3 text-xs font-semibold text-capy-green-dark hover:underline"
+              >
+                {showReplyPreviews
+                  ? "Hide reply previews"
+                  : "Show win/lose reply previews"}
+              </button>
             </div>
           </div>
         )}
