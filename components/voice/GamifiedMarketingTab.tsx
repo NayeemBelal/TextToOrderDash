@@ -8,6 +8,7 @@ import {
   getCampaignConfig,
   type CampaignMessageDefaults,
 } from "@/lib/campaignConfigApi";
+import { sendTestOptin, sendTestCampaign } from "@/lib/testSendApi";
 import { useAuth } from "@/lib/auth-context";
 import {
   GAME_DEFINITIONS,
@@ -314,6 +315,23 @@ export function GamifiedMarketingTab() {
   const [campaignExpiryMinute, setCampaignExpiryMinute] = useState("00");
   const [campaignExpiryAmPm, setCampaignExpiryAmPm] = useState("PM");
 
+  // Test sends (opt-in widget + per-slot campaign widget)
+  const [optinTestPhone, setOptinTestPhone] = useState("");
+  const [optinTestSending, setOptinTestSending] = useState(false);
+  const [optinTestStatus, setOptinTestStatus] = useState<string | null>(null);
+  const [campaignTestPhone, setCampaignTestPhone] = useState("");
+  const [campaignTestClover, setCampaignTestClover] = useState(false);
+  const [campaignTestSendingSlot, setCampaignTestSendingSlot] = useState<
+    number | null
+  >(null);
+  const [campaignTestResult, setCampaignTestResult] = useState<{
+    slot: number;
+    winningAnswer: string;
+  } | null>(null);
+  const [campaignTestError, setCampaignTestError] = useState<string | null>(
+    null,
+  );
+
   const refreshOptinStatus = (id: string) => {
     setOptinRefreshing(true);
     marketingApiFetch<OptinStatus>(
@@ -600,6 +618,59 @@ export function GamifiedMarketingTab() {
     });
     setCopiedAllToast(true);
     setTimeout(() => setCopiedAllToast(false), 2500);
+  };
+
+  const handleSendTestOptin = async () => {
+    if (!restaurantId || !optinTestPhone.trim()) return;
+    setOptinTestSending(true);
+    setOptinTestStatus(null);
+    try {
+      await sendTestOptin({
+        restaurantId,
+        phone: optinTestPhone,
+        message: optinMessage,
+        discountPercent: optinDiscount,
+        expiryDays: optinExpiryDays,
+        expiryTime: to24h(optinExpiryHour, optinExpiryMinute, optinExpiryAmPm),
+      });
+      setOptinTestStatus("Sent! Check your phone — reply YES to get the coupon.");
+    } catch {
+      setOptinTestStatus("Test failed. Check the number and try again.");
+    } finally {
+      setOptinTestSending(false);
+    }
+  };
+
+  const handleSendTestCampaign = async (index: number) => {
+    if (!restaurantId || !campaignTestPhone.trim()) return;
+    const game = games[index];
+    if (!game) return;
+    setCampaignTestSendingSlot(index);
+    setCampaignTestResult(null);
+    setCampaignTestError(null);
+    try {
+      const res = await sendTestCampaign({
+        restaurantId,
+        phone: campaignTestPhone,
+        gameType: game.type,
+        trivia: game.trivia,
+        prizeConfig: prizes[index] ?? { type: "percent-off", percent: 10 },
+        loserDiscount,
+        messages: slotMessages(game),
+        expiryDays: campaignExpiryDays,
+        expiryTime: to24h(
+          campaignExpiryHour,
+          campaignExpiryMinute,
+          campaignExpiryAmPm,
+        ),
+        createCloverCoupon: campaignTestClover,
+      });
+      setCampaignTestResult({ slot: index, winningAnswer: res.winning_answer });
+    } catch {
+      setCampaignTestError("Test failed. Check the number and try again.");
+    } finally {
+      setCampaignTestSendingSlot(null);
+    }
   };
 
   const updateTrivia = (
@@ -1077,6 +1148,43 @@ export function GamifiedMarketingTab() {
                     <option>PM</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Send a test text */}
+              <div className="border-t border-capy-border pt-3 space-y-2">
+                <p className="section-label">Send a test text</p>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={optinTestPhone}
+                    onChange={(e) => setOptinTestPhone(e.target.value)}
+                    placeholder="(555) 123-4567"
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  />
+                  <button
+                    onClick={handleSendTestOptin}
+                    disabled={optinTestSending || !optinTestPhone.trim()}
+                    className="px-4 py-2 rounded-xl bg-capy-text text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
+                  >
+                    {optinTestSending ? "Sending…" : "Send test"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-capy-muted">
+                  Runs the real opt-in flow with the settings above and resets
+                  this number&apos;s opt-in state first — use a number you
+                  control. Reply YES to get the coupon.
+                </p>
+                {optinTestStatus && (
+                  <div
+                    className={`text-xs px-3 py-2 rounded-xl ${
+                      optinTestStatus.startsWith("Sent")
+                        ? "bg-capy-green-light text-capy-green-dark"
+                        : "bg-red-50 text-red-600"
+                    }`}
+                  >
+                    {optinTestStatus}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -2044,6 +2152,63 @@ export function GamifiedMarketingTab() {
                               : "Copy these messages to all games"}
                           </button>
                         )}
+
+                        {/* Send a test round */}
+                        <div className="border-t border-capy-border pt-3 space-y-2">
+                          <p className="section-label">Send a test round</p>
+                          <div className="flex gap-2">
+                            <input
+                              type="tel"
+                              value={campaignTestPhone}
+                              onChange={(e) => setCampaignTestPhone(e.target.value)}
+                              placeholder="(555) 123-4567"
+                              className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                            />
+                            <button
+                              onClick={() => handleSendTestCampaign(i)}
+                              disabled={
+                                campaignTestSendingSlot !== null ||
+                                !campaignTestPhone.trim()
+                              }
+                              className="px-4 py-2 rounded-xl bg-capy-text text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
+                            >
+                              {campaignTestSendingSlot === i
+                                ? "Sending…"
+                                : "Send test"}
+                            </button>
+                          </div>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs text-capy-text">
+                            <input
+                              type="checkbox"
+                              checked={campaignTestClover}
+                              onChange={(e) =>
+                                setCampaignTestClover(e.target.checked)
+                              }
+                              className="w-3.5 h-3.5 accent-capy-green"
+                            />
+                            Create real coupon in Clover when redeemed
+                          </label>
+                          <p className="text-[11px] text-capy-muted">
+                            Texts you this game for real — reply to get the
+                            winner or loser message with a working coupon (test
+                            coupons last 3 minutes).
+                          </p>
+                          {campaignTestResult?.slot === i && (
+                            <div className="bg-capy-green-light text-capy-green-dark text-xs px-3 py-2 rounded-xl">
+                              Sent! Winning answer:{" "}
+                              <span className="font-bold">
+                                {campaignTestResult.winningAnswer}
+                              </span>{" "}
+                              — reply with it to test the winner text; anything
+                              else gets the loser text.
+                            </div>
+                          )}
+                          {campaignTestError && (
+                            <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-xl">
+                              {campaignTestError}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
