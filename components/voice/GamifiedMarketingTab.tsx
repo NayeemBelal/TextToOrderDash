@@ -319,6 +319,7 @@ export function GamifiedMarketingTab() {
   const [optinTestPhone, setOptinTestPhone] = useState("");
   const [optinTestSending, setOptinTestSending] = useState(false);
   const [optinTestStatus, setOptinTestStatus] = useState<string | null>(null);
+  const [optinTestClover, setOptinTestClover] = useState(false);
   const [campaignTestPhone, setCampaignTestPhone] = useState("");
   const [campaignTestClover, setCampaignTestClover] = useState(false);
   const [campaignTestSendingSlot, setCampaignTestSendingSlot] = useState<
@@ -632,6 +633,7 @@ export function GamifiedMarketingTab() {
         discountPercent: optinDiscount,
         expiryDays: optinExpiryDays,
         expiryTime: to24h(optinExpiryHour, optinExpiryMinute, optinExpiryAmPm),
+        createCloverCoupon: optinTestClover,
       });
       setOptinTestStatus("Sent! Check your phone — reply YES to get the coupon.");
     } catch {
@@ -1169,10 +1171,20 @@ export function GamifiedMarketingTab() {
                     {optinTestSending ? "Sending…" : "Send test"}
                   </button>
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-capy-text">
+                  <input
+                    type="checkbox"
+                    checked={optinTestClover}
+                    onChange={(e) => setOptinTestClover(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-capy-green"
+                  />
+                  Create real coupon in Clover when redeemed
+                </label>
                 <p className="text-[11px] text-capy-muted">
                   Runs the real opt-in flow with the settings above and resets
                   this number&apos;s opt-in state first — use a number you
-                  control. Reply YES to get the coupon.
+                  control. Reply YES to get the coupon (test coupons last 3
+                  minutes).
                 </p>
                 {optinTestStatus && (
                   <div

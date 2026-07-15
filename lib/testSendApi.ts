@@ -16,6 +16,7 @@ export interface TestOptinParams {
   discountPercent?: number;
   expiryDays?: number;
   expiryTime?: string; // "HH:MM" 24h
+  createCloverCoupon: boolean; // whether redeeming the test coupon touches Clover
 }
 
 export interface TestOptinResult {
@@ -34,6 +35,7 @@ export function sendTestOptin(p: TestOptinParams): Promise<TestOptinResult> {
       discount_percent: p.discountPercent,
       expiry_days: p.expiryDays,
       expiry_time: p.expiryTime,
+      create_clover_coupon: p.createCloverCoupon,
     }),
   });
 }
