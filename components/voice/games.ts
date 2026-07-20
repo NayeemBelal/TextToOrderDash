@@ -44,6 +44,21 @@ export const FALLBACK_GAME_MESSAGES: Record<GameType, string> = {
     "Hey! It's {restaurant_name}!\n\n🎰 Text a number 1–6. If it matches our roll, you win {prize}. Everyone gets something though!",
 };
 
+// "Everyone wins" mode: same games, guaranteed-prize copy (no "chance to win").
+// Mirrors the backend's DEFAULT_EVERYONE_WINS_GAME_MESSAGES; preview fallback
+// only — the authoritative copy comes from campaign-config's
+// everyone_wins_game_messages.
+export const FALLBACK_EVERYONE_WINS_GAME_MESSAGES: Record<GameType, string> = {
+  "pick-number":
+    "Hey! It's {restaurant_name}!\n\n🎉 Pick a number between 1–100 and WIN {prize} — everyone's a winner today! Reply with your number to claim.",
+  trivia:
+    "Hey! It's {restaurant_name}!\n\n🎉 {question}\n{choices}\nReply A, B, or C — everyone wins {prize} today!",
+  "guess-letter":
+    "Hey! It's {restaurant_name}!\n\n🎉 Guess a letter between A–Z and WIN {prize} — everyone's a winner today! Reply with your letter to claim.",
+  "roll-dice":
+    "Hey! It's {restaurant_name}!\n\n🎉 Text a number 1–6 and WIN {prize} — everyone wins today! Reply to claim.",
+};
+
 export const FALLBACK_WINNER_MESSAGE =
   "🏆 {first_name}, you won {prize}! Tap to redeem in store ({expiry}): {link}";
 

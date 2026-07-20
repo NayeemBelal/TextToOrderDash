@@ -47,6 +47,8 @@ export interface TestCampaignParams {
   trivia?: TriviaConfig;
   prizeConfig: { type: string; itemName?: string; percent?: number };
   loserDiscount: number;
+  // Everyone-wins mode: the test reply always wins (no loser outcome).
+  everyoneWins?: boolean;
   messages: { game?: string; winner?: string; loser?: string };
   expiryDays?: number;
   expiryTime?: string; // "HH:MM" 24h — copy rendering only; test coupons last 3 min
@@ -57,6 +59,7 @@ export interface TestCampaignResult {
   phone: string;
   queued: number;
   winning_answer: string;
+  everyone_wins: boolean;
   test_coupon_minutes: number;
 }
 
@@ -72,6 +75,7 @@ export function sendTestCampaign(
       trivia: p.trivia,
       prize_config: p.prizeConfig,
       loser_discount: p.loserDiscount,
+      everyone_wins: p.everyoneWins ?? false,
       messages: p.messages,
       expiry_days: p.expiryDays,
       expiry_time: p.expiryTime,

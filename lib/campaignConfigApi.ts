@@ -14,6 +14,8 @@ export interface CampaignMessageDefaults {
   // (trivia also {question}/{choices}); winner/loser replies may contain
   // {first_name}/{prize}/{discount}/{code}/{link}/{expiry}.
   game_messages: Record<GameType, string>;
+  // Guaranteed-prize game texts used when everyone-wins mode is on.
+  everyone_wins_game_messages: Record<GameType, string>;
   winner_messages: Record<GameType, string>;
   loser_messages: Record<GameType, string>;
   expiry_days: number | null; // coupon valid this many days after playing
