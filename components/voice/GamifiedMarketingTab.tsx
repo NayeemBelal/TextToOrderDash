@@ -15,6 +15,7 @@ import {
   DEFAULT_GAME_ORDER,
   DEFAULT_TRIVIA,
   FALLBACK_GAME_MESSAGES,
+  FALLBACK_EVERYONE_WINS_GAME_MESSAGES,
   FALLBACK_WINNER_MESSAGE,
   FALLBACK_LOSER_MESSAGE,
   buildTriviaChoices,
@@ -57,6 +58,9 @@ interface CampaignConfig {
   endDate: string | null;
   games: GameConfig[];
   prizes: PrizeConfig[];
+  // "Everyone wins" mode: every player wins the game's prize — no single winner,
+  // no loser's discount. loserDiscount/loserDiscountCap are ignored when true.
+  everyoneWins: boolean;
   loserDiscount: number;
   loserDiscountCap: number;
   // Coupon validity for winner + loser prizes: N days after playing, at a
@@ -162,13 +166,30 @@ function to24h(hour: string, minute: string, ampm: string): string {
   return `${String(h).padStart(2, "0")}:${minute.padStart(2, "0")}`;
 }
 
+// Shipped/server default GAME text for a type, mode-aware: everyone-wins mode
+// uses the guaranteed-prize copy instead of the classic "chance to win" copy.
+function defaultGameText(
+  type: GameType,
+  defaults: CampaignMessageDefaults | null,
+  everyoneWins: boolean,
+): string {
+  if (everyoneWins) {
+    return (
+      defaults?.everyone_wins_game_messages?.[type] ??
+      FALLBACK_EVERYONE_WINS_GAME_MESSAGES[type]
+    );
+  }
+  return defaults?.game_messages?.[type] ?? FALLBACK_GAME_MESSAGES[type];
+}
+
 // Default (server-provided, else fallback) message set for a game type.
 function seedMessages(
   type: GameType,
   defaults: CampaignMessageDefaults | null,
+  everyoneWins = false,
 ): Required<GameMessages> {
   return {
-    game: defaults?.game_messages?.[type] ?? FALLBACK_GAME_MESSAGES[type],
+    game: defaultGameText(type, defaults, everyoneWins),
     winner: defaults?.winner_messages?.[type] ?? FALLBACK_WINNER_MESSAGE,
     loser: defaults?.loser_messages?.[type] ?? FALLBACK_LOSER_MESSAGE,
   };
@@ -178,6 +199,7 @@ function buildDefaultGames(
   days: ScheduleDay[],
   times: Record<string, string>,
   defaults: CampaignMessageDefaults | null,
+  everyoneWins: boolean,
 ): GameConfig[] {
   return days.map((day, i) => {
     const type = DEFAULT_GAME_ORDER[i % DEFAULT_GAME_ORDER.length];
@@ -185,7 +207,7 @@ function buildDefaultGames(
       type,
       day,
       time: times[day] ?? "12:00 PM",
-      messages: seedMessages(type, defaults),
+      messages: seedMessages(type, defaults, everyoneWins),
       ...(type === "trivia" ? { trivia: cloneDefaultTrivia() } : {}),
     };
   });
@@ -268,6 +290,9 @@ export function GamifiedMarketingTab() {
 
   // Step 4 — Prizes
   const [prizes, setPrizes] = useState<PrizeConfig[]>([]);
+  // Campaign mode: false = classic (one winner + loser's discount), true =
+  // everyone wins the prize (no losers). Drives the wizard's win/lose UI.
+  const [everyoneWins, setEveryoneWins] = useState(false);
   const [loserDiscount, setLoserDiscount] = useState(10);
   const [loserDiscountCap, setLoserDiscountCap] = useState(50);
   const [menuItems, setMenuItems] = useState<MarketingMenuItem[]>([]);
@@ -424,6 +449,7 @@ export function GamifiedMarketingTab() {
         if (d.campaign) {
           setCampaignId(d.campaign.id);
           setLaunchedConfig(d.campaign.config);
+          setEveryoneWins(!!d.campaign.config.everyoneWins);
           setPagePhase(d.campaign.status === "paused" ? "paused" : "active");
         }
       })
@@ -515,7 +541,7 @@ export function GamifiedMarketingTab() {
     selectedDays.forEach((day) => {
       times[day] = getDayTime(day);
     });
-    setGames(buildDefaultGames(selectedDays, times, campaignDefaults));
+    setGames(buildDefaultGames(selectedDays, times, campaignDefaults, everyoneWins));
     setPrizes(buildDefaultPrizes(selectedDays.length));
   }, [selectedDays]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -526,8 +552,8 @@ export function GamifiedMarketingTab() {
     if (!campaignDefaults) return;
     setGames((prev) =>
       prev.map((g) => {
-        const fallback = seedMessages(g.type, null);
-        const seeded = seedMessages(g.type, campaignDefaults);
+        const fallback = seedMessages(g.type, null, everyoneWins);
+        const seeded = seedMessages(g.type, campaignDefaults, everyoneWins);
         const m = g.messages ?? {};
         return {
           ...g,
@@ -559,8 +585,8 @@ export function GamifiedMarketingTab() {
         if (i !== index) return g;
         // Re-seed messages for the new game type, but keep any the user has
         // edited (no longer equal to the old type's seeds).
-        const oldSeed = seedMessages(g.type, campaignDefaults);
-        const newSeed = seedMessages(type, campaignDefaults);
+        const oldSeed = seedMessages(g.type, campaignDefaults, everyoneWins);
+        const newSeed = seedMessages(type, campaignDefaults, everyoneWins);
         const m = g.messages ?? {};
         const next: GameConfig = {
           ...g,
@@ -578,6 +604,30 @@ export function GamifiedMarketingTab() {
         // Seed a customizable trivia config the first time a game becomes trivia.
         if (type === "trivia" && !next.trivia) next.trivia = cloneDefaultTrivia();
         return next;
+      }),
+    );
+  };
+
+  // Switch campaign mode. Re-seed each slot's GAME text to the new mode's
+  // default copy, but only where the owner hasn't customized it (still equal to
+  // the old mode's default) — winner/loser replies are left untouched.
+  const applyEveryoneWins = (next: boolean) => {
+    setEveryoneWins(next);
+    setGames((prev) =>
+      prev.map((g) => {
+        const cur = g.messages?.game ?? "";
+        const wasDefault =
+          !cur ||
+          cur === defaultGameText(g.type, campaignDefaults, !next) ||
+          cur === defaultGameText(g.type, null, !next);
+        if (!wasDefault) return g;
+        return {
+          ...g,
+          messages: {
+            ...(g.messages ?? {}),
+            game: defaultGameText(g.type, campaignDefaults, next),
+          },
+        };
       }),
     );
   };
@@ -603,10 +653,10 @@ export function GamifiedMarketingTab() {
     setGames((prev) => {
       const first = prev[0];
       if (!first) return prev;
-      const fm = { ...seedMessages(first.type, campaignDefaults), ...first.messages };
+      const fm = { ...seedMessages(first.type, campaignDefaults, everyoneWins), ...first.messages };
       return prev.map((g, i) => {
         if (i === 0) return g;
-        const seed = seedMessages(g.type, campaignDefaults);
+        const seed = seedMessages(g.type, campaignDefaults, everyoneWins);
         return {
           ...g,
           messages: {
@@ -658,6 +708,7 @@ export function GamifiedMarketingTab() {
         trivia: game.trivia,
         prizeConfig: prizes[index] ?? { type: "percent-off", percent: 10 },
         loserDiscount,
+        everyoneWins,
         messages: slotMessages(game),
         expiryDays: campaignExpiryDays,
         expiryTime: to24h(
@@ -738,6 +789,7 @@ export function GamifiedMarketingTab() {
       endDate: runIndefinitely ? null : endDate,
       games,
       prizes,
+      everyoneWins,
       loserDiscount,
       loserDiscountCap,
       couponExpiryDays: campaignExpiryDays,
@@ -789,8 +841,8 @@ export function GamifiedMarketingTab() {
           prizes.every((p) =>
             p.type === "free-item" ? !!p.itemName : (p.percent ?? 0) > 0,
           ) &&
-          loserDiscount > 0 &&
-          loserDiscountCap > 0
+          // Everyone-wins campaigns have no loser's discount to validate.
+          (everyoneWins || (loserDiscount > 0 && loserDiscountCap > 0))
         );
       default:
         return true;
@@ -827,7 +879,7 @@ export function GamifiedMarketingTab() {
   });
 
   const slotMessages = (g: GameConfig): Required<GameMessages> => ({
-    ...seedMessages(g.type, campaignDefaults),
+    ...seedMessages(g.type, campaignDefaults, everyoneWins),
     ...Object.fromEntries(
       Object.entries(g.messages ?? {}).filter(([, v]) => v != null),
     ),
@@ -1522,11 +1574,22 @@ export function GamifiedMarketingTab() {
                 ))}
               </div>
               <div className="p-3 bg-slate-50 rounded-xl">
-                <p className="section-label mb-1">Loser&apos;s Discount</p>
-                <p className="text-xs text-capy-text">
-                  {launchedConfig.loserDiscount}% off · Cap:{" "}
-                  {launchedConfig.loserDiscountCap}
-                </p>
+                {launchedConfig.everyoneWins ? (
+                  <>
+                    <p className="section-label mb-1">Campaign Mode</p>
+                    <p className="text-xs text-capy-text">
+                      🎉 Everyone wins — every player gets the prize
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="section-label mb-1">Loser&apos;s Discount</p>
+                    <p className="text-xs text-capy-text">
+                      {launchedConfig.loserDiscount}% off · Cap:{" "}
+                      {launchedConfig.loserDiscountCap}
+                    </p>
+                  </>
+                )}
               </div>
               <p className="text-xs text-capy-muted italic">
                 Settings cannot be edited while a campaign is running.
@@ -2137,19 +2200,20 @@ export function GamifiedMarketingTab() {
                             : "{restaurant_name} {prize}",
                         )}
                         {renderMessageEditor(
-                          "Winner reply",
+                          everyoneWins ? "Prize reply (everyone wins)" : "Winner reply",
                           slotMessages(game).winner,
                           (v) => updateGameMessage(i, "winner", v),
                           replyPreviewVars(prizes[i]),
                           "{first_name} {prize} {code} {link} {expiry}",
                         )}
-                        {renderMessageEditor(
-                          "Loser reply",
-                          slotMessages(game).loser,
-                          (v) => updateGameMessage(i, "loser", v),
-                          replyPreviewVars(prizes[i]),
-                          "{first_name} {discount} {code} {link} {expiry}",
-                        )}
+                        {!everyoneWins &&
+                          renderMessageEditor(
+                            "Loser reply",
+                            slotMessages(game).loser,
+                            (v) => updateGameMessage(i, "loser", v),
+                            replyPreviewVars(prizes[i]),
+                            "{first_name} {discount} {code} {link} {expiry}",
+                          )}
                         {i === 0 && games.length > 1 && (
                           <button
                             onClick={copyMessagesToAll}
@@ -2201,18 +2265,28 @@ export function GamifiedMarketingTab() {
                             Create real coupon in Clover when redeemed
                           </label>
                           <p className="text-[11px] text-capy-muted">
-                            Texts you this game for real — reply to get the
-                            winner or loser message with a working coupon (test
-                            coupons last 3 minutes).
+                            {everyoneWins
+                              ? "Texts you this game for real — reply with anything and you'll win the prize with a working coupon (test coupons last 3 minutes)."
+                              : "Texts you this game for real — reply to get the winner or loser message with a working coupon (test coupons last 3 minutes)."}
                           </p>
                           {campaignTestResult?.slot === i && (
                             <div className="bg-capy-green-light text-capy-green-dark text-xs px-3 py-2 rounded-xl">
-                              Sent! Winning answer:{" "}
-                              <span className="font-bold">
-                                {campaignTestResult.winningAnswer}
-                              </span>{" "}
-                              — reply with it to test the winner text; anything
-                              else gets the loser text.
+                              {everyoneWins ? (
+                                <>
+                                  Sent! Everyone wins — reply with{" "}
+                                  <span className="font-bold">any answer</span>{" "}
+                                  to get the winner text and coupon.
+                                </>
+                              ) : (
+                                <>
+                                  Sent! Winning answer:{" "}
+                                  <span className="font-bold">
+                                    {campaignTestResult.winningAnswer}
+                                  </span>{" "}
+                                  — reply with it to test the winner text;
+                                  anything else gets the loser text.
+                                </>
+                              )}
                             </div>
                           )}
                           {campaignTestError && (
@@ -2234,8 +2308,52 @@ export function GamifiedMarketingTab() {
         {wizardStep === 4 && (
           <div className="space-y-3">
             <p className="text-xs text-capy-muted">
-              One prize per game, plus a consolation for everyone else
+              {everyoneWins
+                ? "One prize per game — every player wins it"
+                : "One prize per game, plus a consolation for everyone else"}
             </p>
+
+            {/* Campaign mode */}
+            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <p className="card-heading mb-0.5">Campaign mode</p>
+              <p className="text-xs text-capy-muted mb-3">
+                How prizes are awarded when customers play the game.
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  {
+                    val: false,
+                    emoji: "🎯",
+                    title: "Classic game",
+                    desc: "One winner per round; everyone else gets a loser's discount.",
+                  },
+                  {
+                    val: true,
+                    emoji: "🎉",
+                    title: "Everyone wins",
+                    desc: "Every player wins the prize — no losers, no cap. Great for driving orders.",
+                  },
+                ].map((opt) => (
+                  <button
+                    key={String(opt.val)}
+                    onClick={() => applyEveryoneWins(opt.val)}
+                    className={`text-left rounded-xl border p-3 transition-colors ${
+                      everyoneWins === opt.val
+                        ? "border-capy-green bg-capy-green-light"
+                        : "border-capy-border hover:bg-slate-50"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold text-capy-text">
+                      {opt.emoji} {opt.title}
+                    </p>
+                    <p className="text-[11px] text-capy-muted mt-0.5">
+                      {opt.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {prizes.map((prize, i) => (
               <div
                 key={i}
@@ -2357,7 +2475,8 @@ export function GamifiedMarketingTab() {
               </div>
             ))}
 
-            {/* Loser's Discount */}
+            {/* Loser's Discount — not shown in everyone-wins mode */}
+            {!everyoneWins && (
             <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
               <p className="card-heading mb-0.5">Loser&apos;s Discount</p>
               <p className="text-xs text-capy-muted mb-3">
@@ -2395,12 +2514,15 @@ export function GamifiedMarketingTab() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Coupon Expiry */}
             <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
               <p className="card-heading mb-0.5">Coupon Expiry</p>
               <p className="text-xs text-capy-muted mb-3">
-                Applies to winner and loser coupons — restaurant local time.
+                {everyoneWins
+                  ? "Applies to every winner's coupon — restaurant local time."
+                  : "Applies to winner and loser coupons — restaurant local time."}
               </p>
               <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
                 <select
@@ -2486,8 +2608,9 @@ export function GamifiedMarketingTab() {
                 </p>
               ))}
               <p className="text-xs text-capy-muted mt-1">
-                Loser&apos;s discount: {loserDiscount}% off (cap:{" "}
-                {loserDiscountCap})
+                {everyoneWins
+                  ? "🎉 Everyone wins — every player gets the prize (no losers)"
+                  : `Loser's discount: ${loserDiscount}% off (cap: ${loserDiscountCap})`}
               </p>
               <p className="text-xs text-capy-muted mt-1">
                 Coupons expire {campaignExpiryDays} day
