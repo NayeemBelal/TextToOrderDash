@@ -1,7 +1,5 @@
 "use client";
 
-import { Navbar, Sidebar } from "@/components";
-import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { marketingApiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -78,8 +76,7 @@ function formatPhone(phone: string | null): string {
 }
 
 export default function CustomersPage() {
-  const router = useRouter();
-  const { restaurantId, signOut } = useAuth();
+  const { restaurantId } = useAuth();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CustomerHit[]>([]);
@@ -94,11 +91,6 @@ export default function CustomersPage() {
   const [error, setError] = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/login");
-  };
 
   // ── Debounced search ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -168,11 +160,9 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
-      <Sidebar />
-      <div className="lg:pl-64">
-        <Navbar onSignOut={handleSignOut} />
-        <main className="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="h-full flex flex-col bg-gray-50 dark:bg-black">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="max-w-3xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -357,7 +347,7 @@ export default function CustomersPage() {
               </p>
             </div>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );

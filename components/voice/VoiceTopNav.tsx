@@ -9,6 +9,7 @@ import { useMarketingView, type MarketingView } from "@/lib/marketing-view-conte
 const TABS = [
   { label: "Home", href: "/home" },
   { label: "Configure", href: "/configure" },
+  { label: "Customers", href: "/customers" },
 ];
 
 const MARKETING_TABS: { key: MarketingView; label: string }[] = [
@@ -39,6 +40,16 @@ function MarketingHeaderTabs() {
           </button>
         );
       })}
+      {/* Customer history is a route (not a view toggle), so it's a Link.
+          Surfaced here too, since marketing-only accounts don't see the main nav
+          on /home and would otherwise have no way to reach it. */}
+      <Link
+        href="/customers"
+        className="nav-tab-bar relative px-4 pt-1.5 pb-0.5 text-base text-capy-muted hover:text-capy-text transition-colors duration-150"
+        style={{ fontFamily: "Tektur, sans-serif", fontWeight: 600 }}
+      >
+        Customers
+      </Link>
     </nav>
   );
 }
