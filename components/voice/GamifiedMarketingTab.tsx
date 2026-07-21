@@ -1491,7 +1491,12 @@ export function GamifiedMarketingTab() {
                       {GAME_DEFINITIONS[game.type].label}
                     </p>
                     <p className="text-xs text-capy-muted">
-                      {game.day} at {game.time}
+                      {/* dayTimes is authoritative (it drives the actual round
+                          scheduling and matches the settings summary above);
+                          game.time can be a stale default if the owner changed
+                          the send time after the slot was first built. */}
+                      {game.day} at{" "}
+                      {launchedConfig?.dayTimes?.[game.day] ?? game.time}
                     </p>
                   </div>
                 </div>
