@@ -8,15 +8,16 @@ import { MarketingViewProvider } from '@/lib/marketing-view-context';
 
 const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/about', '/privacy-policy', '/terms-of-service', '/how-it-works', '/integrations', '/forgot-password', '/reset-password', '/prize', '/marketing'];
 // Auth required but rendered without the app nav shell
-const NO_NAV_ROUTES = ['/onboarding'];
+const NO_NAV_ROUTES = ['/onboarding', '/admin'];
 
 export function ConditionalWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, restaurantId, isLoading } = useAuth();
+  const { user, restaurantId, isSuperAdmin, isLoading } = useAuth();
 
   const isFullPage = FULL_PAGE_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'));
   const isNoNav = NO_NAV_ROUTES.some(r => pathname === r || pathname.startsWith(r + '/'));
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
 
   useEffect(() => {
     if (isLoading || isFullPage) return;
@@ -24,12 +25,18 @@ export function ConditionalWrapper({ children }: { children: React.ReactNode }) 
       router.replace('/login');
       return;
     }
+    if (isSuperAdmin) {
+      if (!isAdminRoute) {
+        router.replace('/admin');
+      }
+      return;
+    }
     // Marketing-only users (no Clover POS) can access /home directly
     const isMarketingUser = user?.user_metadata?.marketing_onboarding_complete === true;
     if (!isNoNav && restaurantId === null && !isMarketingUser) {
       router.replace('/onboarding');
     }
-  }, [isLoading, isFullPage, isNoNav, user, restaurantId, router]);
+  }, [isLoading, isFullPage, isNoNav, isAdminRoute, isSuperAdmin, user, restaurantId, router]);
 
   if (isFullPage) {
     return <>{children}</>;

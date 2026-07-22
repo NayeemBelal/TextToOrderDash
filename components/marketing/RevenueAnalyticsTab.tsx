@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useSelectedRestaurant } from "@/lib/selected-restaurant-context";
 import {
   COUPON_TYPES,
   fetchSummary,
@@ -20,7 +20,7 @@ import { OrderDetailDrawer } from "@/components/marketing/revenue/OrderDetailDra
  * Top: filter + stat tiles + revenue chart. Below: real-time order list → detail.
  */
 export function RevenueAnalyticsTab() {
-  const { restaurantId } = useAuth();
+  const restaurantId = useSelectedRestaurant();
   const [range, setRange] = useState<RangeKey>("30d");
   const [types, setTypes] = useState<CouponType[]>(COUPON_TYPES);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
