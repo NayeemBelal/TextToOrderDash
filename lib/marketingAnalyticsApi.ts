@@ -110,6 +110,21 @@ export function fetchSummary(
   );
 }
 
+export interface AdminRestaurant {
+  id: string;
+  name: string;
+  active: boolean;
+  revenue: AnalyticsSummary;
+}
+
+/** Admin-only: every restaurant plus a revenue summary, for the /admin grid. */
+export function fetchAdminRestaurants(range: RangeKey = '30d'): Promise<AdminRestaurant[]> {
+  const tz = encodeURIComponent(localTz());
+  return marketingApiFetch<AdminRestaurant[]>(
+    `/api/admin/restaurants?range=${range}&tz=${tz}`,
+  );
+}
+
 export function fetchOrders(
   restaurantId: string,
   types: CouponType[],

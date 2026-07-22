@@ -12,6 +12,7 @@ const SESSION_KEY = 'sb_session_active';
 interface AuthContextValue {
   user: User | null;
   restaurantId: string | null;
+  isSuperAdmin: boolean;
   isLoading: boolean;
   subscriptions: SubscriptionKey[];
   hasSubscription: (key: SubscriptionKey) => boolean;
@@ -21,6 +22,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   restaurantId: null,
+  isSuperAdmin: false,
   isLoading: true,
   subscriptions: [],
   hasSubscription: () => false,
@@ -81,13 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const restaurantId: string | null = user?.user_metadata?.restaurant_id ?? null;
+  const isSuperAdmin: boolean = user?.user_metadata?.is_super_admin === true;
 
   const subscriptions = useMemo(() => resolveSubscriptions(user), [user]);
   const hasSubscription = (key: SubscriptionKey) => subscriptions.includes(key);
 
   return (
     <AuthContext.Provider
-      value={{ user, restaurantId, isLoading, subscriptions, hasSubscription, signOut }}
+      value={{ user, restaurantId, isSuperAdmin, isLoading, subscriptions, hasSubscription, signOut }}
     >
       {children}
     </AuthContext.Provider>

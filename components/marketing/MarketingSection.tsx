@@ -20,8 +20,8 @@ const VIEWS: { key: MarketingView; label: string }[] = [
  */
 export function MarketingSection() {
   const { view, setView } = useMarketingView();
-  const { hasSubscription } = useAuth();
-  const showLocalNav = hasSubscription("ordering");
+  const { hasSubscription, isSuperAdmin } = useAuth();
+  const showLocalNav = hasSubscription("ordering") || isSuperAdmin;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">

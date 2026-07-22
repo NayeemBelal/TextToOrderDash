@@ -9,7 +9,7 @@ import {
   type CampaignMessageDefaults,
 } from "@/lib/campaignConfigApi";
 import { sendTestOptin, sendTestCampaign } from "@/lib/testSendApi";
-import { useAuth } from "@/lib/auth-context";
+import { useSelectedRestaurant } from "@/lib/selected-restaurant-context";
 import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
@@ -138,8 +138,8 @@ const EMPTY_STATS: CampaignStats = {
 const WIZARD_STEPS = [
   { id: 1, label: "Roster" },
   { id: 2, label: "Schedule" },
-  { id: 3, label: "Games" },
-  { id: 4, label: "Prizes" },
+  { id: 3, label: "Prizes" },
+  { id: 4, label: "Games" },
   { id: 5, label: "Review" },
 ];
 
@@ -258,7 +258,7 @@ function aggregatePerGame(
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function GamifiedMarketingTab() {
-  const { restaurantId } = useAuth();
+  const restaurantId = useSelectedRestaurant();
 
   // Phase
   const [pagePhase, setPagePhase] = useState<"setup" | "active" | "paused">(
@@ -273,6 +273,7 @@ export function GamifiedMarketingTab() {
   );
   const [rosterLoading, setRosterLoading] = useState(true);
   const [rosterSearch, setRosterSearch] = useState("");
+  const [dashboardCustomerSearch, setDashboardCustomerSearch] = useState("");
 
   // Step 2 — Schedule
   const [restaurantTimezone, setRestaurantTimezone] =
@@ -307,6 +308,8 @@ export function GamifiedMarketingTab() {
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const [stats, setStats] = useState<CampaignStats>(EMPTY_STATS);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deletingCampaign, setDeletingCampaign] = useState(false);
 
   // Opt-in blast management
   const [optinStatus, setOptinStatus] = useState<OptinStatus | null>(null);
@@ -816,6 +819,32 @@ export function GamifiedMarketingTab() {
       .catch((err) => console.error("Failed to persist campaign:", err));
   };
 
+  const handleDeleteCampaign = async () => {
+    if (!campaignId) {
+      // No persisted campaign (e.g. launch call failed) — just reset locally.
+      setPagePhase("setup");
+      setLaunchedConfig(null);
+      setConfirmingDelete(false);
+      return;
+    }
+    setDeletingCampaign(true);
+    try {
+      await marketingApiFetch(`/api/marketing/campaigns/${campaignId}`, {
+        method: "DELETE",
+      });
+      setCampaignId(null);
+      setLaunchedConfig(null);
+      setStats(EMPTY_STATS);
+      setPagePhase("setup");
+      setWizardStep(1);
+    } catch (err) {
+      console.error("Failed to delete campaign:", err);
+    } finally {
+      setDeletingCampaign(false);
+      setConfirmingDelete(false);
+    }
+  };
+
   const filteredRoster = rosterSearch
     ? optedInCustomers.filter(
         (c) =>
@@ -823,6 +852,22 @@ export function GamifiedMarketingTab() {
           c.phone.includes(rosterSearch),
       )
     : optedInCustomers;
+
+  // Customers this launched campaign actually targets — matched against the
+  // live opted-in roster so anyone who's since opted out drops off the list.
+  const targetCustomers = launchedConfig
+    ? optedInCustomers.filter((c) =>
+        launchedConfig.targetCustomerIds.includes(c.id),
+      )
+    : [];
+
+  const filteredTargetCustomers = dashboardCustomerSearch
+    ? targetCustomers.filter(
+        (c) =>
+          c.name.toLowerCase().includes(dashboardCustomerSearch.toLowerCase()) ||
+          c.phone.includes(dashboardCustomerSearch),
+      )
+    : targetCustomers;
 
   const filteredMenuItems = menuItemSearch
     ? menuItems.filter((m) =>
@@ -836,7 +881,7 @@ export function GamifiedMarketingTab() {
     switch (wizardStep) {
       case 2:
         return selectedDays.length >= 1;
-      case 4:
+      case 3:
         return (
           prizes.every((p) =>
             p.type === "free-item" ? !!p.itemName : (p.percent ?? 0) > 0,
@@ -1337,28 +1382,59 @@ export function GamifiedMarketingTab() {
               )}
             </div>
           </div>
-          <button
-            onClick={() => {
-              const next = pagePhase === "active" ? "paused" : "active";
-              setPagePhase(next);
-              if (campaignId) {
-                marketingApiFetch(`/api/marketing/campaigns/${campaignId}`, {
-                  method: "PATCH",
-                  body: JSON.stringify({ status: next }),
-                }).catch((err) =>
-                  console.error("Failed to update campaign status:", err),
-                );
-              }
-            }}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              pagePhase === "active"
-                ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                : "bg-capy-green text-white hover:opacity-90"
-            }`}
-            style={{ fontFamily: "Tektur, sans-serif" }}
-          >
-            {pagePhase === "active" ? "Pause" : "Resume"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const next = pagePhase === "active" ? "paused" : "active";
+                setPagePhase(next);
+                if (campaignId) {
+                  marketingApiFetch(`/api/marketing/campaigns/${campaignId}`, {
+                    method: "PATCH",
+                    body: JSON.stringify({ status: next }),
+                  }).catch((err) =>
+                    console.error("Failed to update campaign status:", err),
+                  );
+                }
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                pagePhase === "active"
+                  ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                  : "bg-capy-green text-white hover:opacity-90"
+              }`}
+              style={{ fontFamily: "Tektur, sans-serif" }}
+            >
+              {pagePhase === "active" ? "Pause" : "Resume"}
+            </button>
+            {confirmingDelete ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-capy-muted">Delete campaign?</span>
+                <button
+                  onClick={handleDeleteCampaign}
+                  disabled={deletingCampaign}
+                  className="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  {deletingCampaign ? "Deleting…" : "Confirm"}
+                </button>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  disabled={deletingCampaign}
+                  className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                title="Delete campaign"
+                className="p-2 rounded-xl border border-capy-border text-capy-muted hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Metrics */}
@@ -1470,6 +1546,69 @@ export function GamifiedMarketingTab() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Opted-In Customers targeted by this campaign */}
+        <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-capy-border">
+            <p className="card-heading">Opted-In Customers</p>
+            <span className="text-xs font-semibold text-capy-green-dark bg-capy-green-light px-2.5 py-1 rounded-full">
+              {targetCustomers.length}
+            </span>
+          </div>
+          <div className="px-4 py-2.5 border-b border-capy-border">
+            <div className="flex items-center gap-2 bg-slate-50 border border-capy-border rounded-xl px-3 py-2">
+              <svg
+                className="w-3.5 h-3.5 text-capy-muted flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                value={dashboardCustomerSearch}
+                onChange={(e) => setDashboardCustomerSearch(e.target.value)}
+                placeholder="Search by name or phone..."
+                className="flex-1 bg-transparent text-sm text-capy-text placeholder:text-capy-muted outline-none"
+              />
+            </div>
+          </div>
+          <div className="max-h-52 overflow-y-auto">
+            {rosterLoading ? (
+              <p className="text-xs text-capy-muted text-center py-6">
+                Loading customers…
+              </p>
+            ) : filteredTargetCustomers.length === 0 ? (
+              <p className="text-xs text-capy-muted text-center py-6">
+                {dashboardCustomerSearch
+                  ? `No results for "${dashboardCustomerSearch}"`
+                  : "No opted-in customers were targeted by this campaign"}
+              </p>
+            ) : (
+              filteredTargetCustomers.map((customer) => (
+                <div
+                  key={customer.id}
+                  className="flex items-center gap-3 px-4 py-3 border-b border-capy-border/60 last:border-0"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-capy-text truncate">
+                      {customer.name}
+                    </p>
+                    <p className="text-xs text-capy-muted font-mono">
+                      {customer.phone}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -2033,8 +2172,273 @@ export function GamifiedMarketingTab() {
           </div>
         )}
 
-        {/* ── Step 3: Games ── */}
+        {/* ── Step 3: Prizes ── */}
         {wizardStep === 3 && (
+          <div className="space-y-3">
+            <p className="text-xs text-capy-muted">
+              {everyoneWins
+                ? "One prize per game — every player wins it"
+                : "One prize per game, plus a consolation for everyone else"}
+            </p>
+
+            {/* Campaign mode */}
+            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <p className="card-heading mb-0.5">Campaign mode</p>
+              <p className="text-xs text-capy-muted mb-3">
+                How prizes are awarded when customers play the game.
+              </p>
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  {
+                    val: false,
+                    emoji: "🎯",
+                    title: "Classic game",
+                    desc: "One winner per round; everyone else gets a loser's discount.",
+                  },
+                  {
+                    val: true,
+                    emoji: "🎉",
+                    title: "Everyone wins",
+                    desc: "Every player wins the prize — no losers, no cap. Great for driving orders.",
+                  },
+                ].map((opt) => (
+                  <button
+                    key={String(opt.val)}
+                    onClick={() => applyEveryoneWins(opt.val)}
+                    className={`text-left rounded-xl border p-3 transition-colors ${
+                      everyoneWins === opt.val
+                        ? "border-capy-green bg-capy-green-light"
+                        : "border-capy-border hover:bg-slate-50"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold text-capy-text">
+                      {opt.emoji} {opt.title}
+                    </p>
+                    <p className="text-[11px] text-capy-muted mt-0.5">
+                      {opt.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {prizes.map((prize, i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-capy-border shadow-sm p-4"
+              >
+                <p className="section-label mb-3">
+                  Game {i + 1} Prize — {games[i]?.day ?? ""}
+                </p>
+                <div className="flex items-center gap-4 mb-3">
+                  {(["percent-off", "free-item"] as PrizeType[]).map((type) => (
+                    <label
+                      key={type}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="radio"
+                        checked={prize.type === type}
+                        onChange={() => updatePrizeType(i, type)}
+                        className="w-3.5 h-3.5 accent-capy-green"
+                      />
+                      <span className="text-xs text-capy-text font-medium">
+                        {type === "percent-off" ? "% Off" : "Free Item"}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {prize.type === "percent-off" ? (
+                  <div className="relative w-32">
+                    <input
+                      type="number"
+                      value={prize.percent ?? ""}
+                      onChange={(e) =>
+                        updatePrizePercent(i, Number(e.target.value))
+                      }
+                      min={1}
+                      max={100}
+                      placeholder="20"
+                      className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">
+                      %
+                    </span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={openMenuDropdown === i ? menuItemSearch : ""}
+                      onChange={(e) => {
+                        setMenuItemSearch(e.target.value);
+                        setOpenMenuDropdown(i);
+                      }}
+                      onFocus={() => {
+                        if (!prize.itemName) setOpenMenuDropdown(i);
+                      }}
+                      placeholder={prize.itemName || "Search menu items..."}
+                      className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    />
+                    {prize.itemName && openMenuDropdown !== i && (
+                      <div className="flex items-center justify-between mt-1.5 px-3 py-1.5 bg-capy-green-light border border-capy-green/30 rounded-lg">
+                        <span className="text-xs text-capy-green-dark font-medium">
+                          {prize.itemName}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setPrizes((prev) =>
+                              prev.map((p, idx) =>
+                                idx === i ? { ...p, itemName: undefined } : p,
+                              ),
+                            )
+                          }
+                        >
+                          <svg
+                            className="w-3 h-3 text-capy-green-dark"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                    {openMenuDropdown === i && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-capy-border rounded-xl shadow-lg z-10 max-h-36 overflow-y-auto">
+                        {menuItemsLoading ? (
+                          <p className="p-3 text-center text-xs text-capy-muted">
+                            Loading...
+                          </p>
+                        ) : filteredMenuItems.length === 0 ? (
+                          <p className="p-3 text-center text-xs text-capy-muted">
+                            No items found
+                          </p>
+                        ) : (
+                          filteredMenuItems.slice(0, 20).map((item) => (
+                            <button
+                              key={item.clover_id}
+                              onClick={() => selectFreeItem(i, item.name)}
+                              className="w-full text-left px-3 py-2 text-xs text-capy-text hover:bg-capy-green-light border-b border-capy-border/60 last:border-0 transition-colors"
+                            >
+                              <span className="font-medium">{item.name}</span>
+                              {item.category && (
+                                <span className="text-capy-muted ml-1.5">
+                                  {item.category}
+                                </span>
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Loser's Discount — not shown in everyone-wins mode */}
+            {!everyoneWins && (
+            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <p className="card-heading mb-0.5">Loser&apos;s Discount</p>
+              <p className="text-xs text-capy-muted mb-3">
+                Given to every non-winner. After the cap, losers get a
+                &ldquo;Sorry&rdquo; message.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="section-label mb-1.5">Discount</p>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={loserDiscount}
+                      onChange={(e) => setLoserDiscount(Number(e.target.value))}
+                      min={1}
+                      max={100}
+                      className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
+                    />
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">
+                      %
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <p className="section-label mb-1.5">Max Redemptions</p>
+                  <input
+                    type="number"
+                    value={loserDiscountCap}
+                    onChange={(e) =>
+                      setLoserDiscountCap(Number(e.target.value))
+                    }
+                    min={1}
+                    className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  />
+                </div>
+              </div>
+            </div>
+            )}
+
+            {/* Coupon Expiry */}
+            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <p className="card-heading mb-0.5">Coupon Expiry</p>
+              <p className="text-xs text-capy-muted mb-3">
+                {everyoneWins
+                  ? "Applies to every winner's coupon — restaurant local time."
+                  : "Applies to winner and loser coupons — restaurant local time."}
+              </p>
+              <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
+                <select
+                  value={campaignExpiryDays}
+                  onChange={(e) => setCampaignExpiryDays(Number(e.target.value))}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+                <span className="text-capy-muted">
+                  day{campaignExpiryDays !== 1 ? "s" : ""} after playing, at
+                </span>
+                <select
+                  value={campaignExpiryHour}
+                  onChange={(e) => setCampaignExpiryHour(e.target.value)}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                    <option key={h} value={String(h)}>{h}</option>
+                  ))}
+                </select>
+                <span className="text-capy-muted">:</span>
+                <select
+                  value={campaignExpiryMinute}
+                  onChange={(e) => setCampaignExpiryMinute(e.target.value)}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  {["00", "15", "30", "45"].map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <select
+                  value={campaignExpiryAmPm}
+                  onChange={(e) => setCampaignExpiryAmPm(e.target.value)}
+                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                >
+                  <option>AM</option>
+                  <option>PM</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step 4: Games ── */}
+        {wizardStep === 4 && (
           <div className="space-y-3">
             <p className="text-xs text-capy-muted">
               One game per send day — swap any you&apos;d like
@@ -2306,271 +2710,6 @@ export function GamifiedMarketingTab() {
                 </div>
               ))
             )}
-          </div>
-        )}
-
-        {/* ── Step 4: Prizes ── */}
-        {wizardStep === 4 && (
-          <div className="space-y-3">
-            <p className="text-xs text-capy-muted">
-              {everyoneWins
-                ? "One prize per game — every player wins it"
-                : "One prize per game, plus a consolation for everyone else"}
-            </p>
-
-            {/* Campaign mode */}
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
-              <p className="card-heading mb-0.5">Campaign mode</p>
-              <p className="text-xs text-capy-muted mb-3">
-                How prizes are awarded when customers play the game.
-              </p>
-              <div className="grid grid-cols-1 gap-2">
-                {[
-                  {
-                    val: false,
-                    emoji: "🎯",
-                    title: "Classic game",
-                    desc: "One winner per round; everyone else gets a loser's discount.",
-                  },
-                  {
-                    val: true,
-                    emoji: "🎉",
-                    title: "Everyone wins",
-                    desc: "Every player wins the prize — no losers, no cap. Great for driving orders.",
-                  },
-                ].map((opt) => (
-                  <button
-                    key={String(opt.val)}
-                    onClick={() => applyEveryoneWins(opt.val)}
-                    className={`text-left rounded-xl border p-3 transition-colors ${
-                      everyoneWins === opt.val
-                        ? "border-capy-green bg-capy-green-light"
-                        : "border-capy-border hover:bg-slate-50"
-                    }`}
-                  >
-                    <p className="text-xs font-semibold text-capy-text">
-                      {opt.emoji} {opt.title}
-                    </p>
-                    <p className="text-[11px] text-capy-muted mt-0.5">
-                      {opt.desc}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {prizes.map((prize, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl border border-capy-border shadow-sm p-4"
-              >
-                <p className="section-label mb-3">
-                  Game {i + 1} Prize — {games[i]?.day ?? ""}
-                </p>
-                <div className="flex items-center gap-4 mb-3">
-                  {(["percent-off", "free-item"] as PrizeType[]).map((type) => (
-                    <label
-                      key={type}
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <input
-                        type="radio"
-                        checked={prize.type === type}
-                        onChange={() => updatePrizeType(i, type)}
-                        className="w-3.5 h-3.5 accent-capy-green"
-                      />
-                      <span className="text-xs text-capy-text font-medium">
-                        {type === "percent-off" ? "% Off" : "Free Item"}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {prize.type === "percent-off" ? (
-                  <div className="relative w-32">
-                    <input
-                      type="number"
-                      value={prize.percent ?? ""}
-                      onChange={(e) =>
-                        updatePrizePercent(i, Number(e.target.value))
-                      }
-                      min={1}
-                      max={100}
-                      placeholder="20"
-                      className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
-                    />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">
-                      %
-                    </span>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={openMenuDropdown === i ? menuItemSearch : ""}
-                      onChange={(e) => {
-                        setMenuItemSearch(e.target.value);
-                        setOpenMenuDropdown(i);
-                      }}
-                      onFocus={() => {
-                        if (!prize.itemName) setOpenMenuDropdown(i);
-                      }}
-                      placeholder={prize.itemName || "Search menu items..."}
-                      className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green"
-                    />
-                    {prize.itemName && openMenuDropdown !== i && (
-                      <div className="flex items-center justify-between mt-1.5 px-3 py-1.5 bg-capy-green-light border border-capy-green/30 rounded-lg">
-                        <span className="text-xs text-capy-green-dark font-medium">
-                          {prize.itemName}
-                        </span>
-                        <button
-                          onClick={() =>
-                            setPrizes((prev) =>
-                              prev.map((p, idx) =>
-                                idx === i ? { ...p, itemName: undefined } : p,
-                              ),
-                            )
-                          }
-                        >
-                          <svg
-                            className="w-3 h-3 text-capy-green-dark"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                    {openMenuDropdown === i && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-capy-border rounded-xl shadow-lg z-10 max-h-36 overflow-y-auto">
-                        {menuItemsLoading ? (
-                          <p className="p-3 text-center text-xs text-capy-muted">
-                            Loading...
-                          </p>
-                        ) : filteredMenuItems.length === 0 ? (
-                          <p className="p-3 text-center text-xs text-capy-muted">
-                            No items found
-                          </p>
-                        ) : (
-                          filteredMenuItems.slice(0, 20).map((item) => (
-                            <button
-                              key={item.clover_id}
-                              onClick={() => selectFreeItem(i, item.name)}
-                              className="w-full text-left px-3 py-2 text-xs text-capy-text hover:bg-capy-green-light border-b border-capy-border/60 last:border-0 transition-colors"
-                            >
-                              <span className="font-medium">{item.name}</span>
-                              {item.category && (
-                                <span className="text-capy-muted ml-1.5">
-                                  {item.category}
-                                </span>
-                              )}
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Loser's Discount — not shown in everyone-wins mode */}
-            {!everyoneWins && (
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
-              <p className="card-heading mb-0.5">Loser&apos;s Discount</p>
-              <p className="text-xs text-capy-muted mb-3">
-                Given to every non-winner. After the cap, losers get a
-                &ldquo;Sorry&rdquo; message.
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="section-label mb-1.5">Discount</p>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={loserDiscount}
-                      onChange={(e) => setLoserDiscount(Number(e.target.value))}
-                      min={1}
-                      max={100}
-                      className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
-                    />
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">
-                      %
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <p className="section-label mb-1.5">Max Redemptions</p>
-                  <input
-                    type="number"
-                    value={loserDiscountCap}
-                    onChange={(e) =>
-                      setLoserDiscountCap(Number(e.target.value))
-                    }
-                    min={1}
-                    className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green"
-                  />
-                </div>
-              </div>
-            </div>
-            )}
-
-            {/* Coupon Expiry */}
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
-              <p className="card-heading mb-0.5">Coupon Expiry</p>
-              <p className="text-xs text-capy-muted mb-3">
-                {everyoneWins
-                  ? "Applies to every winner's coupon — restaurant local time."
-                  : "Applies to winner and loser coupons — restaurant local time."}
-              </p>
-              <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
-                <select
-                  value={campaignExpiryDays}
-                  onChange={(e) => setCampaignExpiryDays(Number(e.target.value))}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-                <span className="text-capy-muted">
-                  day{campaignExpiryDays !== 1 ? "s" : ""} after playing, at
-                </span>
-                <select
-                  value={campaignExpiryHour}
-                  onChange={(e) => setCampaignExpiryHour(e.target.value)}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                    <option key={h} value={String(h)}>{h}</option>
-                  ))}
-                </select>
-                <span className="text-capy-muted">:</span>
-                <select
-                  value={campaignExpiryMinute}
-                  onChange={(e) => setCampaignExpiryMinute(e.target.value)}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  {["00", "15", "30", "45"].map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-                <select
-                  value={campaignExpiryAmPm}
-                  onChange={(e) => setCampaignExpiryAmPm(e.target.value)}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  <option>AM</option>
-                  <option>PM</option>
-                </select>
-              </div>
-            </div>
           </div>
         )}
 
