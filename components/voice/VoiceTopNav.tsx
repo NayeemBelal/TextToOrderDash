@@ -12,6 +12,8 @@ const TABS = [
   { label: "Customers", href: "/customers" },
 ];
 
+// Coupon Timeline and Messages are super-admin-only (see MarketingSection);
+// this header toggle is only ever shown to regular (non-admin) owner accounts.
 const MARKETING_TABS: { key: MarketingView; label: string }[] = [
   { key: "campaign", label: "Campaign" },
   { key: "revenue", label: "Revenue" },

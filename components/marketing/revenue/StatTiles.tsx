@@ -1,6 +1,7 @@
 "use client";
 
 import { formatUSD } from "@/lib/marketingAnalyticsApi";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Props {
   revenueCents: number;
@@ -15,9 +16,13 @@ function Tile({ label, value, loading }: { label: string; value: string; loading
       <p className="text-xs text-capy-muted font-medium uppercase tracking-wide leading-none">
         {label}
       </p>
-      <p className="text-2xl md:text-3xl font-bold text-capy-text leading-tight mt-1 break-words tabular-nums">
-        {loading ? "—" : value}
-      </p>
+      {loading ? (
+        <Skeleton className="h-7 md:h-8 w-24 mt-1" />
+      ) : (
+        <p className="text-2xl md:text-3xl font-bold text-capy-text leading-tight mt-1 break-words tabular-nums">
+          {value}
+        </p>
+      )}
     </div>
   );
 }
