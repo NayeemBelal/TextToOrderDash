@@ -4,10 +4,18 @@ import { useAuth } from "@/lib/auth-context";
 import { useMarketingView, type MarketingView } from "@/lib/marketing-view-context";
 import { GamifiedMarketingTab } from "@/components/voice/GamifiedMarketingTab";
 import { RevenueAnalyticsTab } from "@/components/marketing/RevenueAnalyticsTab";
+import { CouponTimelineTab } from "@/components/marketing/timeline/CouponTimelineTab";
+import { MessagesTab } from "@/components/marketing/messages/MessagesTab";
 
-const VIEWS: { key: MarketingView; label: string }[] = [
+const BASE_VIEWS: { key: MarketingView; label: string }[] = [
   { key: "campaign", label: "Campaign" },
   { key: "revenue", label: "Revenue" },
+];
+
+// Super-admin-only: internal ops tooling, not part of the owner-facing product.
+const ADMIN_VIEWS: { key: MarketingView; label: string }[] = [
+  { key: "timeline", label: "Coupon Timeline" },
+  { key: "messages", label: "Messages" },
 ];
 
 /**
@@ -17,18 +25,25 @@ const VIEWS: { key: MarketingView; label: string }[] = [
  * drive it from the header toggle (aligned with the logo), so this component
  * renders only the content. Multi-product accounts, whose header shows the
  * ordering tabs, get the Campaign/Revenue sub-nav here instead.
+ *
+ * Coupon Timeline and Messages are gated to isSuperAdmin — restaurant owners
+ * never see these tabs, only the super-admin viewing a restaurant via /admin.
  */
 export function MarketingSection() {
   const { view, setView } = useMarketingView();
   const { hasSubscription, isSuperAdmin } = useAuth();
   const showLocalNav = hasSubscription("ordering") || isSuperAdmin;
+  const views = isSuperAdmin ? [...BASE_VIEWS, ...ADMIN_VIEWS] : BASE_VIEWS;
+  // Safety fallback: a non-admin should never render an admin-only view, even
+  // if shared view state was left on "timeline"/"messages" from a prior session.
+  const activeView = isSuperAdmin || (view !== "timeline" && view !== "messages") ? view : "campaign";
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {showLocalNav && (
         <div className="flex items-center gap-1 flex-shrink-0 px-4 border-b border-capy-border">
-          {VIEWS.map((v) => {
-            const active = view === v.key;
+          {views.map((v) => {
+            const active = activeView === v.key;
             return (
               <button
                 key={v.key}
@@ -48,7 +63,15 @@ export function MarketingSection() {
 
       {/* Single page-level scroll: inner lists keep their own scroll. */}
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {view === "campaign" ? <GamifiedMarketingTab /> : <RevenueAnalyticsTab />}
+        {activeView === "campaign" ? (
+          <GamifiedMarketingTab />
+        ) : activeView === "revenue" ? (
+          <RevenueAnalyticsTab />
+        ) : activeView === "timeline" ? (
+          <CouponTimelineTab />
+        ) : (
+          <MessagesTab />
+        )}
       </div>
     </div>
   );

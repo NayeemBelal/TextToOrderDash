@@ -9,6 +9,7 @@ import {
   type CouponType,
   type OrderListItem,
 } from "@/lib/marketingAnalyticsApi";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const POLL_MS = 45_000; // "real-time within ~1 min" — refresh the top of the list
 
@@ -97,7 +98,20 @@ export function OrdersList({ restaurantId, types, onSelect }: Props) {
       </div>
 
       {loading ? (
-        <div className="px-5 py-10 text-center text-sm text-capy-muted">Loading orders…</div>
+        <div className="divide-y divide-capy-border">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 px-5 py-3">
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <Skeleton className="h-3.5 w-28" />
+                <Skeleton className="h-3 w-36" />
+              </div>
+              <div className="text-right flex-shrink-0 space-y-1.5">
+                <Skeleton className="h-3.5 w-12 ml-auto" />
+                <Skeleton className="h-3 w-10 ml-auto" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : items.length === 0 ? (
         <div className="px-5 py-10 text-center text-sm text-capy-muted">
           No orders from marketing yet. They&apos;ll appear here as coupons get used.

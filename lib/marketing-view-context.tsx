@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-export type MarketingView = "campaign" | "revenue";
+export type MarketingView = "campaign" | "revenue" | "timeline" | "messages";
 
 interface MarketingViewValue {
   view: MarketingView;

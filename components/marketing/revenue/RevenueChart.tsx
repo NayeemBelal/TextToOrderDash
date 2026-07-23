@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { formatUSD, type RangeKey, type SummaryPoint } from "@/lib/marketingAnalyticsApi";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 const GREEN = "#22C55E"; // capy-green — single-series brand accent (no legend needed)
 
@@ -81,7 +82,16 @@ export function RevenueChart({ series, range, onRangeChange, loading }: Props) {
 
       <div className="h-56 w-full">
         {loading ? (
-          <div className="h-full flex items-center justify-center text-sm text-capy-muted">Loading…</div>
+          <div className="h-full flex items-end gap-2 pb-4">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="flex-1 rounded-t"
+                // Deterministic per-index heights so the shimmer doesn't jump on re-render.
+                style={{ height: `${30 + ((i * 37) % 60)}%` }}
+              />
+            ))}
+          </div>
         ) : !hasData ? (
           <div className="h-full flex items-center justify-center text-sm text-capy-muted">
             No revenue in this range yet.

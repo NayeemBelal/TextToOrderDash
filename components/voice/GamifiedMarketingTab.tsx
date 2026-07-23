@@ -10,6 +10,7 @@ import {
 } from "@/lib/campaignConfigApi";
 import { sendTestOptin, sendTestCampaign } from "@/lib/testSendApi";
 import { useSelectedRestaurant } from "@/lib/selected-restaurant-context";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
@@ -255,6 +256,24 @@ function aggregatePerGame(
     );
 }
 
+function CustomerRowSkeletons() {
+  return (
+    <>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-4 py-3 border-b border-capy-border/60 last:border-0"
+        >
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <Skeleton className="h-3.5 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function GamifiedMarketingTab() {
@@ -308,6 +327,7 @@ export function GamifiedMarketingTab() {
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const [stats, setStats] = useState<CampaignStats>(EMPTY_STATS);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deletingCampaign, setDeletingCampaign] = useState(false);
 
@@ -461,7 +481,11 @@ export function GamifiedMarketingTab() {
 
   // Load real campaign stats whenever we have a campaign
   useEffect(() => {
-    if (!campaignId) return;
+    if (!campaignId) {
+      setStatsLoading(false);
+      return;
+    }
+    setStatsLoading(true);
     marketingApiFetch<CampaignStats>(`/api/marketing/campaigns/${campaignId}/stats`)
       .then((d) =>
         setStats({
@@ -473,7 +497,8 @@ export function GamifiedMarketingTab() {
           per_game: d.per_game ?? [],
         }),
       )
-      .catch(() => setStats(EMPTY_STATS));
+      .catch(() => setStats(EMPTY_STATS))
+      .finally(() => setStatsLoading(false));
   }, [campaignId]);
 
   const rid = restaurantId;
@@ -1449,12 +1474,16 @@ export function GamifiedMarketingTab() {
               className="bg-white rounded-2xl border border-capy-border shadow-sm p-4"
             >
               <p className="section-label">{stat.label}</p>
-              <p
-                className="text-2xl font-bold text-capy-text mt-1"
-                style={{ fontFamily: "Tektur, sans-serif" }}
-              >
-                {stat.value.toLocaleString()}
-              </p>
+              {statsLoading ? (
+                <Skeleton className="h-7 w-12 mt-1" />
+              ) : (
+                <p
+                  className="text-2xl font-bold text-capy-text mt-1"
+                  style={{ fontFamily: "Tektur, sans-serif" }}
+                >
+                  {stat.value.toLocaleString()}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -1462,12 +1491,16 @@ export function GamifiedMarketingTab() {
         {/* Score card */}
         <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-capy-green-light border-4 border-capy-green flex items-center justify-center shrink-0">
-            <span
-              className="text-xl font-bold text-capy-green-dark"
-              style={{ fontFamily: "Tektur, sans-serif" }}
-            >
-              {stats.campaign_score}
-            </span>
+            {statsLoading ? (
+              <Skeleton className="h-5 w-6 rounded" />
+            ) : (
+              <span
+                className="text-xl font-bold text-capy-green-dark"
+                style={{ fontFamily: "Tektur, sans-serif" }}
+              >
+                {stats.campaign_score}
+              </span>
+            )}
           </div>
           <div className="flex-1">
             <p className="card-heading">Campaign Score</p>
@@ -1508,7 +1541,17 @@ export function GamifiedMarketingTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-capy-border/60">
-                {stats.top_customers.length === 0 ? (
+                {statsLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-4 py-2.5"><Skeleton className="w-5 h-5 rounded-full" /></td>
+                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-24" /></td>
+                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-6" /></td>
+                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-6" /></td>
+                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-6" /></td>
+                    </tr>
+                  ))
+                ) : stats.top_customers.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
@@ -1583,9 +1626,7 @@ export function GamifiedMarketingTab() {
           </div>
           <div className="max-h-52 overflow-y-auto">
             {rosterLoading ? (
-              <p className="text-xs text-capy-muted text-center py-6">
-                Loading customers…
-              </p>
+              <CustomerRowSkeletons />
             ) : filteredTargetCustomers.length === 0 ? (
               <p className="text-xs text-capy-muted text-center py-6">
                 {dashboardCustomerSearch
@@ -1651,12 +1692,16 @@ export function GamifiedMarketingTab() {
                   })().map((s) => (
                     <div key={s.label}>
                       <p className="section-label">{s.label}</p>
-                      <p
-                        className="text-lg font-bold text-capy-text mt-0.5"
-                        style={{ fontFamily: "Tektur, sans-serif" }}
-                      >
-                        {s.value}
-                      </p>
+                      {statsLoading ? (
+                        <Skeleton className="h-5 w-6 mt-0.5" />
+                      ) : (
+                        <p
+                          className="text-lg font-bold text-capy-text mt-0.5"
+                          style={{ fontFamily: "Tektur, sans-serif" }}
+                        >
+                          {s.value}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1917,9 +1962,7 @@ export function GamifiedMarketingTab() {
               {/* Customer list */}
               <div className="max-h-52 overflow-y-auto">
                 {rosterLoading ? (
-                  <p className="text-xs text-capy-muted text-center py-6">
-                    Loading customers…
-                  </p>
+                  <CustomerRowSkeletons />
                 ) : filteredRoster.length === 0 ? (
                   <p className="text-xs text-capy-muted text-center py-6">
                     {rosterSearch
@@ -2313,9 +2356,11 @@ export function GamifiedMarketingTab() {
                     {openMenuDropdown === i && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-capy-border rounded-xl shadow-lg z-10 max-h-36 overflow-y-auto">
                         {menuItemsLoading ? (
-                          <p className="p-3 text-center text-xs text-capy-muted">
-                            Loading...
-                          </p>
+                          <div className="p-2 space-y-2">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                              <Skeleton key={i} className="h-3.5 w-full" />
+                            ))}
+                          </div>
                         ) : filteredMenuItems.length === 0 ? (
                           <p className="p-3 text-center text-xs text-capy-muted">
                             No items found

@@ -8,6 +8,7 @@ import {
   formatUSD,
   type OrderDetail,
 } from "@/lib/marketingAnalyticsApi";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 interface Props {
   restaurantId: string;
@@ -96,7 +97,19 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          {loading && <p className="text-sm text-capy-muted">Loading…</p>}
+          {loading && (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           {detail && (
