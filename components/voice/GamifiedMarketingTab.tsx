@@ -12,6 +12,12 @@ import { sendTestOptin, sendTestCampaign } from "@/lib/testSendApi";
 import { useSelectedRestaurant } from "@/lib/selected-restaurant-context";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
+  fetchCustomerGroups,
+  fetchGroupMembers,
+  type CustomerGroup,
+} from "@/lib/customerGroupsApi";
+import { CustomerGroupsPanel } from "@/components/voice/campaign/CustomerGroupsPanel";
+import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
   DEFAULT_TRIVIA,
@@ -294,6 +300,12 @@ export function GamifiedMarketingTab() {
   const [rosterSearch, setRosterSearch] = useState("");
   const [dashboardCustomerSearch, setDashboardCustomerSearch] = useState("");
 
+  // Customer groups — static, reusable one-click filters over the opted-in roster.
+  const [customerGroups, setCustomerGroups] = useState<CustomerGroup[] | null>(null);
+  const [activeGroupIds, setActiveGroupIds] = useState<Set<string>>(new Set());
+  const [groupMembersCache, setGroupMembersCache] = useState<Record<string, string[]>>({});
+  const [groupsPanelOpen, setGroupsPanelOpen] = useState(false);
+
   // Step 2 — Schedule
   const [restaurantTimezone, setRestaurantTimezone] =
     useState<string>("America/Chicago");
@@ -419,6 +431,11 @@ export function GamifiedMarketingTab() {
       })
       .catch(() => setOptedInCustomers([]))
       .finally(() => setRosterLoading(false));
+
+    // Customer groups
+    fetchCustomerGroups(id)
+      .then((r) => setCustomerGroups(r.groups))
+      .catch(() => setCustomerGroups([]));
 
     // Menu items for prize selection
     setMenuItemsLoading(true);
@@ -868,6 +885,42 @@ export function GamifiedMarketingTab() {
       setDeletingCampaign(false);
       setConfirmingDelete(false);
     }
+  };
+
+  const refreshGroups = () => {
+    if (!restaurantId) return;
+    fetchCustomerGroups(restaurantId)
+      .then((r) => setCustomerGroups(r.groups))
+      .catch(() => {});
+  };
+
+  // Toggling a group chip merges/removes exactly that group's members from the
+  // selection — manual individual picks outside the group are left untouched.
+  const toggleGroupChip = async (groupId: string) => {
+    if (!restaurantId) return;
+    const isActive = activeGroupIds.has(groupId);
+    let memberIds = groupMembersCache[groupId];
+    if (!memberIds) {
+      try {
+        const res = await fetchGroupMembers(restaurantId, groupId);
+        memberIds = res.members.map((m) => m.customer_id);
+        setGroupMembersCache((prev) => ({ ...prev, [groupId]: memberIds! }));
+      } catch {
+        return;
+      }
+    }
+    setActiveGroupIds((prev) => {
+      const next = new Set(prev);
+      isActive ? next.delete(groupId) : next.add(groupId);
+      return next;
+    });
+    setSelectedCustomerIds((prev) => {
+      const next = new Set(prev);
+      for (const cid of memberIds!) {
+        isActive ? next.delete(cid) : next.add(cid);
+      }
+      return next;
+    });
   };
 
   const filteredRoster = rosterSearch
@@ -1878,11 +1931,41 @@ export function GamifiedMarketingTab() {
               {/* Header: title + selected count */}
               <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-capy-border">
                 <p className="card-heading">Opted In</p>
-                <span className="text-xs font-semibold text-capy-green-dark bg-capy-green-light px-2.5 py-1 rounded-full">
-                  {selectedCustomerIds.size} / {optedInCustomers.length}{" "}
-                  selected
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setGroupsPanelOpen(true)}
+                    className="text-xs font-semibold text-capy-muted hover:text-capy-text hover:underline"
+                  >
+                    Manage groups
+                  </button>
+                  <span className="text-xs font-semibold text-capy-green-dark bg-capy-green-light px-2.5 py-1 rounded-full">
+                    {selectedCustomerIds.size} / {optedInCustomers.length}{" "}
+                    selected
+                  </span>
+                </div>
               </div>
+
+              {/* Group chips — one-click filters over the roster below */}
+              {customerGroups && customerGroups.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 px-4 py-2.5 border-b border-capy-border">
+                  {customerGroups.map((g) => {
+                    const active = activeGroupIds.has(g.id);
+                    return (
+                      <button
+                        key={g.id}
+                        onClick={() => toggleGroupChip(g.id)}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                          active
+                            ? "bg-capy-green-light border-capy-green text-capy-green-dark"
+                            : "bg-white border-capy-border text-capy-muted hover:text-capy-text"
+                        }`}
+                      >
+                        {g.name} · {g.member_count}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Select all / Deselect all */}
               {!rosterLoading && optedInCustomers.length > 0 && (
@@ -2942,6 +3025,15 @@ export function GamifiedMarketingTab() {
           </button>
         )}
       </div>
+
+      {groupsPanelOpen && restaurantId && (
+        <CustomerGroupsPanel
+          restaurantId={restaurantId}
+          optedInCustomers={optedInCustomers}
+          onClose={() => setGroupsPanelOpen(false)}
+          onGroupsChanged={refreshGroups}
+        />
+      )}
     </div>
   );
 }
