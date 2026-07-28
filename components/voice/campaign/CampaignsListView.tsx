@@ -6,6 +6,11 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { GamifiedMarketingTab } from "@/components/voice/GamifiedMarketingTab";
 import { PromoBlastWizard } from "@/components/voice/campaign/PromoBlastWizard";
 import { PromoCampaignDetail } from "@/components/voice/campaign/PromoCampaignDetail";
+import { OptInPanel } from "@/components/voice/campaign/OptInPanel";
+import { ResponsivePanel } from "@/components/ui/ResponsivePanel";
+
+// Terminal states — hidden from the main list, only shown in history view.
+const TERMINAL_STATUSES = new Set(["ended", "sent", "canceled", "failed"]);
 
 type View =
   | { mode: "list" }
@@ -46,6 +51,8 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
   const [campaigns, setCampaigns] = useState<CampaignListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [optInPanelOpen, setOptInPanelOpen] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const loadCampaigns = () => {
     fetchAllCampaigns(restaurantId)
@@ -83,24 +90,43 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
     else setView({ mode: "game-detail", campaignId: c.id });
   };
 
+  const visibleCampaigns = (campaigns ?? []).filter((c) =>
+    showHistory ? TERMINAL_STATUSES.has(c.status) : !TERMINAL_STATUSES.has(c.status),
+  );
+
   return (
     <div className="p-4">
       <div className="max-w-4xl mx-auto space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 className="text-lg font-bold text-capy-text">Campaigns</h2>
             <p className="text-xs text-capy-muted">Games and promotional blasts, all in one place</p>
           </div>
-          <button
-            onClick={() => setPickerOpen(true)}
-            className="w-9 h-9 rounded-full bg-capy-green text-white text-xl font-bold flex items-center justify-center hover:bg-capy-green-dark transition-colors shrink-0"
-            aria-label="New campaign"
-          >
-            +
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOptInPanelOpen(true)}
+              className="px-3 py-2 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
+            >
+              Opt-In Progress
+            </button>
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="w-9 h-9 rounded-full bg-capy-green text-white text-xl font-bold flex items-center justify-center hover:bg-capy-green-dark transition-colors shrink-0"
+              aria-label="New campaign"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <button
+          onClick={() => setShowHistory((s) => !s)}
+          className="text-xs font-semibold text-capy-muted hover:text-capy-text transition-colors"
+        >
+          {showHistory ? "← Back to active campaigns" : "View history →"}
+        </button>
 
         <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
           {campaigns === null ? (
@@ -109,15 +135,19 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
             </div>
-          ) : campaigns.length === 0 ? (
+          ) : visibleCampaigns.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-sm text-capy-muted mb-3">No campaigns yet.</p>
-              <button
-                onClick={() => setPickerOpen(true)}
-                className="px-4 py-2 rounded-xl bg-capy-green text-white text-sm font-semibold hover:bg-capy-green-dark transition-colors"
-              >
-                Create your first campaign
-              </button>
+              <p className="text-sm text-capy-muted mb-3">
+                {showHistory ? "No past campaigns yet." : "No active campaigns yet."}
+              </p>
+              {!showHistory && (
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="px-4 py-2 rounded-xl bg-capy-green text-white text-sm font-semibold hover:bg-capy-green-dark transition-colors"
+                >
+                  Create your first campaign
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -131,7 +161,7 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {campaigns.map((c) => (
+                  {visibleCampaigns.map((c) => (
                     <tr
                       key={`${c.type}-${c.id}`}
                       onClick={() => openCampaign(c)}
@@ -204,6 +234,10 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
           </div>
         </div>
       )}
+
+      <ResponsivePanel open={optInPanelOpen} onClose={() => setOptInPanelOpen(false)} title="Opt-In Progress">
+        <OptInPanel restaurantId={restaurantId} />
+      </ResponsivePanel>
     </div>
   );
 }

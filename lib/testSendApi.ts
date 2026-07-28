@@ -52,6 +52,7 @@ export interface TestCampaignParams {
   messages: { game?: string; winner?: string; loser?: string };
   expiryDays?: number;
   expiryTime?: string; // "HH:MM" 24h — copy rendering only; test coupons last 3 min
+  expiryHours?: number; // copy rendering only; takes precedence over days/time
   createCloverCoupon: boolean;
 }
 
@@ -79,6 +80,7 @@ export function sendTestCampaign(
       messages: p.messages,
       expiry_days: p.expiryDays,
       expiry_time: p.expiryTime,
+      expiry_hours: p.expiryHours,
       create_clover_coupon: p.createCloverCoupon,
     }),
   });

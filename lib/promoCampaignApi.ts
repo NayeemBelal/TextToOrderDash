@@ -38,6 +38,7 @@ export interface PromoParams {
   has_coupon: boolean;
   discount_percent?: number | null;
   coupon_expiry_days?: number | null;
+  coupon_expiry_hours?: number | null;
   media_urls?: string[] | null;
 }
 
@@ -70,6 +71,7 @@ export interface ScheduledPromo {
   has_coupon: boolean;
   discount_percent: number | null;
   coupon_expiry_days: number | null;
+  coupon_expiry_hours: number | null;
   target_customer_ids: string[];
   send_at: string;
   status: PromoStatus;
@@ -127,6 +129,7 @@ export function sendTestPromo(params: {
   has_coupon: boolean;
   discount_percent?: number | null;
   coupon_expiry_days?: number | null;
+  coupon_expiry_hours?: number | null;
   create_clover_coupon: boolean;
 }): Promise<{ phone: string; message: string }> {
   return marketingApiFetch('/api/marketing/test-promo', {
