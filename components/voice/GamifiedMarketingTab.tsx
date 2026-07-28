@@ -17,6 +17,7 @@ import {
   type CustomerGroup,
 } from "@/lib/customerGroupsApi";
 import { CustomerGroupsPanel } from "@/components/voice/campaign/CustomerGroupsPanel";
+import { PromoBlastWizard } from "@/components/voice/campaign/PromoBlastWizard";
 import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
@@ -284,6 +285,10 @@ function CustomerRowSkeletons() {
 
 export function GamifiedMarketingTab() {
   const restaurantId = useSelectedRestaurant();
+
+  // Campaign type — game campaigns (this component's existing wizard/dashboard)
+  // vs. a one-off Promotional Message blast (separate, simpler flow).
+  const [campaignMode, setCampaignMode] = useState<"game" | "promo">("game");
 
   // Phase
   const [pagePhase, setPagePhase] = useState<"setup" | "active" | "paused">(
@@ -1430,6 +1435,10 @@ export function GamifiedMarketingTab() {
     );
   }
 
+  if (campaignMode === "promo") {
+    return <PromoBlastWizard restaurantId={restaurantId} onBackToGames={() => setCampaignMode("game")} />;
+  }
+
   if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */
     return (
@@ -1461,6 +1470,12 @@ export function GamifiedMarketingTab() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCampaignMode("promo")}
+              className="px-4 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors"
+            >
+              Send Promo Message
+            </button>
             <button
               onClick={() => {
                 const next = pagePhase === "active" ? "paused" : "active";
@@ -1859,6 +1874,12 @@ export function GamifiedMarketingTab() {
               Set up your automated game-based marketing
             </p>
           </div>
+          <button
+            onClick={() => setCampaignMode("promo")}
+            className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors shrink-0"
+          >
+            Send Promo Message
+          </button>
         </div>
 
         {/* Step indicators */}
