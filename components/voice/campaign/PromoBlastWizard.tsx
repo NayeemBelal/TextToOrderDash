@@ -42,10 +42,10 @@ function formatUSD(amount: number): string {
 
 export function PromoBlastWizard({
   restaurantId,
-  onBackToGames,
+  onExit,
 }: {
   restaurantId: string;
-  onBackToGames: () => void;
+  onExit: () => void;
 }) {
   const [step, setStep] = useState<Step>("roster");
 
@@ -63,7 +63,9 @@ export function PromoBlastWizard({
   const [message, setMessage] = useState("");
   const [hasCoupon, setHasCoupon] = useState(false);
   const [discountPercent, setDiscountPercent] = useState(10);
+  const [couponExpiryMode, setCouponExpiryMode] = useState<"days" | "hours">("days");
   const [couponExpiryDays, setCouponExpiryDays] = useState(7);
+  const [couponExpiryHours, setCouponExpiryHours] = useState(3);
 
   // Send
   const [sendMode, setSendMode] = useState<"now" | "schedule">("now");
@@ -115,7 +117,8 @@ export function PromoBlastWizard({
         message,
         has_coupon: hasCoupon,
         discount_percent: hasCoupon ? discountPercent : null,
-        coupon_expiry_days: hasCoupon ? couponExpiryDays : null,
+        coupon_expiry_days: hasCoupon && couponExpiryMode === "days" ? couponExpiryDays : null,
+        coupon_expiry_hours: hasCoupon && couponExpiryMode === "hours" ? couponExpiryHours : null,
       })
         .then((p) => !cancelled && setPreview(p))
         .catch(() => !cancelled && setPreviewError("Couldn't estimate cost."))
@@ -125,7 +128,17 @@ export function PromoBlastWizard({
       cancelled = true;
       clearTimeout(t);
     };
-  }, [step, restaurantId, selectedCustomerIds, message, hasCoupon, discountPercent, couponExpiryDays]);
+  }, [
+    step,
+    restaurantId,
+    selectedCustomerIds,
+    message,
+    hasCoupon,
+    discountPercent,
+    couponExpiryMode,
+    couponExpiryDays,
+    couponExpiryHours,
+  ]);
 
   const toggleGroupChip = async (groupId: string) => {
     const isActive = activeGroupIds.has(groupId);
@@ -176,7 +189,8 @@ export function PromoBlastWizard({
         message,
         has_coupon: hasCoupon,
         discount_percent: hasCoupon ? discountPercent : null,
-        coupon_expiry_days: hasCoupon ? couponExpiryDays : null,
+        coupon_expiry_days: hasCoupon && couponExpiryMode === "days" ? couponExpiryDays : null,
+        coupon_expiry_hours: hasCoupon && couponExpiryMode === "hours" ? couponExpiryHours : null,
         create_clover_coupon: testCreateClover,
       });
       setTestStatus("Sent! Check your phone.");
@@ -201,7 +215,8 @@ export function PromoBlastWizard({
         message,
         has_coupon: hasCoupon,
         discount_percent: hasCoupon ? discountPercent : null,
-        coupon_expiry_days: hasCoupon ? couponExpiryDays : null,
+        coupon_expiry_days: hasCoupon && couponExpiryMode === "days" ? couponExpiryDays : null,
+        coupon_expiry_hours: hasCoupon && couponExpiryMode === "hours" ? couponExpiryHours : null,
       };
       if (sendMode === "now") {
         const result = await sendPromoNow(params);
@@ -231,10 +246,10 @@ export function PromoBlastWizard({
             </p>
           </div>
           <button
-            onClick={onBackToGames}
+            onClick={onExit}
             className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors shrink-0"
           >
-            Back to Games
+            Cancel
           </button>
         </div>
 
@@ -468,15 +483,56 @@ export function PromoBlastWizard({
                     />
                   </div>
                   <div>
-                    <p className="text-[11px] text-capy-muted mb-1">Expires after (days)</p>
-                    <input
-                      type="number"
-                      min={1}
-                      max={90}
-                      value={couponExpiryDays}
-                      onChange={(e) => setCouponExpiryDays(Math.max(1, Math.min(90, parseInt(e.target.value) || 0)))}
-                      className="w-20 px-2.5 py-1.5 bg-slate-50 border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
-                    />
+                    <p className="text-[11px] text-capy-muted mb-1">Expires after</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex rounded-lg border border-capy-border overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setCouponExpiryMode("days")}
+                          className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                            couponExpiryMode === "days"
+                              ? "bg-capy-green text-white"
+                              : "bg-slate-50 text-capy-muted hover:bg-slate-100"
+                          }`}
+                        >
+                          Days
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCouponExpiryMode("hours")}
+                          className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${
+                            couponExpiryMode === "hours"
+                              ? "bg-capy-green text-white"
+                              : "bg-slate-50 text-capy-muted hover:bg-slate-100"
+                          }`}
+                        >
+                          Hours
+                        </button>
+                      </div>
+                      {couponExpiryMode === "days" ? (
+                        <input
+                          type="number"
+                          min={1}
+                          max={90}
+                          value={couponExpiryDays}
+                          onChange={(e) =>
+                            setCouponExpiryDays(Math.max(1, Math.min(90, parseInt(e.target.value) || 0)))
+                          }
+                          className="w-20 px-2.5 py-1.5 bg-slate-50 border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                        />
+                      ) : (
+                        <input
+                          type="number"
+                          min={1}
+                          max={72}
+                          value={couponExpiryHours}
+                          onChange={(e) =>
+                            setCouponExpiryHours(Math.max(1, Math.min(72, parseInt(e.target.value) || 0)))
+                          }
+                          className="w-20 px-2.5 py-1.5 bg-slate-50 border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -637,22 +693,32 @@ export function PromoBlastWizard({
               <div className="text-sm px-3 py-2.5 rounded-xl bg-capy-green-light text-capy-green-dark">{sentResult}</div>
             )}
 
-            <div className="flex gap-2">
+            {sentResult ? (
               <button
-                onClick={() => setStep("compose")}
-                className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleSend}
-                disabled={sending || previewLoading || (preview?.recipient_count ?? 0) === 0}
-                className="flex-1 py-2.5 rounded-xl bg-capy-green text-white text-sm font-semibold hover:bg-capy-green-dark disabled:opacity-50 transition-colors"
+                onClick={onExit}
+                className="w-full py-2.5 rounded-xl bg-capy-text text-white text-sm font-semibold hover:opacity-90 transition-opacity"
                 style={{ fontFamily: "Tektur, sans-serif" }}
               >
-                {sending ? "Sending…" : sendMode === "now" ? "Send Now" : "Schedule"}
+                Done
               </button>
-            </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setStep("compose")}
+                  className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleSend}
+                  disabled={sending || previewLoading || (preview?.recipient_count ?? 0) === 0}
+                  className="flex-1 py-2.5 rounded-xl bg-capy-green text-white text-sm font-semibold hover:bg-capy-green-dark disabled:opacity-50 transition-colors"
+                  style={{ fontFamily: "Tektur, sans-serif" }}
+                >
+                  {sending ? "Sending…" : sendMode === "now" ? "Send Now" : "Schedule"}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

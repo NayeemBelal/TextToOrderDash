@@ -38,6 +38,7 @@ export interface PromoParams {
   has_coupon: boolean;
   discount_percent?: number | null;
   coupon_expiry_days?: number | null;
+  coupon_expiry_hours?: number | null;
   media_urls?: string[] | null;
 }
 
@@ -70,6 +71,7 @@ export interface ScheduledPromo {
   has_coupon: boolean;
   discount_percent: number | null;
   coupon_expiry_days: number | null;
+  coupon_expiry_hours: number | null;
   target_customer_ids: string[];
   send_at: string;
   status: PromoStatus;
@@ -100,6 +102,26 @@ export function cancelScheduledPromo(restaurantId: string, promoId: string): Pro
   });
 }
 
+export interface PromoDeliveryRecipient {
+  customer_id: string;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  delivery_status: string | null;
+  sent_at: string | null;
+}
+
+export interface PromoDetail extends ScheduledPromo {
+  recipients: PromoDeliveryRecipient[];
+  delivered: number;
+  failed: number;
+  unconfirmed: number;
+}
+
+export function fetchPromoDetail(restaurantId: string, promoId: string): Promise<PromoDetail> {
+  return marketingApiFetch(`/api/marketing/promo/${promoId}?restaurant_id=${restaurantId}`);
+}
+
 export function sendTestPromo(params: {
   restaurant_id: string;
   phone: string;
@@ -107,6 +129,7 @@ export function sendTestPromo(params: {
   has_coupon: boolean;
   discount_percent?: number | null;
   coupon_expiry_days?: number | null;
+  coupon_expiry_hours?: number | null;
   create_clover_coupon: boolean;
 }): Promise<{ phone: string; message: string }> {
   return marketingApiFetch('/api/marketing/test-promo', {

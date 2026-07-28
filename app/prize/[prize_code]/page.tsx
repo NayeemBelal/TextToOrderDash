@@ -33,9 +33,10 @@ function darken(hex: string, amount = 0.18): string {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
-// Format milliseconds remaining as a friendly countdown. The coupon is valid
-// for up to 24h (the clock starts when the SMS is sent), so show hours while the
-// window is long and fall back to MM:SS in the final hour.
+// Format milliseconds remaining as a friendly countdown — the actual window
+// (days/hours/minutes, restaurant-configured) comes from redemption_expires_at,
+// not a fixed 24h. Show hours while the window is long and fall back to
+// MM:SS in the final hour.
 function formatRemaining(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(total / 3600);
@@ -43,6 +44,15 @@ function formatRemaining(ms: number): string {
   const s = total % 60;
   if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+// "Use this by 10:42 AM" (today) or "10:42 AM on Mon, Jul 27" if past midnight.
+function formatUseBy(exp: Date): string {
+  const time = exp.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const sameDay = exp.toDateString() === new Date().toDateString();
+  if (sameDay) return `Use this by ${time}`;
+  const date = exp.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return `Use this by ${time} on ${date}`;
 }
 
 // Pick readable text color (black/white) for a given background hex.
@@ -88,15 +98,22 @@ export default function PrizePage() {
         } else if (d.state === "expired") {
           setPageState("expired");
         } else {
+          if (d.redemption_expires_at) {
+            const exp = new Date(d.redemption_expires_at);
+            setExpiresAt(exp);
+            setCountdown(formatRemaining(exp.getTime() - Date.now()));
+          }
           setPageState("pending");
         }
       })
       .catch(() => setPageState("not_found"));
   }, [prize_code]);
 
-  // Countdown ticker
+  // Countdown ticker — runs for both "pending" (offer not yet redeemed in
+  // store) and "active" (post-redeem, waiting on the cashier) states, since
+  // redemption_expires_at is the same deadline for both.
   useEffect(() => {
-    if (pageState !== "active" || !expiresAt) return;
+    if ((pageState !== "active" && pageState !== "pending") || !expiresAt) return;
     timerRef.current = setInterval(() => {
       const remaining = Math.max(0, expiresAt.getTime() - Date.now());
       setCountdown(formatRemaining(remaining));
@@ -224,9 +241,21 @@ export default function PrizePage() {
         {pageState === "pending" && (
           <div className="px-6 py-6 space-y-4">
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 text-center leading-relaxed">
-              ⏱ This offer is valid for <strong>24 hours</strong> from when you received it.
+              {expiresAt ? (
+                <>⏱ <strong>{formatUseBy(expiresAt)}</strong></>
+              ) : (
+                <>⏱ This offer won&apos;t last forever.</>
+              )}
               <br />Tap <strong>Redeem</strong> when you&apos;re ready at the register!
             </div>
+            {expiresAt && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Time Remaining</p>
+                <p className={`text-4xl font-extrabold tabular-nums ${isUrgent ? "text-red-600" : "text-amber-700"}`}>
+                  {countdown}
+                </p>
+              </div>
+            )}
             <button
               onClick={handleRedeem}
               disabled={redeeming}
@@ -280,7 +309,7 @@ export default function PrizePage() {
           <div className="px-6 py-10 text-center space-y-3">
             <p className="font-semibold text-gray-700">This offer has expired</p>
             <p className="text-sm text-gray-400 leading-relaxed">
-              The 24-hour redemption window has passed.<br />
+              The redemption window has passed.<br />
               Keep an eye out for the next one!
             </p>
           </div>

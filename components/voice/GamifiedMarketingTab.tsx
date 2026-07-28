@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 import { marketingApiFetch } from "@/lib/api";
 import { countSegments } from "@/lib/smsSegments";
-import { getOptinConfig } from "@/lib/optinConfigApi";
 import {
   getCampaignConfig,
   type CampaignMessageDefaults,
 } from "@/lib/campaignConfigApi";
-import { sendTestOptin, sendTestCampaign } from "@/lib/testSendApi";
+import { sendTestCampaign } from "@/lib/testSendApi";
 import { useSelectedRestaurant } from "@/lib/selected-restaurant-context";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
@@ -17,7 +16,6 @@ import {
   type CustomerGroup,
 } from "@/lib/customerGroupsApi";
 import { CustomerGroupsPanel } from "@/components/voice/campaign/CustomerGroupsPanel";
-import { PromoBlastWizard } from "@/components/voice/campaign/PromoBlastWizard";
 import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
@@ -73,9 +71,11 @@ interface CampaignConfig {
   loserDiscountCap: number;
   // Coupon validity for winner + loser prizes: N days after playing, at a
   // restaurant-local time of day ("HH:MM" 24h). Backend falls back to the
-  // rolling 24h default when absent (old campaigns).
+  // rolling 24h default when absent (old campaigns). couponExpiryHours (when
+  // set) takes precedence over the days/time pair — mutually exclusive modes.
   couponExpiryDays?: number | null;
   couponExpiryTime?: string | null;
+  couponExpiryHours?: number | null;
   optedInCount: number;
   targetCustomerIds: string[];
 }
@@ -283,18 +283,32 @@ function CustomerRowSkeletons() {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function GamifiedMarketingTab() {
-  const restaurantId = useSelectedRestaurant();
+interface GamifiedMarketingTabProps {
+  /** An existing campaign's id — load it directly and skip the setup wizard.
+   * Omit to start the wizard fresh for a brand-new campaign. */
+  campaignId?: string;
+  /** For a NEW campaign only: preset the everyoneWins toggle from which of
+   * the two game options was picked in the campaign-type chooser. Still
+   * adjustable by the owner in step 3 as before. */
+  initialEveryoneWins?: boolean;
+  /** Return to the campaigns list (after launch, delete, or Cancel). */
+  onExit: () => void;
+}
 
-  // Campaign type — game campaigns (this component's existing wizard/dashboard)
-  // vs. a one-off Promotional Message blast (separate, simpler flow).
-  const [campaignMode, setCampaignMode] = useState<"game" | "promo">("game");
+export function GamifiedMarketingTab({
+  campaignId: existingCampaignId,
+  initialEveryoneWins,
+  onExit,
+}: GamifiedMarketingTabProps) {
+  const restaurantId = useSelectedRestaurant();
 
   // Phase
   const [pagePhase, setPagePhase] = useState<"setup" | "active" | "paused">(
     "setup",
   );
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [launching, setLaunching] = useState(false);
+  const [launchError, setLaunchError] = useState<string | null>(null);
 
   // Step 1 — Roster
   const [optedInCustomers, setOptedInCustomers] = useState<MockCustomer[]>([]);
@@ -342,30 +356,19 @@ export function GamifiedMarketingTab() {
     null,
   );
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
-  const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [campaignId, setCampaignId] = useState<string | null>(existingCampaignId ?? null);
+  // True only while an EXISTING campaign's data is still loading — gates the
+  // render so the wizard's default "setup" view never flashes first.
+  const [campaignLoading, setCampaignLoading] = useState(!!existingCampaignId);
   const [stats, setStats] = useState<CampaignStats>(EMPTY_STATS);
   const [statsLoading, setStatsLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deletingCampaign, setDeletingCampaign] = useState(false);
 
-  // Opt-in blast management
+  // Opt-in status — read-only here (small indicators like "Not Opted In: N
+  // customers" in the roster step); the full progress/scan/blast/config UI
+  // now lives in the restaurant-wide OptInPanel on the campaigns list page.
   const [optinStatus, setOptinStatus] = useState<OptinStatus | null>(null);
-  const [scanResult, setScanResult] = useState<{ new_customers: number } | null>(null);
-  const [scanError, setScanError] = useState<string | null>(null);
-  const [scanLoading, setScanLoading] = useState(false);
-  const [blastLoading, setBlastLoading] = useState(false);
-  const [blastToast, setBlastToast] = useState<string | null>(null);
-  const [optinRefreshing, setOptinRefreshing] = useState(false);
-
-  // Opt-in blast config (message, discount, coupon expiry)
-  const [optinConfigOpen, setOptinConfigOpen] = useState(false);
-  const [optinMessage, setOptinMessage] = useState("");
-  const [optinDiscount, setOptinDiscount] = useState(10);
-  const [optinRestaurantName, setOptinRestaurantName] = useState("");
-  const [optinExpiryDays, setOptinExpiryDays] = useState(1);
-  const [optinExpiryHour, setOptinExpiryHour] = useState("11");
-  const [optinExpiryMinute, setOptinExpiryMinute] = useState("00");
-  const [optinExpiryAmPm, setOptinExpiryAmPm] = useState("PM");
 
   // Campaign message config (per-slot editable copy + coupon expiry)
   const [campaignDefaults, setCampaignDefaults] =
@@ -375,16 +378,14 @@ export function GamifiedMarketingTab() {
   );
   const [copiedAllToast, setCopiedAllToast] = useState(false);
   const [showReplyPreviews, setShowReplyPreviews] = useState(false);
+  const [campaignExpiryMode, setCampaignExpiryMode] = useState<"days" | "hours">("days");
   const [campaignExpiryDays, setCampaignExpiryDays] = useState(1);
   const [campaignExpiryHour, setCampaignExpiryHour] = useState("11");
   const [campaignExpiryMinute, setCampaignExpiryMinute] = useState("00");
   const [campaignExpiryAmPm, setCampaignExpiryAmPm] = useState("PM");
+  const [campaignExpiryHours, setCampaignExpiryHours] = useState(3);
 
-  // Test sends (opt-in widget + per-slot campaign widget)
-  const [optinTestPhone, setOptinTestPhone] = useState("");
-  const [optinTestSending, setOptinTestSending] = useState(false);
-  const [optinTestStatus, setOptinTestStatus] = useState<string | null>(null);
-  const [optinTestClover, setOptinTestClover] = useState(false);
+  // Test sends (per-slot campaign widget)
   const [campaignTestPhone, setCampaignTestPhone] = useState("");
   const [campaignTestClover, setCampaignTestClover] = useState(false);
   const [campaignTestSendingSlot, setCampaignTestSendingSlot] = useState<
@@ -399,13 +400,11 @@ export function GamifiedMarketingTab() {
   );
 
   const refreshOptinStatus = (id: string) => {
-    setOptinRefreshing(true);
     marketingApiFetch<OptinStatus>(
       `/api/marketing/optin-status?restaurant_id=${id}`,
     )
       .then((d) => setOptinStatus(d))
-      .catch(() => {})
-      .finally(() => setOptinRefreshing(false));
+      .catch(() => {});
   };
 
   const getDayTime = (day: string) =>
@@ -453,20 +452,6 @@ export function GamifiedMarketingTab() {
     // Opt-in status
     refreshOptinStatus(id);
 
-    // Opt-in blast config — prefill the "Configure message & offer" form
-    getOptinConfig(id)
-      .then((c) => {
-        setOptinMessage(c.message ?? "");
-        setOptinDiscount(c.discount_percent ?? 10);
-        setOptinRestaurantName(c.restaurant_name ?? "");
-        if (c.expiry_days) setOptinExpiryDays(c.expiry_days);
-        const t = from24h(c.expiry_time);
-        setOptinExpiryHour(t.hour);
-        setOptinExpiryMinute(t.minute);
-        setOptinExpiryAmPm(t.ampm);
-      })
-      .catch(() => {});
-
     // Campaign message config — prefill the wizard's per-game message editors
     // and the coupon-expiry control. On failure the FALLBACK_* templates in
     // games.ts keep the editors usable.
@@ -481,25 +466,27 @@ export function GamifiedMarketingTab() {
       })
       .catch(() => {});
 
-    // Restore an existing active/paused campaign so a page refresh
-    // doesn't lose dashboard state.
-    marketingApiFetch<{
-      campaign: {
-        id: string;
-        status: "active" | "paused";
-        config: CampaignConfig;
-      } | null;
-    }>(`/api/marketing/campaigns?restaurant_id=${id}`)
-      .then((d) => {
-        if (d.campaign) {
+    // Existing-campaign mode: load THIS specific campaign's config/status and
+    // go straight to the dashboard view. New-campaign mode (no id) stays on
+    // the setup wizard, preset with whichever game type was picked in the
+    // campaign-type chooser. campaignLoading gates the render so the wizard's
+    // default "setup" view never flashes before this resolves.
+    if (existingCampaignId) {
+      marketingApiFetch<{
+        campaign: { id: string; status: "active" | "paused" | "ended"; config: CampaignConfig };
+      }>(`/api/marketing/campaigns/${existingCampaignId}?restaurant_id=${id}`)
+        .then((d) => {
           setCampaignId(d.campaign.id);
           setLaunchedConfig(d.campaign.config);
           setEveryoneWins(!!d.campaign.config.everyoneWins);
           setPagePhase(d.campaign.status === "paused" ? "paused" : "active");
-        }
-      })
-      .catch(() => {});
-  }, [restaurantId]);
+        })
+        .catch(() => {})
+        .finally(() => setCampaignLoading(false));
+    } else if (initialEveryoneWins) {
+      setEveryoneWins(true);
+    }
+  }, [restaurantId, existingCampaignId, initialEveryoneWins]);
 
   // Load real campaign stats whenever we have a campaign
   useEffect(() => {
@@ -522,63 +509,6 @@ export function GamifiedMarketingTab() {
       .catch(() => setStats(EMPTY_STATS))
       .finally(() => setStatsLoading(false));
   }, [campaignId]);
-
-  const rid = restaurantId;
-
-  const handleScanClover = async () => {
-    if (!rid) return;
-    setScanLoading(true);
-    setScanResult(null);
-    setScanError(null);
-    try {
-      const data = await marketingApiFetch<{ new_customers?: number }>(
-        "/api/marketing/scan-clover",
-        {
-          method: "POST",
-          body: JSON.stringify({ restaurant_id: rid }),
-        },
-      );
-      setScanResult({ new_customers: data.new_customers ?? 0 });
-    } catch {
-      // Surface the failure instead of masking it as "0 new customers /
-      // already contacted" — marketingApiFetch throws on any non-OK response.
-      setScanError("Scan failed. Check the Clover connection and try again.");
-    } finally {
-      setScanLoading(false);
-    }
-  };
-
-  const handleSendBlast = async () => {
-    if (!rid) return;
-    if (!scanResult || scanResult.new_customers === 0) return;
-    setBlastLoading(true);
-    try {
-      const data = await marketingApiFetch<{ queued?: number }>(
-        "/api/marketing/send-optin-blast",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            restaurant_id: rid,
-            message: optinMessage,
-            discount_percent: optinDiscount,
-            expiry_days: optinExpiryDays,
-            expiry_time: to24h(optinExpiryHour, optinExpiryMinute, optinExpiryAmPm),
-          }),
-        },
-      );
-      const queued = data.queued ?? 0;
-      setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
-      setScanResult(null);
-      // Refresh status
-      refreshOptinStatus(rid);
-      setTimeout(() => setBlastToast(null), 4000);
-    } catch {
-      setBlastToast("Something went wrong. Please try again.");
-      setTimeout(() => setBlastToast(null), 4000);
-    } finally {
-      setBlastLoading(false);
-    }
-  };
 
   // Rebuild games + prizes when selected days change
   useEffect(() => {
@@ -721,28 +651,6 @@ export function GamifiedMarketingTab() {
     setTimeout(() => setCopiedAllToast(false), 2500);
   };
 
-  const handleSendTestOptin = async () => {
-    if (!restaurantId || !optinTestPhone.trim()) return;
-    setOptinTestSending(true);
-    setOptinTestStatus(null);
-    try {
-      await sendTestOptin({
-        restaurantId,
-        phone: optinTestPhone,
-        message: optinMessage,
-        discountPercent: optinDiscount,
-        expiryDays: optinExpiryDays,
-        expiryTime: to24h(optinExpiryHour, optinExpiryMinute, optinExpiryAmPm),
-        createCloverCoupon: optinTestClover,
-      });
-      setOptinTestStatus("Sent! Check your phone — reply YES to get the coupon.");
-    } catch {
-      setOptinTestStatus("Test failed. Check the number and try again.");
-    } finally {
-      setOptinTestSending(false);
-    }
-  };
-
   const handleSendTestCampaign = async (index: number) => {
     if (!restaurantId || !campaignTestPhone.trim()) return;
     const game = games[index];
@@ -760,12 +668,12 @@ export function GamifiedMarketingTab() {
         loserDiscount,
         everyoneWins,
         messages: slotMessages(game),
-        expiryDays: campaignExpiryDays,
-        expiryTime: to24h(
-          campaignExpiryHour,
-          campaignExpiryMinute,
-          campaignExpiryAmPm,
-        ),
+        expiryDays: campaignExpiryMode === "days" ? campaignExpiryDays : undefined,
+        expiryTime:
+          campaignExpiryMode === "days"
+            ? to24h(campaignExpiryHour, campaignExpiryMinute, campaignExpiryAmPm)
+            : undefined,
+        expiryHours: campaignExpiryMode === "hours" ? campaignExpiryHours : undefined,
         createCloverCoupon: campaignTestClover,
       });
       setCampaignTestResult({ slot: index, winningAnswer: res.winning_answer });
@@ -842,36 +750,41 @@ export function GamifiedMarketingTab() {
       everyoneWins,
       loserDiscount,
       loserDiscountCap,
-      couponExpiryDays: campaignExpiryDays,
-      couponExpiryTime: to24h(
-        campaignExpiryHour,
-        campaignExpiryMinute,
-        campaignExpiryAmPm,
-      ),
+      couponExpiryDays: campaignExpiryMode === "days" ? campaignExpiryDays : null,
+      couponExpiryTime:
+        campaignExpiryMode === "days"
+          ? to24h(campaignExpiryHour, campaignExpiryMinute, campaignExpiryAmPm)
+          : null,
+      couponExpiryHours: campaignExpiryMode === "hours" ? campaignExpiryHours : null,
       optedInCount: selectedCustomerIds.size,
       targetCustomerIds: Array.from(selectedCustomerIds),
     };
-    setLaunchedConfig(config);
-    setPagePhase("active");
-
-    // Persist campaign to backend
-    const rid = restaurantId;
-    marketingApiFetch<{ campaign_id?: string }>("/api/marketing/campaigns", {
-      method: "POST",
-      body: JSON.stringify({ restaurant_id: rid, config }),
-    })
-      .then((d) => {
-        if (d.campaign_id) setCampaignId(d.campaign_id);
-      })
-      .catch((err) => console.error("Failed to persist campaign:", err));
+    setLaunching(true);
+    setLaunchError(null);
+    try {
+      const d = await marketingApiFetch<{ campaign_id?: string }>("/api/marketing/campaigns", {
+        method: "POST",
+        body: JSON.stringify({ restaurant_id: restaurantId, config }),
+      });
+      if (d.campaign_id) setCampaignId(d.campaign_id);
+      setLaunchedConfig(config);
+      onExit();
+    } catch (err) {
+      const status = err instanceof Error ? err.message : "";
+      setLaunchError(
+        status.includes("409")
+          ? "Some of the selected customers are already targeted by another active campaign — a customer can only be in one active game campaign at a time."
+          : "Couldn't launch the campaign. Try again.",
+      );
+    } finally {
+      setLaunching(false);
+    }
   };
 
   const handleDeleteCampaign = async () => {
     if (!campaignId) {
       // No persisted campaign (e.g. launch call failed) — just reset locally.
-      setPagePhase("setup");
-      setLaunchedConfig(null);
-      setConfirmingDelete(false);
+      onExit();
       return;
     }
     setDeletingCampaign(true);
@@ -879,11 +792,7 @@ export function GamifiedMarketingTab() {
       await marketingApiFetch(`/api/marketing/campaigns/${campaignId}`, {
         method: "DELETE",
       });
-      setCampaignId(null);
-      setLaunchedConfig(null);
-      setStats(EMPTY_STATS);
-      setPagePhase("setup");
-      setWizardStep(1);
+      onExit();
     } catch (err) {
       console.error("Failed to delete campaign:", err);
     } finally {
@@ -980,9 +889,11 @@ export function GamifiedMarketingTab() {
   // ── Campaign message preview helpers ─────────────────────────────────────
   // Previews and segment counts are computed on the RENDERED message
   // (placeholders substituted), so they match what actually sends.
-  const campaignRestaurantName =
-    campaignDefaults?.restaurant_name || optinRestaurantName || "Your Restaurant";
-  const campaignExpiryText = `valid for ${campaignExpiryDays} day${campaignExpiryDays !== 1 ? "s" : ""}`;
+  const campaignRestaurantName = campaignDefaults?.restaurant_name || "Your Restaurant";
+  const campaignExpiryText =
+    campaignExpiryMode === "hours"
+      ? `valid for ${campaignExpiryHours} hour${campaignExpiryHours !== 1 ? "s" : ""}`
+      : `valid for ${campaignExpiryDays} day${campaignExpiryDays !== 1 ? "s" : ""}`;
 
   const gamePreviewVars = (
     g: GameConfig,
@@ -1041,372 +952,6 @@ export function GamifiedMarketingTab() {
     );
   };
 
-  /* ── Opt-In card ──────────────────────────────────────────────────────────
-     Rendered identically on the dashboard and inside the setup wizard, so it
-     lives in one helper. Before any blast has gone out it's a scan/send call to
-     action; once we've texted anyone (blast_sent > 0) it flips into a progress
-     tracker (Sent → Opted In + funnel), with scan/send demoted to a secondary
-     "send to new customers" action. */
-  const renderOptInCard = (wrapperClassName = "") => {
-    const hasBlasted = (optinStatus?.blast_sent ?? 0) > 0;
-    const conversion =
-      optinStatus && optinStatus.blast_sent > 0
-        ? Math.round(
-            (optinStatus.blast_opted_in / optinStatus.blast_sent) * 100,
-          )
-        : 0;
-    const newCustomers = scanResult?.new_customers ?? 0;
-
-    // Segment count is computed on the RENDERED message (placeholders substituted),
-    // so it matches what actually sends.
-    const renderedOptinMessage = optinMessage
-      .replace(/\{restaurant_name\}/g, optinRestaurantName)
-      .replace(/\{discount\}/g, String(optinDiscount));
-    const seg = countSegments(renderedOptinMessage);
-
-    return (
-      <div
-        className={`bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3 ${wrapperClassName}`}
-      >
-        {hasBlasted && optinStatus ? (
-          /* ── Progress tracker ── */
-          <>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="card-heading text-sm">Opt-In Progress</p>
-                <p className="text-xs text-capy-muted mt-0.5">
-                  How your opt-in blast is converting
-                </p>
-              </div>
-              <button
-                onClick={() => rid && refreshOptinStatus(rid)}
-                disabled={optinRefreshing}
-                title="Refresh"
-                className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
-              >
-                <svg
-                  className={`w-4 h-4 ${optinRefreshing ? "animate-spin" : ""}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Headline stats */}
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="section-label">Sent</p>
-                <p
-                  className="text-2xl font-bold text-capy-text mt-0.5"
-                  style={{ fontFamily: "Tektur, sans-serif" }}
-                >
-                  {optinStatus.blast_sent.toLocaleString()}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="section-label">Opted In</p>
-                <p
-                  className="text-2xl font-bold text-capy-green-dark mt-0.5"
-                  style={{ fontFamily: "Tektur, sans-serif" }}
-                >
-                  {optinStatus.blast_opted_in.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Conversion progress bar */}
-            <div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-capy-green rounded-full transition-all"
-                  style={{ width: `${conversion}%` }}
-                />
-              </div>
-              <p className="text-xs text-capy-muted mt-1">
-                {conversion}% opted in
-              </p>
-            </div>
-
-            {/* Funnel legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-capy-green" />
-                <span className="font-semibold text-capy-text">
-                  {optinStatus.blast_opted_in}
-                </span>
-                <span className="text-capy-muted">opted in</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="font-semibold text-capy-text">
-                  {optinStatus.blast_pending}
-                </span>
-                <span className="text-capy-muted">awaiting reply</span>
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-slate-400" />
-                <span className="font-semibold text-capy-text">
-                  {optinStatus.blast_opted_out}
-                </span>
-                <span className="text-capy-muted">declined</span>
-              </span>
-            </div>
-          </>
-        ) : (
-          /* ── Pre-blast call to action ── */
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="card-heading text-sm">Opt-In Your Customer List</p>
-              <p className="text-xs text-capy-muted mt-0.5">
-                Send a compliant opt-in invite to your Clover contacts
-              </p>
-            </div>
-            {optinStatus && (
-              <div className="flex gap-3 text-xs text-right">
-                <div>
-                  <p className="font-semibold text-capy-green-dark">
-                    {optinStatus.opted_in}
-                  </p>
-                  <p className="text-capy-muted">opted in</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-amber-600">
-                    {optinStatus.pending}
-                  </p>
-                  <p className="text-capy-muted">pending</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-slate-400">
-                    {optinStatus.opted_out}
-                  </p>
-                  <p className="text-capy-muted">opted out</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {optinStatus?.last_scan_at && !scanResult && (
-          <p className="text-xs text-capy-muted">
-            Last scan:{" "}
-            {new Date(optinStatus.last_scan_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        )}
-        {scanError && (
-          <div className="flex items-center gap-2 text-sm text-red-600">
-            <span className="font-semibold">!</span>
-            <span>{scanError}</span>
-          </div>
-        )}
-        {scanResult !== null && (
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-capy-green-dark font-semibold">✓</span>
-            {newCustomers > 0 ? (
-              <span className="text-capy-text">
-                {newCustomers} new customer{newCustomers !== 1 ? "s" : ""} ready
-                to receive opt-in
-              </span>
-            ) : (
-              <span className="text-capy-muted">
-                All Clover customers have already been contacted
-              </span>
-            )}
-          </div>
-        )}
-        {blastToast && (
-          <div className="bg-capy-green-light text-capy-green-dark text-xs font-semibold px-3 py-2 rounded-xl">
-            {blastToast}
-          </div>
-        )}
-        {/* ── Configure message & offer ── */}
-        <div className="border-t border-capy-border pt-3">
-          <button
-            onClick={() => setOptinConfigOpen((o) => !o)}
-            className="flex items-center justify-between w-full text-xs font-semibold text-capy-text"
-          >
-            <span>⚙ Configure message &amp; offer</span>
-            <svg
-              className={`w-3.5 h-3.5 text-capy-muted transition-transform ${optinConfigOpen ? "rotate-180" : ""}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {optinConfigOpen && (
-            <div className="space-y-3 mt-3">
-              {/* Message */}
-              <div>
-                <p className="section-label mb-1">Opt-in message</p>
-                <textarea
-                  value={optinMessage}
-                  onChange={(e) => setOptinMessage(e.target.value)}
-                  rows={4}
-                  className="w-full bg-slate-50 border border-capy-border rounded-xl px-3 py-2 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
-                />
-                <div className="flex items-center justify-between text-[11px] text-capy-muted mt-1">
-                  <span>
-                    {seg.chars} char{seg.chars !== 1 ? "s" : ""} · {seg.segments} SMS
-                    segment{seg.segments !== 1 ? "s" : ""} · {seg.encoding}
-                  </span>
-                  <span className="font-mono">{"{discount}"} {"{restaurant_name}"}</span>
-                </div>
-              </div>
-
-              {/* Discount */}
-              <div className="flex items-center gap-3">
-                <p className="section-label">Discount</p>
-                <div className="relative w-24">
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={optinDiscount}
-                    onChange={(e) => setOptinDiscount(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
-                  />
-                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">
-                    %
-                  </span>
-                </div>
-              </div>
-
-              {/* Expiry: N days after opt-in, at a local time */}
-              <div>
-                <p className="section-label mb-1">Coupon expires</p>
-                <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
-                  <select
-                    value={optinExpiryDays}
-                    onChange={(e) => setOptinExpiryDays(Number(e.target.value))}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                  >
-                    {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
-                  <span className="text-capy-muted">
-                    day{optinExpiryDays !== 1 ? "s" : ""} after opt-in, at
-                  </span>
-                  <select
-                    value={optinExpiryHour}
-                    onChange={(e) => setOptinExpiryHour(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                      <option key={h} value={String(h)}>{h}</option>
-                    ))}
-                  </select>
-                  <span className="text-capy-muted">:</span>
-                  <select
-                    value={optinExpiryMinute}
-                    onChange={(e) => setOptinExpiryMinute(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                  >
-                    {["00", "15", "30", "45"].map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={optinExpiryAmPm}
-                    onChange={(e) => setOptinExpiryAmPm(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                  >
-                    <option>AM</option>
-                    <option>PM</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Send a test text */}
-              <div className="border-t border-capy-border pt-3 space-y-2">
-                <p className="section-label">Send a test text</p>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    value={optinTestPhone}
-                    onChange={(e) => setOptinTestPhone(e.target.value)}
-                    placeholder="(555) 123-4567"
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
-                  />
-                  <button
-                    onClick={handleSendTestOptin}
-                    disabled={optinTestSending || !optinTestPhone.trim()}
-                    className="px-4 py-2 rounded-xl bg-capy-text text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
-                  >
-                    {optinTestSending ? "Sending…" : "Send test"}
-                  </button>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-capy-text">
-                  <input
-                    type="checkbox"
-                    checked={optinTestClover}
-                    onChange={(e) => setOptinTestClover(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-capy-green"
-                  />
-                  Create real coupon in Clover when redeemed
-                </label>
-                <p className="text-[11px] text-capy-muted">
-                  Runs the real opt-in flow with the settings above and resets
-                  this number&apos;s opt-in state first — use a number you
-                  control. Reply YES to get the coupon (test coupons last 3
-                  minutes).
-                </p>
-                {optinTestStatus && (
-                  <div
-                    className={`text-xs px-3 py-2 rounded-xl ${
-                      optinTestStatus.startsWith("Sent")
-                        ? "bg-capy-green-light text-capy-green-dark"
-                        : "bg-red-50 text-red-600"
-                    }`}
-                  >
-                    {optinTestStatus}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={handleScanClover}
-            disabled={scanLoading || blastLoading}
-            className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
-          >
-            {scanLoading ? "Scanning…" : "Scan Clover"}
-          </button>
-          {newCustomers > 0 && (
-            <button
-              onClick={handleSendBlast}
-              disabled={blastLoading}
-              className="flex-1 py-2 px-3 rounded-xl bg-capy-green text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
-            >
-              {blastLoading
-                ? "Sending…"
-                : hasBlasted
-                  ? `Send opt-in to ${newCustomers} new`
-                  : `Send ${optinDiscount}% Off Opt-In to ${newCustomers} Customer${newCustomers !== 1 ? "s" : ""}`}
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   // ── Render ──────────────────────────────────────────────────────────────
 
@@ -1435,17 +980,24 @@ export function GamifiedMarketingTab() {
     );
   }
 
-  if (campaignMode === "promo") {
-    return <PromoBlastWizard restaurantId={restaurantId} onBackToGames={() => setCampaignMode("game")} />;
+  if (campaignLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-capy-green border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */
     return (
       <div className="p-4 space-y-4">
-
-        {/* Opt-In card (also visible on dashboard) */}
-        {renderOptInCard()}
+        <button
+          onClick={onExit}
+          className="text-xs font-semibold text-capy-muted hover:text-capy-text transition-colors"
+        >
+          ← All Campaigns
+        </button>
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1470,12 +1022,6 @@ export function GamifiedMarketingTab() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCampaignMode("promo")}
-              className="px-4 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors"
-            >
-              Send Promo Message
-            </button>
             <button
               onClick={() => {
                 const next = pagePhase === "active" ? "paused" : "active";
@@ -1533,7 +1079,7 @@ export function GamifiedMarketingTab() {
         {/* Metrics */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Opted In", value: stats.opted_in },
+            { label: "Customers", value: stats.opted_in },
             { label: "Played", value: stats.played },
             { label: "Redeemed", value: stats.redeemed },
           ].map((stat) => (
@@ -1581,82 +1127,6 @@ export function GamifiedMarketingTab() {
                 style={{ width: `${stats.campaign_score}%` }}
               />
             </div>
-          </div>
-        </div>
-
-        {/* Top 5 Returning Customers */}
-        <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-capy-border">
-            <p className="card-heading">Top 5 Returning Customers</p>
-            <p className="text-xs text-capy-muted mt-0.5">
-              Returned within 30 days of redeeming
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50">
-                  {["Rank", "Customer", "Played", "Redeemed", "Returns"].map(
-                    (col) => (
-                      <th
-                        key={col}
-                        className="px-4 py-2.5 text-left section-label"
-                      >
-                        {col}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-capy-border/60">
-                {statsLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-4 py-2.5"><Skeleton className="w-5 h-5 rounded-full" /></td>
-                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-24" /></td>
-                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-6" /></td>
-                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-6" /></td>
-                      <td className="px-4 py-2.5"><Skeleton className="h-3.5 w-6" /></td>
-                    </tr>
-                  ))
-                ) : stats.top_customers.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-4 py-6 text-center text-xs text-capy-muted"
-                    >
-                      No plays yet — stats appear after your first game round.
-                    </td>
-                  </tr>
-                ) : (
-                  stats.top_customers.map((row) => (
-                    <tr
-                      key={row.rank}
-                      className="hover:bg-slate-50/50 transition-colors"
-                    >
-                      <td className="px-4 py-2.5">
-                        <span
-                          className="w-5 h-5 rounded-full bg-capy-text text-white text-xs font-bold flex items-center justify-center"
-                          style={{ fontFamily: "Tektur, sans-serif" }}
-                        >
-                          {row.rank}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-capy-text font-mono">
-                        {row.phone}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-capy-text">
-                        {row.games_played}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-capy-text">
-                        {row.redeemed}
-                      </td>
-                      <td className="px-4 py-2.5 text-xs text-capy-text">—</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
           </div>
         </div>
 
@@ -1862,9 +1332,6 @@ export function GamifiedMarketingTab() {
   return (
     <div className="flex flex-col">
 
-      {/* ── Opt-In card ── */}
-      {renderOptInCard("flex-shrink-0 mx-4 mt-4")}
-
       {/* Wizard header */}
       <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-capy-border">
         <div className="flex items-center justify-between mb-3">
@@ -1875,10 +1342,10 @@ export function GamifiedMarketingTab() {
             </p>
           </div>
           <button
-            onClick={() => setCampaignMode("promo")}
+            onClick={onExit}
             className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors shrink-0"
           >
-            Send Promo Message
+            Cancel
           </button>
         </div>
 
@@ -2535,53 +2002,96 @@ export function GamifiedMarketingTab() {
 
             {/* Coupon Expiry */}
             <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
-              <p className="card-heading mb-0.5">Coupon Expiry</p>
+              <div className="flex items-center justify-between mb-0.5">
+                <p className="card-heading mb-0">Coupon Expiry</p>
+                <div className="flex rounded-lg border border-capy-border overflow-hidden shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setCampaignExpiryMode("days")}
+                    className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      campaignExpiryMode === "days"
+                        ? "bg-capy-green text-white"
+                        : "bg-slate-50 text-capy-muted hover:bg-slate-100"
+                    }`}
+                  >
+                    Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCampaignExpiryMode("hours")}
+                    className={`px-2.5 py-1 text-xs font-semibold transition-colors ${
+                      campaignExpiryMode === "hours"
+                        ? "bg-capy-green text-white"
+                        : "bg-slate-50 text-capy-muted hover:bg-slate-100"
+                    }`}
+                  >
+                    Hours
+                  </button>
+                </div>
+              </div>
               <p className="text-xs text-capy-muted mb-3">
                 {everyoneWins
                   ? "Applies to every winner's coupon — restaurant local time."
                   : "Applies to winner and loser coupons — restaurant local time."}
               </p>
-              <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
-                <select
-                  value={campaignExpiryDays}
-                  onChange={(e) => setCampaignExpiryDays(Number(e.target.value))}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
-                </select>
-                <span className="text-capy-muted">
-                  day{campaignExpiryDays !== 1 ? "s" : ""} after playing, at
-                </span>
-                <select
-                  value={campaignExpiryHour}
-                  onChange={(e) => setCampaignExpiryHour(e.target.value)}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
-                    <option key={h} value={String(h)}>{h}</option>
-                  ))}
-                </select>
-                <span className="text-capy-muted">:</span>
-                <select
-                  value={campaignExpiryMinute}
-                  onChange={(e) => setCampaignExpiryMinute(e.target.value)}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  {["00", "15", "30", "45"].map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-                <select
-                  value={campaignExpiryAmPm}
-                  onChange={(e) => setCampaignExpiryAmPm(e.target.value)}
-                  className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
-                >
-                  <option>AM</option>
-                  <option>PM</option>
-                </select>
-              </div>
+              {campaignExpiryMode === "days" ? (
+                <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
+                  <select
+                    value={campaignExpiryDays}
+                    onChange={(e) => setCampaignExpiryDays(Number(e.target.value))}
+                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  >
+                    {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                  <span className="text-capy-muted">
+                    day{campaignExpiryDays !== 1 ? "s" : ""} after playing, at
+                  </span>
+                  <select
+                    value={campaignExpiryHour}
+                    onChange={(e) => setCampaignExpiryHour(e.target.value)}
+                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                      <option key={h} value={String(h)}>{h}</option>
+                    ))}
+                  </select>
+                  <span className="text-capy-muted">:</span>
+                  <select
+                    value={campaignExpiryMinute}
+                    onChange={(e) => setCampaignExpiryMinute(e.target.value)}
+                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  >
+                    {["00", "15", "30", "45"].map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={campaignExpiryAmPm}
+                    onChange={(e) => setCampaignExpiryAmPm(e.target.value)}
+                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  >
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-wrap text-xs text-capy-text">
+                  <select
+                    value={campaignExpiryHours}
+                    onChange={(e) => setCampaignExpiryHours(Number(e.target.value))}
+                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  >
+                    {Array.from({ length: 72 }, (_, i) => i + 1).map((h) => (
+                      <option key={h} value={h}>{h}</option>
+                    ))}
+                  </select>
+                  <span className="text-capy-muted">
+                    hour{campaignExpiryHours !== 1 ? "s" : ""} after playing
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -2906,9 +2416,18 @@ export function GamifiedMarketingTab() {
                   : `Loser's discount: ${loserDiscount}% off (cap: ${loserDiscountCap})`}
               </p>
               <p className="text-xs text-capy-muted mt-1">
-                Coupons expire {campaignExpiryDays} day
-                {campaignExpiryDays !== 1 ? "s" : ""} after playing at{" "}
-                {campaignExpiryHour}:{campaignExpiryMinute} {campaignExpiryAmPm}
+                {campaignExpiryMode === "hours" ? (
+                  <>
+                    Coupons expire {campaignExpiryHours} hour
+                    {campaignExpiryHours !== 1 ? "s" : ""} after playing
+                  </>
+                ) : (
+                  <>
+                    Coupons expire {campaignExpiryDays} day
+                    {campaignExpiryDays !== 1 ? "s" : ""} after playing at{" "}
+                    {campaignExpiryHour}:{campaignExpiryMinute} {campaignExpiryAmPm}
+                  </>
+                )}
               </p>
             </div>
             <div className="p-3.5 bg-slate-50 rounded-xl border border-capy-border">
@@ -2991,6 +2510,12 @@ export function GamifiedMarketingTab() {
         )}
       </div>
 
+      {launchError && wizardStep === 5 && (
+        <div className="mx-4 mb-2 px-3.5 py-2.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          {launchError}
+        </div>
+      )}
+
       {/* Wizard footer navigation */}
       <div className="sticky bottom-0 z-10 px-4 py-4 border-t border-capy-border flex items-center justify-between bg-white">
         <button
@@ -3039,10 +2564,11 @@ export function GamifiedMarketingTab() {
         ) : (
           <button
             onClick={handleLaunch}
-            className="px-5 py-2.5 bg-capy-green hover:opacity-90 text-white text-sm font-semibold rounded-xl transition-opacity flex items-center gap-2"
+            disabled={launching}
+            className="px-5 py-2.5 bg-capy-green hover:opacity-90 text-white text-sm font-semibold rounded-xl transition-opacity disabled:opacity-50 flex items-center gap-2"
             style={{ fontFamily: "Tektur, sans-serif" }}
           >
-            🚀 Launch Campaign
+            {launching ? "Launching…" : "🚀 Launch Campaign"}
           </button>
         )}
       </div>
@@ -3055,6 +2581,7 @@ export function GamifiedMarketingTab() {
           onGroupsChanged={refreshGroups}
         />
       )}
+
     </div>
   );
 }
