@@ -100,6 +100,26 @@ export function cancelScheduledPromo(restaurantId: string, promoId: string): Pro
   });
 }
 
+export interface PromoDeliveryRecipient {
+  customer_id: string;
+  name: string | null;
+  phone: string | null;
+  status: string;
+  delivery_status: string | null;
+  sent_at: string | null;
+}
+
+export interface PromoDetail extends ScheduledPromo {
+  recipients: PromoDeliveryRecipient[];
+  delivered: number;
+  failed: number;
+  unconfirmed: number;
+}
+
+export function fetchPromoDetail(restaurantId: string, promoId: string): Promise<PromoDetail> {
+  return marketingApiFetch(`/api/marketing/promo/${promoId}?restaurant_id=${restaurantId}`);
+}
+
 export function sendTestPromo(params: {
   restaurant_id: string;
   phone: string;

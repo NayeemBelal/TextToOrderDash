@@ -1,8 +1,9 @@
 "use client";
 
 import { useAuth } from "@/lib/auth-context";
+import { useSelectedRestaurant } from "@/lib/selected-restaurant-context";
 import { useMarketingView, type MarketingView } from "@/lib/marketing-view-context";
-import { GamifiedMarketingTab } from "@/components/voice/GamifiedMarketingTab";
+import { CampaignsListView } from "@/components/voice/campaign/CampaignsListView";
 import { RevenueAnalyticsTab } from "@/components/marketing/RevenueAnalyticsTab";
 import { CouponTimelineTab } from "@/components/marketing/timeline/CouponTimelineTab";
 import { MessagesTab } from "@/components/marketing/messages/MessagesTab";
@@ -32,6 +33,7 @@ const ADMIN_VIEWS: { key: MarketingView; label: string }[] = [
 export function MarketingSection() {
   const { view, setView } = useMarketingView();
   const { hasSubscription, isSuperAdmin } = useAuth();
+  const restaurantId = useSelectedRestaurant();
   const showLocalNav = hasSubscription("ordering") || isSuperAdmin;
   const views = isSuperAdmin ? [...BASE_VIEWS, ...ADMIN_VIEWS] : BASE_VIEWS;
   // Safety fallback: a non-admin should never render an admin-only view, even
@@ -64,7 +66,13 @@ export function MarketingSection() {
       {/* Single page-level scroll: inner lists keep their own scroll. */}
       <div className="flex-1 min-h-0 overflow-y-auto">
         {activeView === "campaign" ? (
-          <GamifiedMarketingTab />
+          restaurantId ? (
+            <CampaignsListView restaurantId={restaurantId} />
+          ) : (
+            <div className="h-full flex items-center justify-center p-6 text-sm text-capy-muted">
+              No restaurant linked to this account.
+            </div>
+          )
         ) : activeView === "revenue" ? (
           <RevenueAnalyticsTab />
         ) : activeView === "timeline" ? (

@@ -17,7 +17,7 @@ import {
   type CustomerGroup,
 } from "@/lib/customerGroupsApi";
 import { CustomerGroupsPanel } from "@/components/voice/campaign/CustomerGroupsPanel";
-import { PromoBlastWizard } from "@/components/voice/campaign/PromoBlastWizard";
+import { ResponsivePanel } from "@/components/ui/ResponsivePanel";
 import {
   GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
@@ -283,18 +283,32 @@ function CustomerRowSkeletons() {
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-export function GamifiedMarketingTab() {
-  const restaurantId = useSelectedRestaurant();
+interface GamifiedMarketingTabProps {
+  /** An existing campaign's id — load it directly and skip the setup wizard.
+   * Omit to start the wizard fresh for a brand-new campaign. */
+  campaignId?: string;
+  /** For a NEW campaign only: preset the everyoneWins toggle from which of
+   * the two game options was picked in the campaign-type chooser. Still
+   * adjustable by the owner in step 3 as before. */
+  initialEveryoneWins?: boolean;
+  /** Return to the campaigns list (after launch, delete, or Cancel). */
+  onExit: () => void;
+}
 
-  // Campaign type — game campaigns (this component's existing wizard/dashboard)
-  // vs. a one-off Promotional Message blast (separate, simpler flow).
-  const [campaignMode, setCampaignMode] = useState<"game" | "promo">("game");
+export function GamifiedMarketingTab({
+  campaignId: existingCampaignId,
+  initialEveryoneWins,
+  onExit,
+}: GamifiedMarketingTabProps) {
+  const restaurantId = useSelectedRestaurant();
 
   // Phase
   const [pagePhase, setPagePhase] = useState<"setup" | "active" | "paused">(
     "setup",
   );
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [launching, setLaunching] = useState(false);
+  const [launchError, setLaunchError] = useState<string | null>(null);
 
   // Step 1 — Roster
   const [optedInCustomers, setOptedInCustomers] = useState<MockCustomer[]>([]);
@@ -310,6 +324,7 @@ export function GamifiedMarketingTab() {
   const [activeGroupIds, setActiveGroupIds] = useState<Set<string>>(new Set());
   const [groupMembersCache, setGroupMembersCache] = useState<Record<string, string[]>>({});
   const [groupsPanelOpen, setGroupsPanelOpen] = useState(false);
+  const [optInPanelOpen, setOptInPanelOpen] = useState(false);
 
   // Step 2 — Schedule
   const [restaurantTimezone, setRestaurantTimezone] =
@@ -342,7 +357,7 @@ export function GamifiedMarketingTab() {
     null,
   );
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
-  const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [campaignId, setCampaignId] = useState<string | null>(existingCampaignId ?? null);
   const [stats, setStats] = useState<CampaignStats>(EMPTY_STATS);
   const [statsLoading, setStatsLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -481,25 +496,25 @@ export function GamifiedMarketingTab() {
       })
       .catch(() => {});
 
-    // Restore an existing active/paused campaign so a page refresh
-    // doesn't lose dashboard state.
-    marketingApiFetch<{
-      campaign: {
-        id: string;
-        status: "active" | "paused";
-        config: CampaignConfig;
-      } | null;
-    }>(`/api/marketing/campaigns?restaurant_id=${id}`)
-      .then((d) => {
-        if (d.campaign) {
+    // Existing-campaign mode: load THIS specific campaign's config/status and
+    // go straight to the dashboard view. New-campaign mode (no id) stays on
+    // the setup wizard, preset with whichever game type was picked in the
+    // campaign-type chooser.
+    if (existingCampaignId) {
+      marketingApiFetch<{
+        campaign: { id: string; status: "active" | "paused" | "ended"; config: CampaignConfig };
+      }>(`/api/marketing/campaigns/${existingCampaignId}?restaurant_id=${id}`)
+        .then((d) => {
           setCampaignId(d.campaign.id);
           setLaunchedConfig(d.campaign.config);
           setEveryoneWins(!!d.campaign.config.everyoneWins);
           setPagePhase(d.campaign.status === "paused" ? "paused" : "active");
-        }
-      })
-      .catch(() => {});
-  }, [restaurantId]);
+        })
+        .catch(() => {});
+    } else if (initialEveryoneWins) {
+      setEveryoneWins(true);
+    }
+  }, [restaurantId, existingCampaignId, initialEveryoneWins]);
 
   // Load real campaign stats whenever we have a campaign
   useEffect(() => {
@@ -851,27 +866,32 @@ export function GamifiedMarketingTab() {
       optedInCount: selectedCustomerIds.size,
       targetCustomerIds: Array.from(selectedCustomerIds),
     };
-    setLaunchedConfig(config);
-    setPagePhase("active");
-
-    // Persist campaign to backend
-    const rid = restaurantId;
-    marketingApiFetch<{ campaign_id?: string }>("/api/marketing/campaigns", {
-      method: "POST",
-      body: JSON.stringify({ restaurant_id: rid, config }),
-    })
-      .then((d) => {
-        if (d.campaign_id) setCampaignId(d.campaign_id);
-      })
-      .catch((err) => console.error("Failed to persist campaign:", err));
+    setLaunching(true);
+    setLaunchError(null);
+    try {
+      const d = await marketingApiFetch<{ campaign_id?: string }>("/api/marketing/campaigns", {
+        method: "POST",
+        body: JSON.stringify({ restaurant_id: restaurantId, config }),
+      });
+      if (d.campaign_id) setCampaignId(d.campaign_id);
+      setLaunchedConfig(config);
+      onExit();
+    } catch (err) {
+      const status = err instanceof Error ? err.message : "";
+      setLaunchError(
+        status.includes("409")
+          ? "Some of the selected customers are already targeted by another active campaign — a customer can only be in one active game campaign at a time."
+          : "Couldn't launch the campaign. Try again.",
+      );
+    } finally {
+      setLaunching(false);
+    }
   };
 
   const handleDeleteCampaign = async () => {
     if (!campaignId) {
       // No persisted campaign (e.g. launch call failed) — just reset locally.
-      setPagePhase("setup");
-      setLaunchedConfig(null);
-      setConfirmingDelete(false);
+      onExit();
       return;
     }
     setDeletingCampaign(true);
@@ -879,11 +899,7 @@ export function GamifiedMarketingTab() {
       await marketingApiFetch(`/api/marketing/campaigns/${campaignId}`, {
         method: "DELETE",
       });
-      setCampaignId(null);
-      setLaunchedConfig(null);
-      setStats(EMPTY_STATS);
-      setPagePhase("setup");
-      setWizardStep(1);
+      onExit();
     } catch (err) {
       console.error("Failed to delete campaign:", err);
     } finally {
@@ -1435,17 +1451,28 @@ export function GamifiedMarketingTab() {
     );
   }
 
-  if (campaignMode === "promo") {
-    return <PromoBlastWizard restaurantId={restaurantId} onBackToGames={() => setCampaignMode("game")} />;
-  }
-
   if (pagePhase !== "setup") {
     /* ── DASHBOARD ─────────────────────────────────────────────────── */
     return (
       <div className="p-4 space-y-4">
+        <button
+          onClick={onExit}
+          className="text-xs font-semibold text-capy-muted hover:text-capy-text transition-colors"
+        >
+          ← All Campaigns
+        </button>
 
-        {/* Opt-In card (also visible on dashboard) */}
-        {renderOptInCard()}
+        <button
+          onClick={() => setOptInPanelOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors w-fit"
+        >
+          Opt-In Progress
+          {optinStatus && optinStatus.blast_sent > 0 && (
+            <span className="text-xs font-semibold text-capy-green-dark bg-capy-green-light px-2 py-0.5 rounded-full">
+              {optinStatus.blast_opted_in}/{optinStatus.blast_sent}
+            </span>
+          )}
+        </button>
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1470,12 +1497,6 @@ export function GamifiedMarketingTab() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCampaignMode("promo")}
-              className="px-4 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors"
-            >
-              Send Promo Message
-            </button>
             <button
               onClick={() => {
                 const next = pagePhase === "active" ? "paused" : "active";
@@ -1862,8 +1883,18 @@ export function GamifiedMarketingTab() {
   return (
     <div className="flex flex-col">
 
-      {/* ── Opt-In card ── */}
-      {renderOptInCard("flex-shrink-0 mx-4 mt-4")}
+      {/* ── Opt-In status ── */}
+      <button
+        onClick={() => setOptInPanelOpen(true)}
+        className="flex-shrink-0 mx-4 mt-4 flex items-center gap-2 px-3 py-2 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors w-fit"
+      >
+        Opt-In Progress
+        {optinStatus && optinStatus.blast_sent > 0 && (
+          <span className="text-xs font-semibold text-capy-green-dark bg-capy-green-light px-2 py-0.5 rounded-full">
+            {optinStatus.blast_opted_in}/{optinStatus.blast_sent}
+          </span>
+        )}
+      </button>
 
       {/* Wizard header */}
       <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-capy-border">
@@ -1875,10 +1906,10 @@ export function GamifiedMarketingTab() {
             </p>
           </div>
           <button
-            onClick={() => setCampaignMode("promo")}
+            onClick={onExit}
             className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors shrink-0"
           >
-            Send Promo Message
+            Cancel
           </button>
         </div>
 
@@ -2991,6 +3022,12 @@ export function GamifiedMarketingTab() {
         )}
       </div>
 
+      {launchError && wizardStep === 5 && (
+        <div className="mx-4 mb-2 px-3.5 py-2.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          {launchError}
+        </div>
+      )}
+
       {/* Wizard footer navigation */}
       <div className="sticky bottom-0 z-10 px-4 py-4 border-t border-capy-border flex items-center justify-between bg-white">
         <button
@@ -3039,10 +3076,11 @@ export function GamifiedMarketingTab() {
         ) : (
           <button
             onClick={handleLaunch}
-            className="px-5 py-2.5 bg-capy-green hover:opacity-90 text-white text-sm font-semibold rounded-xl transition-opacity flex items-center gap-2"
+            disabled={launching}
+            className="px-5 py-2.5 bg-capy-green hover:opacity-90 text-white text-sm font-semibold rounded-xl transition-opacity disabled:opacity-50 flex items-center gap-2"
             style={{ fontFamily: "Tektur, sans-serif" }}
           >
-            🚀 Launch Campaign
+            {launching ? "Launching…" : "🚀 Launch Campaign"}
           </button>
         )}
       </div>
@@ -3055,6 +3093,38 @@ export function GamifiedMarketingTab() {
           onGroupsChanged={refreshGroups}
         />
       )}
+
+      <ResponsivePanel open={optInPanelOpen} onClose={() => setOptInPanelOpen(false)} title="Opt-In Progress">
+        <div className="p-4 space-y-4">
+          {renderOptInCard()}
+
+          <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-capy-border">
+              <p className="card-heading text-sm">All Opted-In Customers</p>
+              <p className="text-xs text-capy-muted mt-0.5">{optedInCustomers.length} total</p>
+            </div>
+            <div className="max-h-[40vh] overflow-y-auto">
+              {rosterLoading ? (
+                <CustomerRowSkeletons />
+              ) : optedInCustomers.length === 0 ? (
+                <p className="text-xs text-capy-muted text-center py-6">No opted-in customers yet.</p>
+              ) : (
+                optedInCustomers.map((customer) => (
+                  <div
+                    key={customer.id}
+                    className="flex items-center gap-3 px-4 py-3 border-b border-capy-border/60 last:border-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-capy-text truncate">{customer.name}</p>
+                      <p className="text-xs text-capy-muted font-mono">{customer.phone}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </ResponsivePanel>
     </div>
   );
 }

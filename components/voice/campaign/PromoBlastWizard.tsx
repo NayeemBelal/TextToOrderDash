@@ -42,10 +42,10 @@ function formatUSD(amount: number): string {
 
 export function PromoBlastWizard({
   restaurantId,
-  onBackToGames,
+  onExit,
 }: {
   restaurantId: string;
-  onBackToGames: () => void;
+  onExit: () => void;
 }) {
   const [step, setStep] = useState<Step>("roster");
 
@@ -231,10 +231,10 @@ export function PromoBlastWizard({
             </p>
           </div>
           <button
-            onClick={onBackToGames}
+            onClick={onExit}
             className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors shrink-0"
           >
-            Back to Games
+            Cancel
           </button>
         </div>
 
@@ -637,22 +637,32 @@ export function PromoBlastWizard({
               <div className="text-sm px-3 py-2.5 rounded-xl bg-capy-green-light text-capy-green-dark">{sentResult}</div>
             )}
 
-            <div className="flex gap-2">
+            {sentResult ? (
               <button
-                onClick={() => setStep("compose")}
-                className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                onClick={handleSend}
-                disabled={sending || previewLoading || (preview?.recipient_count ?? 0) === 0}
-                className="flex-1 py-2.5 rounded-xl bg-capy-green text-white text-sm font-semibold hover:bg-capy-green-dark disabled:opacity-50 transition-colors"
+                onClick={onExit}
+                className="w-full py-2.5 rounded-xl bg-capy-text text-white text-sm font-semibold hover:opacity-90 transition-opacity"
                 style={{ fontFamily: "Tektur, sans-serif" }}
               >
-                {sending ? "Sending…" : sendMode === "now" ? "Send Now" : "Schedule"}
+                Done
               </button>
-            </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setStep("compose")}
+                  className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleSend}
+                  disabled={sending || previewLoading || (preview?.recipient_count ?? 0) === 0}
+                  className="flex-1 py-2.5 rounded-xl bg-capy-green text-white text-sm font-semibold hover:bg-capy-green-dark disabled:opacity-50 transition-colors"
+                  style={{ fontFamily: "Tektur, sans-serif" }}
+                >
+                  {sending ? "Sending…" : sendMode === "now" ? "Send Now" : "Schedule"}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
