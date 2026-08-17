@@ -108,7 +108,7 @@ function FaqSheet({
       <div
         className="w-full sm:max-w-sm bg-black text-white rounded-t-3xl overflow-hidden flex flex-col shadow-2xl"
         style={{
-          height: "62vh",
+          height: "62dvh",
           transform: `translateY(${translateY})`,
           transition: isDragging ? "none" : "transform 300ms ease-out",
         }}
@@ -192,7 +192,7 @@ export default function ReferralModal({
         onClick={onClose}
       >
         <div
-          className={`w-full sm:max-w-sm bg-black text-white rounded-t-3xl sm:rounded-3xl overflow-hidden h-[95vh] sm:h-[85vh] max-h-[720px] flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
+          className={`w-full sm:max-w-sm bg-black text-white rounded-t-3xl sm:rounded-3xl overflow-hidden h-[88dvh] sm:h-[85dvh] max-h-[720px] flex flex-col shadow-2xl transition-transform duration-300 ease-out ${
             visible ? "translate-y-0" : "translate-y-full"
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -206,7 +206,8 @@ export default function ReferralModal({
             <button
               onClick={onClose}
               aria-label="Close"
-              className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/40 backdrop-blur flex items-center justify-center"
+              className="absolute left-4 w-9 h-9 rounded-full bg-black/60 ring-1 ring-white/20 backdrop-blur flex items-center justify-center"
+              style={{ top: "max(1rem, env(safe-area-inset-top))" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icons/close.webp" alt="" className="w-4 h-4" />
