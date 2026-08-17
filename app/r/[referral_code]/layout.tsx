@@ -53,12 +53,10 @@ export async function generateMetadata({
       title,
       description,
       images: [
-        {
-          url: image,
-          width: 1200,
-          height: 1200,
-          alt: title,
-        },
+        // No width/height hint — per-restaurant og_image_url photos vary in
+        // aspect ratio (square, portrait, etc.), so a fixed dimension here
+        // would misrepresent some of them to crawlers.
+        { url: image, alt: title },
       ],
       type: "website",
     },
