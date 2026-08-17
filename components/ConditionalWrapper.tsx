@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { MarketingViewProvider } from '@/lib/marketing-view-context';
 import { AdminViewProvider } from '@/lib/admin-view-context';
 
-const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/about', '/privacy-policy', '/terms-of-service', '/how-it-works', '/integrations', '/forgot-password', '/reset-password', '/prize', '/marketing'];
+const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/about', '/privacy-policy', '/terms-of-service', '/how-it-works', '/integrations', '/forgot-password', '/reset-password', '/prize', '/r', '/marketing'];
 // Auth required but rendered without the app nav shell
 const NO_NAV_ROUTES = ['/onboarding'];
 

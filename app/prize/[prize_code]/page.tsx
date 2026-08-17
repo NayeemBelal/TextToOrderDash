@@ -2,7 +2,11 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
+import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
+import ReferralModal from "./ReferralModal";
+
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 type PrizeState = "loading" | "pending" | "active" | "expired" | "used" | "not_found";
 
@@ -17,6 +21,15 @@ interface PrizeData {
   discount_name: string;
   logo_url: string | null;
   brand_color: string | null;
+  background_image_url: string | null;
+  referral: {
+    referral_url: string;
+    bonus_claimed: boolean;
+    bonus_percent: number;
+    referred_discount_percent: number;
+    share_image_url: string | null;
+    share_taglines: string[];
+  } | null;
 }
 
 // Neutral, professional fallback when a restaurant hasn't set a brand color.
@@ -168,6 +181,8 @@ export default function PrizePage() {
     return "Thanks for playing!";
   };
 
+  const [showReferralModal, setShowReferralModal] = useState(false);
+
   // ── Branding ──────────────────────────────────────────────────────────────
   const brand = (data?.brand_color && /^#?[0-9a-fA-F]{6}$/.test(data.brand_color))
     ? (data.brand_color.startsWith("#") ? data.brand_color : `#${data.brand_color}`)
@@ -180,35 +195,76 @@ export default function PrizePage() {
       : `linear-gradient(135deg, ${brand}, ${darken(brand)})`;
   const onBrand = textOn(brand);
   const logo = data?.logo_url || null;
+  const hasHeroImage = Boolean(data?.background_image_url);
 
   return (
-    <div className="min-h-screen bg-slate-100 flex items-start justify-center p-5">
+    <div className={`min-h-screen bg-slate-100 flex items-start justify-center p-5 ${poppins.className}`}>
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden">
 
-        {/* Header */}
-        <div className="px-6 py-8 text-center" style={{ backgroundImage: headerBg, color: onBrand }}>
-          {/* Logo badge (falls back to an emoji when no logo is set) */}
-          <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden">
-            {logo && pageState !== "used" ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
-            ) : (
-              <span className="text-3xl">
-                {pageState === "used" ? "✅" : pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}
-              </span>
-            )}
+        {/* Header — a full, unobstructed shot of the food when the restaurant
+            has one (the whole point: make them hungry before they even read
+            the offer), falling back to the plain brand-color header otherwise. */}
+        {hasHeroImage ? (
+          <div className="relative h-64">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${data!.background_image_url})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center bottom",
+              }}
+            />
+            {/* Scrim only over the bottom third, where the name/status sit —
+                the rest of the photo stays untouched and vivid. */}
+            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+            <div className="relative h-full flex flex-col items-center justify-end pb-4 px-6 text-center text-white">
+              <div className="mb-2 w-14 h-14 rounded-full bg-white shadow-md ring-2 ring-white/60 flex items-center justify-center overflow-hidden">
+                {logo && pageState !== "used" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
+                ) : (
+                  <span className="text-2xl">
+                    {pageState === "used" ? "✅" : pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-lg font-bold leading-tight drop-shadow-sm">{data?.restaurant_name ?? ""}</h1>
+              <p className="text-sm mt-0.5 text-white/90">
+                {pageState === "used"
+                  ? "Coupon used"
+                  : pageState === "expired"
+                  ? "Offer expired"
+                  : data?.is_winner
+                  ? "You won a reward!"
+                  : "A reward for you"}
+              </p>
+            </div>
           </div>
-          <h1 className="text-lg font-bold leading-tight">{data?.restaurant_name ?? ""}</h1>
-          <p className="text-sm mt-0.5" style={{ opacity: 0.85 }}>
-            {pageState === "used"
-              ? "Coupon used"
-              : pageState === "expired"
-              ? "Offer expired"
-              : data?.is_winner
-              ? "You won a reward!"
-              : "A reward for you"}
-          </p>
-        </div>
+        ) : (
+          <div className="px-6 py-8 text-center" style={{ backgroundImage: headerBg, color: onBrand }}>
+            {/* Logo badge (falls back to an emoji when no logo is set) */}
+            <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden">
+              {logo && pageState !== "used" ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
+              ) : (
+                <span className="text-3xl">
+                  {pageState === "used" ? "✅" : pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}
+                </span>
+              )}
+            </div>
+            <h1 className="text-lg font-bold leading-tight">{data?.restaurant_name ?? ""}</h1>
+            <p className="text-sm mt-0.5" style={{ opacity: 0.85 }}>
+              {pageState === "used"
+                ? "Coupon used"
+                : pageState === "expired"
+                ? "Offer expired"
+                : data?.is_winner
+                ? "You won a reward!"
+                : "A reward for you"}
+            </p>
+          </div>
+        )}
 
         {/* Prize summary — shown while the coupon is still claimable/active */}
         {pageState !== "expired" && pageState !== "used" && pageState !== "loading" && pageState !== "not_found" && data && (
@@ -315,8 +371,39 @@ export default function PrizePage() {
           </div>
         )}
 
+        {/* Referral CTA — only on states where bumping this coupon still means
+            something (an expired coupon can't be un-expired by a bump). Opens
+            the full explainer card rather than sharing directly. */}
+        {data?.referral && (pageState === "pending" || pageState === "active" || pageState === "used") && (
+          <div className="px-6 py-5 border-t border-gray-100">
+            <button
+              onClick={() => setShowReferralModal(true)}
+              className="w-full flex items-center justify-center gap-2.5 rounded-full border-2 py-3 px-4 font-semibold text-sm transition-colors"
+              style={{ borderColor: brand, color: darken(brand, 0.1) }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/refer.webp" alt="" className="w-5 h-5" />
+              Want +{data.referral.bonus_percent}% on the coupon?
+            </button>
+          </div>
+        )}
+
         <div className="px-6 py-4 text-center text-xs text-gray-300">Powered by Belan</div>
       </div>
+
+      {data?.referral && (
+        <ReferralModal
+          open={showReferralModal}
+          onClose={() => setShowReferralModal(false)}
+          restaurantName={data.restaurant_name}
+          shareImageUrl={data.referral.share_image_url}
+          bonusPercent={data.referral.bonus_percent}
+          referredPercent={data.referral.referred_discount_percent}
+          referralUrl={data.referral.referral_url}
+          shareTaglines={data.referral.share_taglines}
+          bonusClaimed={data.referral.bonus_claimed}
+        />
+      )}
     </div>
   );
 }
