@@ -7,37 +7,7 @@ import { MARKETING_API_BASE_URL } from "@/lib/api";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
-type PageState =
-  | "loading"
-  | "form"
-  | "submitting"
-  | "verifying"
-  | "success"
-  | "verify_failed"
-  | "already_member"
-  | "invalid";
-
-const VERIFY_MESSAGES = ["Checking…", "Eating…", "Saving…"];
-const VERIFY_POLL_INTERVAL_MS = 1500;
-const VERIFY_TIMEOUT_MS = 20000;
-
-async function pollDeliveryStatus(claimId: string): Promise<"delivered" | "failed" | "timeout"> {
-  const start = Date.now();
-  while (Date.now() - start < VERIFY_TIMEOUT_MS) {
-    try {
-      const res = await fetch(`${MARKETING_API_BASE_URL}/api/referral/claim/${claimId}/status`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.status === "delivered") return "delivered";
-        if (json.status === "failed") return "failed";
-      }
-    } catch {
-      // Network hiccup mid-poll — keep trying until the timeout.
-    }
-    await new Promise((r) => setTimeout(r, VERIFY_POLL_INTERVAL_MS));
-  }
-  return "timeout";
-}
+type PageState = "loading" | "form" | "submitting" | "success" | "already_member" | "invalid";
 
 interface ReferralData {
   state: "active" | "invalid";
@@ -79,16 +49,6 @@ export default function ReferralPage() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [verifyMsgIndex, setVerifyMsgIndex] = useState(0);
-
-  useEffect(() => {
-    if (pageState !== "verifying") return;
-    setVerifyMsgIndex(0);
-    const id = setInterval(() => {
-      setVerifyMsgIndex((i) => (i + 1) % VERIFY_MESSAGES.length);
-    }, 1100);
-    return () => clearInterval(id);
-  }, [pageState]);
 
   useEffect(() => {
     fetch(`${MARKETING_API_BASE_URL}/api/referral/${referral_code}`)
@@ -123,13 +83,7 @@ export default function ReferralPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.detail || "Something went wrong. Please try again.");
-      if (json.already_member) {
-        setPageState("already_member");
-        return;
-      }
-      setPageState("verifying");
-      const outcome = await pollDeliveryStatus(json.claim_id);
-      setPageState(outcome === "failed" ? "verify_failed" : "success");
+      setPageState(json.already_member ? "already_member" : "success");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
       setPageState("form");
@@ -282,43 +236,13 @@ export default function ReferralPage() {
           </form>
         )}
 
-        {/* Verifying — confirming the welcome text actually reached the number */}
-        {pageState === "verifying" && (
-          <div className="px-6 py-12 text-center space-y-3">
-            <div
-              className="mx-auto mb-1 w-10 h-10 rounded-full border-4 border-gray-200 animate-spin"
-              style={{ borderTopColor: brand }}
-            />
-            <p className="font-semibold text-gray-700">{VERIFY_MESSAGES[verifyMsgIndex]}</p>
-            <p className="text-sm text-gray-400">Sending your welcome text…</p>
-          </div>
-        )}
-
-        {/* Verification failed — the welcome text never delivered */}
-        {pageState === "verify_failed" && (
-          <div className="px-6 py-10 text-center space-y-3">
-            <div className="text-4xl mb-1">📵</div>
-            <p className="font-semibold text-gray-700">We failed to verify this number</p>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              We couldn&apos;t deliver a text to that number. Double-check it and try again.
-            </p>
-            <button
-              onClick={() => setPageState("form")}
-              className="mt-2 text-sm font-semibold underline"
-              style={{ color: brand }}
-            >
-              Try a different number
-            </button>
-          </div>
-        )}
-
         {/* Success */}
         {pageState === "success" && (
           <div className="px-6 py-10 text-center space-y-3">
             <div className="text-4xl mb-1">🎉</div>
             <p className="font-semibold text-gray-700">You&apos;re in!</p>
             <p className="text-sm text-gray-400 leading-relaxed">
-              Check your texts — your {pct}% off welcome coupon is on its way.
+              If your number is valid, you will get the discount in your messages within the next 5 minutes!
             </p>
           </div>
         )}
