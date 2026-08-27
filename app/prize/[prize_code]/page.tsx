@@ -214,7 +214,10 @@ export default function PrizePage() {
               style={{
                 backgroundImage: `url(${data!.background_image_url})`,
                 backgroundSize: "cover",
-                backgroundPosition: "center bottom",
+                backgroundPosition:
+                  data!.restaurant_name === "Lime N Dime"
+                    ? "center bottom -100px"
+                    : "center bottom",
               }}
             />
             {/* Scrim only over the bottom third, where the name/status sit —
