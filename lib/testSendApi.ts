@@ -7,7 +7,7 @@
  * `marketingApiFetch`, which attaches the Supabase JWT.
  */
 import { marketingApiFetch } from "@/lib/api";
-import type { GameType, TriviaConfig } from "@/components/voice/games";
+import type { GameSpec, GameType, TriviaConfig } from "@/components/voice/games";
 
 export interface TestOptinParams {
   restaurantId: string;
@@ -45,11 +45,14 @@ export interface TestCampaignParams {
   phone: string;
   gameType: GameType;
   trivia?: TriviaConfig;
+  /** A curated or hand-built game. When present it defines the round;
+   *  gameType/trivia are the legacy shape for the original four games. */
+  spec?: Partial<GameSpec>;
   prizeConfig: { type: string; itemName?: string; percent?: number };
   loserDiscount: number;
   // Everyone-wins mode: the test reply always wins (no loser outcome).
   everyoneWins?: boolean;
-  messages: { game?: string; winner?: string; loser?: string };
+  messages: { game?: string; winner?: string; loser?: string; entry?: string };
   expiryDays?: number;
   expiryTime?: string; // "HH:MM" 24h — copy rendering only; test coupons last 3 min
   expiryHours?: number; // copy rendering only; takes precedence over days/time
@@ -59,8 +62,14 @@ export interface TestCampaignParams {
 export interface TestCampaignResult {
   phone: string;
   queued: number;
+  /** Empty for games with nothing to aim for (everyone-wins, random draws). */
   winning_answer: string;
   everyone_wins: boolean;
+  /** True when any reply wins the test — everyone-wins mode, or a deferred
+   *  game where the lone tester is necessarily the winner. */
+  always_wins?: boolean;
+  /** One-line description of the rules the round was created with. */
+  summary?: string;
   test_coupon_minutes: number;
 }
 
@@ -74,6 +83,7 @@ export function sendTestCampaign(
       phone: p.phone,
       game_type: p.gameType,
       trivia: p.trivia,
+      spec: p.spec,
       prize_config: p.prizeConfig,
       loser_discount: p.loserDiscount,
       everyone_wins: p.everyoneWins ?? false,

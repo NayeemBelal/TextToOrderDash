@@ -17,17 +17,27 @@ import {
 } from "@/lib/customerGroupsApi";
 import { CustomerGroupsPanel } from "@/components/voice/campaign/CustomerGroupsPanel";
 import {
-  GAME_DEFINITIONS,
   DEFAULT_GAME_ORDER,
   DEFAULT_TRIVIA,
   FALLBACK_GAME_MESSAGES,
   FALLBACK_EVERYONE_WINS_GAME_MESSAGES,
   FALLBACK_WINNER_MESSAGE,
   FALLBACK_LOSER_MESSAGE,
+  FALLBACK_ENTRY_MESSAGE,
+  LEGACY_SPECS,
+  buildSpecChoices,
   buildTriviaChoices,
+  describeAnswerSpace,
+  gameDisplay,
+  isDeferredRule,
+  type GameSpec,
   type GameType,
+  type LegacyGameType,
   type TriviaConfig,
 } from "@/components/voice/games";
+import { GameCreator } from "@/components/voice/campaign/GameCreator";
+import { GameTemplatePicker } from "@/components/voice/campaign/GameTemplatePicker";
+import type { GameTemplate } from "@/lib/gameTemplatesApi";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,15 +52,24 @@ interface MockCustomer {
 // Per-slot editable SMS copy, sent to the backend inside each game's config.
 // Placeholders match the backend renderer (services/campaign_templates.py).
 interface GameMessages {
-  game?: string; // {restaurant_name} {prize}; trivia also {question} {choices}
+  game?: string; // {restaurant_name} {prize} {range}; also {question} {choices} {draw_time}
   winner?: string; // {first_name} {prize} {code} {link} {expiry}
   loser?: string; // {first_name} {discount} {code} {link} {expiry}
+  // Deferred games only (closest guess, random draw): the "you're entered"
+  // text sent on reply, before anyone knows who won.
+  entry?: string; // {first_name} {prize} {draw_time}
 }
 interface GameConfig {
   type: GameType;
   day: ScheduleDay;
   time: string;
   trivia?: TriviaConfig;
+  // The full game definition, when the slot came from the curated catalog or
+  // the creator. Absent for the four legacy games left as they are, which the
+  // backend still resolves from `type` + `trivia`.
+  spec?: Partial<GameSpec>;
+  /** The template this slot started from, so the picker can show it selected. */
+  templateId?: string;
   messages?: GameMessages;
 }
 interface PrizeConfig {
@@ -184,13 +203,24 @@ function defaultGameText(
   if (everyoneWins) {
     return (
       defaults?.everyone_wins_game_messages?.[type] ??
-      FALLBACK_EVERYONE_WINS_GAME_MESSAGES[type]
+      FALLBACK_EVERYONE_WINS_GAME_MESSAGES[type as LegacyGameType] ??
+      ""
     );
   }
-  return defaults?.game_messages?.[type] ?? FALLBACK_GAME_MESSAGES[type];
+  return (
+    defaults?.game_messages?.[type] ??
+    FALLBACK_GAME_MESSAGES[type as LegacyGameType] ??
+    ""
+  );
 }
 
 // Default (server-provided, else fallback) message set for a game type.
+//
+// A curated or hand-built game has no shipped copy here — the backend fills
+// that in from its catalog when the round is created, and a template supplies
+// its own copy at pick time. So an empty game text is a legitimate "let the
+// server decide", not a bug; it's only the four legacy games that have local
+// fallbacks worth showing before the config fetch resolves.
 function seedMessages(
   type: GameType,
   defaults: CampaignMessageDefaults | null,
@@ -200,7 +230,43 @@ function seedMessages(
     game: defaultGameText(type, defaults, everyoneWins),
     winner: defaults?.winner_messages?.[type] ?? FALLBACK_WINNER_MESSAGE,
     loser: defaults?.loser_messages?.[type] ?? FALLBACK_LOSER_MESSAGE,
+    entry: defaults?.entry_messages?.[type] ?? FALLBACK_ENTRY_MESSAGE,
   };
+}
+
+/** A game's display name → the slug its rounds are filed under. */
+function slugifyGameName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+/** The effective spec for a slot: explicit for curated/creator games, derived
+ *  from the legacy type + trivia for the original four. */
+function slotSpec(g: GameConfig): Partial<GameSpec> {
+  if (g.spec) return g.spec;
+  const legacy = LEGACY_SPECS[g.type as LegacyGameType];
+  if (!legacy) return { type: g.type };
+  if (g.type === "trivia") {
+    const trivia = g.trivia ?? DEFAULT_TRIVIA;
+    return {
+      ...legacy,
+      question: trivia.question,
+      choices: trivia.choices,
+      answer: trivia.answer,
+    };
+  }
+  return legacy;
+}
+
+/** True when this slot's winners are picked after an entry window rather than
+ *  on reply — which is what decides whether the entry-message editor and the
+ *  {draw_time} placeholder are relevant. */
+function slotIsDeferred(g: GameConfig, everyoneWins: boolean): boolean {
+  if (everyoneWins) return false; // the mode overrides the game's own rule
+  return isDeferredRule(slotSpec(g).win_rule);
 }
 
 function buildDefaultGames(
@@ -210,7 +276,8 @@ function buildDefaultGames(
   everyoneWins: boolean,
 ): GameConfig[] {
   return days.map((day, i) => {
-    const type = DEFAULT_GAME_ORDER[i % DEFAULT_GAME_ORDER.length];
+    const type: LegacyGameType =
+      DEFAULT_GAME_ORDER[i % DEFAULT_GAME_ORDER.length];
     return {
       type,
       day,
@@ -338,6 +405,9 @@ export function GamifiedMarketingTab({
   // Step 3 — Games
   const [games, setGames] = useState<GameConfig[]>([]);
   const [openGamePicker, setOpenGamePicker] = useState<number | null>(null);
+  // Which slot has the from-scratch creator open. Separate from the picker
+  // (which the creator is reached through) so closing one doesn't close both.
+  const [openGameCreator, setOpenGameCreator] = useState<number | null>(null);
 
   // Step 4 — Prizes
   const [prizes, setPrizes] = useState<PrizeConfig[]>([]);
@@ -394,6 +464,9 @@ export function GamifiedMarketingTab({
   const [campaignTestResult, setCampaignTestResult] = useState<{
     slot: number;
     winningAnswer: string;
+    // True when there's no answer to aim for — everyone-wins mode, or a
+    // deferred game where the lone tester always wins.
+    alwaysWins: boolean;
   } | null>(null);
   const [campaignTestError, setCampaignTestError] = useState<string | null>(
     null,
@@ -545,6 +618,8 @@ export function GamifiedMarketingTab({
                 : m.winner,
             loser:
               !m.loser || m.loser === fallback.loser ? seeded.loser : m.loser,
+            entry:
+              !m.entry || m.entry === fallback.entry ? seeded.entry : m.entry,
           },
         };
       }),
@@ -571,6 +646,11 @@ export function GamifiedMarketingTab({
         const next: GameConfig = {
           ...g,
           type,
+          // Swapping to a plain legacy game drops any curated/creator spec —
+          // the backend derives one from the type, and keeping the old spec
+          // would silently override the game just chosen.
+          spec: undefined,
+          templateId: undefined,
           messages: {
             game: !m.game || m.game === oldSeed.game ? newSeed.game : m.game,
             winner:
@@ -579,11 +659,85 @@ export function GamifiedMarketingTab({
                 : m.winner,
             loser:
               !m.loser || m.loser === oldSeed.loser ? newSeed.loser : m.loser,
+            entry:
+              !m.entry || m.entry === oldSeed.entry ? newSeed.entry : m.entry,
           },
         };
         // Seed a customizable trivia config the first time a game becomes trivia.
         if (type === "trivia" && !next.trivia) next.trivia = cloneDefaultTrivia();
         return next;
+      }),
+    );
+  };
+
+  /** Fill a slot from a curated template: game, rules, prize and all its copy.
+   *  Everything stays editable afterwards — a template is a starting point. */
+  const applyTemplate = (index: number, template: GameTemplate) => {
+    const seed = seedMessages(template.spec.type, campaignDefaults, everyoneWins);
+    setGames((prev) =>
+      prev.map((g, i) =>
+        i === index
+          ? {
+              ...g,
+              type: template.spec.type,
+              spec: template.spec,
+              templateId: template.id,
+              // The trivia blob stays in sync for multiple-choice games so the
+              // legacy editor and preview keep working on templates too.
+              trivia:
+                template.spec.answer_format === "choice" && template.spec.choices
+                  ? {
+                      question: template.spec.question ?? "",
+                      choices: template.spec.choices as TriviaConfig["choices"],
+                      answer: (template.spec.answer ??
+                        "A") as TriviaConfig["answer"],
+                    }
+                  : undefined,
+              messages: {
+                game: template.messages.game ?? seed.game,
+                winner: template.messages.winner ?? seed.winner,
+                loser: template.messages.loser ?? seed.loser,
+                entry: template.messages.entry ?? seed.entry,
+              },
+            }
+          : g,
+      ),
+    );
+    // A template ships a prize that suits it (a free item for a draw, a
+    // percentage for trivia) — apply it unless the owner already chose one.
+    const suggested = template.suggested_prize;
+    if (suggested?.type) {
+      setPrizes((prev) =>
+        prev.map((p, i) =>
+          i === index && !p.itemName && !p.percent
+            ? {
+                type: suggested.type as PrizeType,
+                itemName: suggested.itemName,
+                percent: suggested.percent,
+              }
+            : p,
+        ),
+      );
+    }
+    setOpenGamePicker(null);
+    setOpenGameCreator(null);
+  };
+
+  /** Patch one slot's spec from the creator's editors. */
+  const updateSpec = (index: number, patch: Partial<GameSpec>) => {
+    setGames((prev) =>
+      prev.map((g, i) => {
+        if (i !== index) return g;
+        const spec = { ...slotSpec(g), ...patch };
+        // Naming a game gives it its own slug. A hand-built game that kept
+        // the slug it started from would save its copy over that game's
+        // defaults, and would fall back to that game's shipped text — a
+        // closest-guess game inheriting "Pick a number between 1–100".
+        if (patch.label !== undefined) {
+          spec.type = slugifyGameName(patch.label) || spec.type;
+        }
+        if (!spec.type) spec.type = "custom-game";
+        return { ...g, type: spec.type, spec, templateId: undefined };
       }),
     );
   };
@@ -643,6 +797,7 @@ export function GamifiedMarketingTab({
             game: g.type === first.type ? fm.game : seed.game,
             winner: fm.winner,
             loser: fm.loser,
+            entry: fm.entry,
           },
         };
       });
@@ -664,6 +819,7 @@ export function GamifiedMarketingTab({
         phone: campaignTestPhone,
         gameType: game.type,
         trivia: game.trivia,
+        spec: game.spec,
         prizeConfig: prizes[index] ?? { type: "percent-off", percent: 10 },
         loserDiscount,
         everyoneWins,
@@ -676,7 +832,11 @@ export function GamifiedMarketingTab({
         expiryHours: campaignExpiryMode === "hours" ? campaignExpiryHours : undefined,
         createCloverCoupon: campaignTestClover,
       });
-      setCampaignTestResult({ slot: index, winningAnswer: res.winning_answer });
+      setCampaignTestResult({
+        slot: index,
+        winningAnswer: res.winning_answer,
+        alwaysWins: res.always_wins ?? res.everyone_wins,
+      });
     } catch {
       setCampaignTestError("Test failed. Check the number and try again.");
     } finally {
@@ -694,14 +854,22 @@ export function GamifiedMarketingTab({
       prev.map((g, i) => {
         if (i !== index) return g;
         const base = g.trivia ?? cloneDefaultTrivia();
-        return {
-          ...g,
-          trivia: {
-            ...base,
-            ...patch,
-            choices: { ...base.choices, ...(patch.choices ?? {}) },
-          },
+        const trivia = {
+          ...base,
+          ...patch,
+          choices: { ...base.choices, ...(patch.choices ?? {}) },
         };
+        // Keep an explicit spec in step with the trivia editor, or the spec
+        // (which the backend prefers) would override what was just typed.
+        const spec = g.spec
+          ? {
+              ...g.spec,
+              question: trivia.question,
+              choices: trivia.choices,
+              answer: trivia.answer,
+            }
+          : undefined;
+        return { ...g, trivia, spec };
       }),
     );
   };
@@ -899,12 +1067,19 @@ export function GamifiedMarketingTab({
     g: GameConfig,
     prize?: PrizeConfig,
   ): Record<string, string> => {
+    const spec = slotSpec(g);
+    // Curated and creator games carry their question/choices on the spec;
+    // the legacy four carry them on the trivia blob.
     const trivia = g.trivia ?? campaignDefaults?.default_trivia ?? DEFAULT_TRIVIA;
+    const hasSpecChoices = !!spec.choices && Object.keys(spec.choices).length > 0;
     return {
       restaurant_name: campaignRestaurantName,
       prize: buildPrizeLabel(prize),
-      question: trivia.question,
-      choices: buildTriviaChoices(trivia),
+      question: spec.question ?? trivia.question,
+      choices: hasSpecChoices ? buildSpecChoices(spec) : buildTriviaChoices(trivia),
+      range: describeAnswerSpace(spec),
+      // The real value depends on when the round fires; this is the shape of it.
+      draw_time: "at 6:30 PM",
     };
   };
 
@@ -915,6 +1090,7 @@ export function GamifiedMarketingTab({
     code: "WIN-7GK2QX",
     link: "https://belan.tech/prize/WIN-7GK2QX",
     expiry: campaignExpiryText,
+    draw_time: "at 6:30 PM",
   });
 
   const slotMessages = (g: GameConfig): Required<GameMessages> => ({
@@ -923,6 +1099,20 @@ export function GamifiedMarketingTab({
       Object.entries(g.messages ?? {}).filter(([, v]) => v != null),
     ),
   });
+
+  /** The placeholders that mean something for this slot's game — a
+   *  pick-a-number game has no {question}, a trivia game has no {draw_time}. */
+  const gamePlaceholders = (g: GameConfig): string => {
+    const spec = slotSpec(g);
+    const parts = ["{restaurant_name}", "{prize}"];
+    if (spec.answer_format && spec.answer_format !== "any" && spec.answer_format !== "text") {
+      parts.push("{range}");
+    }
+    if (spec.question || spec.answer_format === "choice") parts.push("{question}");
+    if (spec.answer_format === "choice") parts.push("{choices}");
+    if (slotIsDeferred(g, everyoneWins)) parts.push("{draw_time}");
+    return parts.join(" ");
+  };
 
   const renderMessageEditor = (
     label: string,
@@ -1202,11 +1392,11 @@ export function GamifiedMarketingTab({
               >
                 <div className="flex items-center gap-2.5 mb-3">
                   <span className="text-xl">
-                    {GAME_DEFINITIONS[game.type].emoji}
+                    {gameDisplay(game.type, game.spec?.label).emoji}
                   </span>
                   <div>
                     <p className="card-heading text-xs">
-                      {GAME_DEFINITIONS[game.type].label}
+                      {gameDisplay(game.type, game.spec?.label).label}
                     </p>
                     <p className="text-xs text-capy-muted">
                       {/* dayTimes is authoritative (it drives the actual round
@@ -1288,8 +1478,8 @@ export function GamifiedMarketingTab({
                 <p className="section-label mb-1.5">Games & Prizes</p>
                 {launchedConfig.games.map((g, i) => (
                   <p key={i} className="text-xs text-capy-text">
-                    {GAME_DEFINITIONS[g.type].emoji} {g.day} —{" "}
-                    {GAME_DEFINITIONS[g.type].label}
+                    {gameDisplay(g.type, g.spec?.label).emoji} {g.day} —{" "}
+                    {gameDisplay(g.type, g.spec?.label).label}
                     <span className="text-capy-muted">
                       {" "}
                       ·{" "}
@@ -2117,16 +2307,24 @@ export function GamifiedMarketingTab({
                       <p className="section-label mb-1.5">
                         Game {i + 1} — {game.day} at {getDayTime(game.day)}
                       </p>
-                      <div className="flex items-center gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <span className="text-xl">
-                          {GAME_DEFINITIONS[game.type].emoji}
+                          {gameDisplay(game.type, game.spec?.label).emoji}
                         </span>
                         <span
                           className="font-semibold text-capy-text text-sm"
                           style={{ fontFamily: "Tektur, sans-serif" }}
                         >
-                          {GAME_DEFINITIONS[game.type].label}
+                          {gameDisplay(game.type, game.spec?.label).label}
                         </span>
+                        {slotIsDeferred(game, everyoneWins) && (
+                          <span
+                            title="Players are entered on reply; the winner is announced when entries close."
+                            className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-capy-border/40 text-capy-muted"
+                          >
+                            timed
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-capy-muted italic leading-relaxed whitespace-pre-line">
                         &ldquo;
@@ -2138,50 +2336,59 @@ export function GamifiedMarketingTab({
                       </p>
                     </div>
                     <button
-                      onClick={() =>
-                        setOpenGamePicker(openGamePicker === i ? null : i)
-                      }
+                      onClick={() => {
+                        setOpenGamePicker(openGamePicker === i ? null : i);
+                        setOpenGameCreator(null);
+                      }}
                       className="ml-3 px-3 py-1.5 text-xs font-medium rounded-lg border border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark transition-all shrink-0"
                     >
                       Change
                     </button>
                   </div>
-                  {openGamePicker === i && (
+                  {openGamePicker === i && restaurantId && (
+                    <GameTemplatePicker
+                      restaurantId={restaurantId}
+                      currentType={game.type}
+                      everyoneWins={everyoneWins}
+                      onPick={(template) => applyTemplate(i, template)}
+                      onBuildYourOwn={() => {
+                        setOpenGamePicker(null);
+                        setOpenGameCreator(i);
+                        // Seed the creator from whatever this slot plays now,
+                        // so "build your own" starts from something working
+                        // rather than an empty form.
+                        updateSpec(i, slotSpec(game));
+                      }}
+                      onClose={() => setOpenGamePicker(null)}
+                    />
+                  )}
+                  {openGameCreator === i && restaurantId && (
                     <div className="px-4 pb-4 border-t border-capy-border pt-3">
-                      <p className="text-xs text-capy-muted mb-2 font-medium">
-                        Select a game type:
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(Object.keys(GAME_DEFINITIONS) as GameType[]).map(
-                          (type) => (
-                            <button
-                              key={type}
-                              onClick={() => {
-                                updateGame(i, type);
-                                setOpenGamePicker(null);
-                              }}
-                              className={`p-3 rounded-xl border-2 text-left transition-all ${
-                                game.type === type
-                                  ? "border-capy-green bg-capy-green-light"
-                                  : "border-capy-border hover:border-capy-green"
-                              }`}
-                            >
-                              <span className="text-lg">
-                                {GAME_DEFINITIONS[type].emoji}
-                              </span>
-                              <p
-                                className="text-xs font-semibold text-capy-text mt-1"
-                                style={{ fontFamily: "Tektur, sans-serif" }}
-                              >
-                                {GAME_DEFINITIONS[type].label}
-                              </p>
-                            </button>
-                          ),
-                        )}
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-xs text-capy-muted font-medium">
+                          Build your own game
+                        </p>
+                        <button
+                          onClick={() => setOpenGameCreator(null)}
+                          className="text-xs text-capy-muted hover:text-capy-text transition-colors"
+                        >
+                          Done
+                        </button>
                       </div>
+                      <GameCreator
+                        restaurantId={restaurantId}
+                        spec={slotSpec(game)}
+                        onChange={(patch) => updateSpec(i, patch)}
+                        prize={prizes[i]}
+                        gameMessage={slotMessages(game).game}
+                        everyoneWins={everyoneWins}
+                      />
                     </div>
                   )}
-                  {game.type === "trivia" && (
+                  {/* The legacy trivia editor stays for the original trivia
+                      game; curated and creator games edit their question and
+                      choices in the creator above. */}
+                  {game.type === "trivia" && !game.spec && openGameCreator !== i && (
                     <div className="px-4 pb-4 border-t border-capy-border pt-3 space-y-2">
                       <p className="section-label">Customize Trivia</p>
                       <input
@@ -2263,12 +2470,25 @@ export function GamifiedMarketingTab({
                           slotMessages(game).game,
                           (v) => updateGameMessage(i, "game", v),
                           gamePreviewVars(game, prizes[i]),
-                          game.type === "trivia"
-                            ? "{restaurant_name} {prize} {question} {choices}"
-                            : "{restaurant_name} {prize}",
+                          gamePlaceholders(game),
                         )}
+                        {/* Deferred games answer a reply twice: an entry
+                            acknowledgement now, the result when the window
+                            closes. Instant games send only the result. */}
+                        {slotIsDeferred(game, everyoneWins) &&
+                          renderMessageEditor(
+                            "Entry reply (sent right away)",
+                            slotMessages(game).entry,
+                            (v) => updateGameMessage(i, "entry", v),
+                            replyPreviewVars(prizes[i]),
+                            "{first_name} {prize} {draw_time}",
+                          )}
                         {renderMessageEditor(
-                          everyoneWins ? "Prize reply (everyone wins)" : "Winner reply",
+                          everyoneWins
+                            ? "Prize reply (everyone wins)"
+                            : slotIsDeferred(game, everyoneWins)
+                              ? "Winner reply (sent when entries close)"
+                              : "Winner reply",
                           slotMessages(game).winner,
                           (v) => updateGameMessage(i, "winner", v),
                           replyPreviewVars(prizes[i]),
@@ -2335,13 +2555,15 @@ export function GamifiedMarketingTab({
                           <p className="text-[11px] text-capy-muted">
                             {everyoneWins
                               ? "Texts you this game for real — reply with anything and you'll win the prize with a working coupon (test coupons last 3 minutes)."
-                              : "Texts you this game for real — reply to get the winner or loser message with a working coupon (test coupons last 3 minutes)."}
+                              : slotIsDeferred(game, everyoneWins)
+                                ? "Texts you this game for real. A test round is judged as soon as you reply (you're the only entry, so you win) — in a live round the winner comes when entries close."
+                                : "Texts you this game for real — reply to get the winner or loser message with a working coupon (test coupons last 3 minutes)."}
                           </p>
                           {campaignTestResult?.slot === i && (
                             <div className="bg-capy-green-light text-capy-green-dark text-xs px-3 py-2 rounded-xl">
-                              {everyoneWins ? (
+                              {campaignTestResult.alwaysWins ? (
                                 <>
-                                  Sent! Everyone wins — reply with{" "}
+                                  Sent! Reply with{" "}
                                   <span className="font-bold">any answer</span>{" "}
                                   to get the winner text and coupon.
                                 </>
@@ -2395,8 +2617,8 @@ export function GamifiedMarketingTab({
               <p className="section-label mb-1.5">Games</p>
               {games.map((g, i) => (
                 <p key={i} className="text-xs text-capy-text">
-                  {GAME_DEFINITIONS[g.type].emoji} {g.day} —{" "}
-                  {GAME_DEFINITIONS[g.type].label}
+                  {gameDisplay(g.type, g.spec?.label).emoji} {g.day} —{" "}
+                  {gameDisplay(g.type, g.spec?.label).label}
                 </p>
               ))}
             </div>
