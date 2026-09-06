@@ -6,6 +6,8 @@ import { countSegments } from "@/lib/smsSegments";
 import { getOptinConfig } from "@/lib/optinConfigApi";
 import { sendTestOptin } from "@/lib/testSendApi";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { RosterUploadCard } from "@/components/voice/campaign/RosterUploadCard";
+import type { RosterUploadResult } from "@/lib/rosterImportApi";
 
 interface OptinStatus {
   opted_in: number;
@@ -85,6 +87,12 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
   const [optedInCustomers, setOptedInCustomers] = useState<RosterCustomer[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
 
+  // Where this blast's contacts come from. "clover" scans the POS; "upload"
+  // takes a spreadsheet, which is the only route for a merchant who isn't on
+  // Clover. Both feed the same Send button below.
+  const [source, setSource] = useState<"clover" | "upload">("clover");
+  const [rosterUpload, setRosterUpload] = useState<RosterUploadResult | null>(null);
+
   const refreshOptinStatus = (id: string) => {
     setOptinRefreshing(true);
     marketingApiFetch<OptinStatus>(`/api/marketing/optin-status?restaurant_id=${id}`)
@@ -137,13 +145,15 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
   };
 
   const handleSendBlast = async () => {
-    if (!scanResult || scanResult.new_customers === 0) return;
+    if (newCustomers === 0) return;
     setBlastLoading(true);
     try {
       const data = await marketingApiFetch<{ queued?: number }>("/api/marketing/send-optin-blast", {
         method: "POST",
         body: JSON.stringify({
           restaurant_id: restaurantId,
+          // Present ⇒ blast the staged spreadsheet instead of the Clover roster.
+          import_id: source === "upload" ? rosterUpload?.import_id : undefined,
           message: optinMessage,
           discount_percent: optinDiscount,
           expiry_days: optinExpiryDays,
@@ -153,6 +163,9 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
       const queued = data.queued ?? 0;
       setBlastToast(`Queued ${queued} customer${queued !== 1 ? "s" : ""} — texts are sending now.`);
       setScanResult(null);
+      // An upload is single-use on the backend; clearing it keeps the button
+      // from offering a send that would now 409.
+      setRosterUpload(null);
       refreshOptinStatus(restaurantId);
       setTimeout(() => setBlastToast(null), 4000);
     } catch {
@@ -190,7 +203,10 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
     optinStatus && optinStatus.blast_sent > 0
       ? Math.round((optinStatus.blast_opted_in / optinStatus.blast_sent) * 100)
       : 0;
-  const newCustomers = scanResult?.new_customers ?? 0;
+  // How many people the Send button would actually text, whichever source
+  // the owner picked.
+  const newCustomers =
+    source === "upload" ? rosterUpload?.new ?? 0 : scanResult?.new_customers ?? 0;
 
   const renderedOptinMessage = optinMessage
     .replace(/\{restaurant_name\}/g, optinRestaurantName)
@@ -284,18 +300,42 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
           </div>
         )}
 
-        {optinStatus?.last_scan_at && !scanResult && (
+        <div className="flex gap-1.5">
+          {(["clover", "upload"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setSource(s)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                source === s
+                  ? "bg-capy-green text-white"
+                  : "border border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark"
+              }`}
+            >
+              {s === "clover" ? "From Clover" : "From a spreadsheet"}
+            </button>
+          ))}
+        </div>
+
+        {source === "upload" && (
+          <RosterUploadCard
+            restaurantId={restaurantId}
+            result={rosterUpload}
+            onResult={setRosterUpload}
+          />
+        )}
+
+        {source === "clover" && optinStatus?.last_scan_at && !scanResult && (
           <p className="text-xs text-capy-muted">
             Last scan: {new Date(optinStatus.last_scan_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
         )}
-        {scanError && (
+        {source === "clover" && scanError && (
           <div className="flex items-center gap-2 text-sm text-red-600">
             <span className="font-semibold">!</span>
             <span>{scanError}</span>
           </div>
         )}
-        {scanResult !== null && (
+        {source === "clover" && scanResult !== null && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-capy-green-dark font-semibold">✓</span>
             {newCustomers > 0 ? (
@@ -436,13 +476,15 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
         </div>
 
         <div className="flex gap-2">
-          <button
-            onClick={handleScanClover}
-            disabled={scanLoading || blastLoading}
-            className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
-          >
-            {scanLoading ? "Scanning…" : "Scan Clover"}
-          </button>
+          {source === "clover" && (
+            <button
+              onClick={handleScanClover}
+              disabled={scanLoading || blastLoading}
+              className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+            >
+              {scanLoading ? "Scanning…" : "Scan Clover"}
+            </button>
+          )}
           {newCustomers > 0 && (
             <button
               onClick={handleSendBlast}

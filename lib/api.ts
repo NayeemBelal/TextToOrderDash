@@ -50,6 +50,43 @@ export async function marketingApiFetch<T = unknown>(
   return res.json() as Promise<T>;
 }
 
+/**
+ * File-upload variant of `marketingApiFetch` (spreadsheet roster imports).
+ *
+ * Identical auth, but deliberately does NOT set Content-Type: the browser has
+ * to write it itself so it can include the multipart boundary.
+ *
+ * Errors carry the backend's `detail` when it sent one — a rejected upload
+ * says exactly what's wrong with the file ("we couldn't find a column of
+ * phone numbers"), and that text is the whole value of the response.
+ */
+export async function marketingApiUpload<T = unknown>(
+  path: string,
+  form: FormData,
+): Promise<T> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const res = await fetch(`${MARKETING_API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  if (!res.ok) {
+    let detail = `API ${res.status}: ${path}`;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === 'string') detail = body.detail;
+    } catch {
+      // Non-JSON error body — keep the status line.
+    }
+    throw new Error(detail);
+  }
+  return res.json() as Promise<T>;
+}
+
 export interface Call {
   id: string;
   timestamp: string;
