@@ -284,7 +284,7 @@ export default function PrizePage() {
         )}
 
         {/* Prize summary — shown while the coupon is still claimable/active */}
-        {pageState !== "expired" && pageState !== "used" && pageState !== "loading" && pageState !== "not_found" && data && (
+        {pageState !== "expired" && pageState !== "used" && pageState !== "not_found" && data && (
           <div className="px-6 py-5 border-b border-gray-100 text-center">
             <span
               className="inline-block rounded-full px-5 py-2 text-sm font-semibold"
