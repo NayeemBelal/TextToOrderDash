@@ -225,15 +225,20 @@ export default function PrivacyPolicyPage() {
             </p>
           </blockquote>
           <p>
+            Some restaurants also collect opt-in consent through a web sign-up form (for example, after scanning a QR code in-store). That form requires an unchecked-by-default checkbox stating the same terms below, and we record the exact disclosure text shown, the timestamp, your IP address, and browser user agent at the moment you check it.
+          </p>
+          <p>
             Your consent is specific to each restaurant. Opting in to receive texts from one restaurant does not opt you in to receive texts from any other restaurant on the Belan AI platform.
           </p>
           <ul className="list-none space-y-1 pl-0">
             {[
+              "Consent to receive SMS messages is never a condition of purchasing any goods or services.",
               "Text STOP at any time to immediately opt out of all messages from that restaurant.",
               "Text START to re-enable text ordering after opting out.",
               "Text HELP for support information.",
               "Marketing SMS messages are only sent to customers who have an active opt-in status.",
               "We do not send marketing messages to customers who have texted STOP.",
+              "No mobile opt-in data or phone number collected for SMS consent purposes is sold or shared with any third party for their own marketing or promotional purposes. It is used solely to deliver messages on behalf of the restaurant you opted in with.",
             ].map((item) => (
               <li key={item} className="flex items-start gap-2 text-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-black mt-2 flex-shrink-0" />
