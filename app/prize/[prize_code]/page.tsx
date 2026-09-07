@@ -200,6 +200,17 @@ export default function PrizePage() {
   const logo = data?.logo_url || null;
   const hasHeroImage = Boolean(data?.background_image_url);
 
+  if (pageState === "loading") {
+    return (
+      <div className={`min-h-screen bg-slate-100 flex items-center justify-center p-5 ${poppins.className}`}>
+        <div
+          className="w-10 h-10 rounded-full border-[3px] border-slate-300 animate-spin"
+          style={{ borderTopColor: DEFAULT_BRAND }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-slate-100 flex items-start justify-center p-5 ${poppins.className}`}>
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden">
@@ -283,11 +294,6 @@ export default function PrizePage() {
             </span>
             <p className="text-xs text-gray-400 mt-2">{prizeSubtitle()}</p>
           </div>
-        )}
-
-        {/* Loading */}
-        {pageState === "loading" && (
-          <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading your reward…</div>
         )}
 
         {/* Not found */}

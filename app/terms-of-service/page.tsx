@@ -322,6 +322,9 @@ export default function TermsOfServicePage() {
               <p className="text-black/80 font-bold">
                 You are solely responsible for obtaining all necessary consents from your customers
                 before sending SMS messages through the Services, including TCPA opt-in consent.
+                Consent to receive SMS messages must never be made a condition of any purchase, and
+                mobile opt-in data collected through the Services may not be sold or shared with any
+                third party for marketing purposes.
               </p>
             </section>
 
