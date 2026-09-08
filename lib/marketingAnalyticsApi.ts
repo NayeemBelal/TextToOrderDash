@@ -8,15 +8,16 @@
  */
 import { marketingApiFetch } from '@/lib/api';
 
-export type CouponType = 'optin' | 'winner' | 'loser';
+export type CouponType = 'optin' | 'winner' | 'loser' | 'promo';
 export type RangeKey = '7d' | '30d' | '90d' | 'all';
 
-export const COUPON_TYPES: CouponType[] = ['optin', 'winner', 'loser'];
+export const COUPON_TYPES: CouponType[] = ['optin', 'winner', 'loser', 'promo'];
 
 export const COUPON_TYPE_LABEL: Record<CouponType, string> = {
   optin: 'Opt-in',
   winner: 'Winners',
   loser: 'Losers',
+  promo: 'Promo',
 };
 
 export interface SummaryPoint {

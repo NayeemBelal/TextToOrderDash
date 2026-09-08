@@ -17,6 +17,7 @@ const CHIP: Record<CouponType, string> = {
   optin: "bg-slate-100 text-slate-600",
   winner: "bg-capy-green-light text-capy-green-dark",
   loser: "bg-amber-100 text-amber-700",
+  promo: "bg-sky-100 text-sky-700",
 };
 
 function relativeTime(iso: string | null): string {
