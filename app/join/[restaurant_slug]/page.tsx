@@ -28,6 +28,35 @@ interface JoinData {
   consent_disclosure_text?: string;
 }
 
+// POST /api/join response — since the backend activates the coupon at signup,
+// the success screen shows it immediately instead of "check your texts".
+interface JoinResult {
+  already_member: boolean;
+  prize_code?: string;
+  prize_url?: string;
+  discount_percent?: number;
+  discount_name?: string;
+  expires_at?: string;
+  // "pos_coupon": cashier searches the discount name in the POS list (Clover).
+  // "show_staff": staff applies the restaurant's standing tier discount (Toast).
+  redemption_mode?: "pos_coupon" | "show_staff";
+  // False = the POS mint failed; fall back to the old "check your texts" copy
+  // (the SMS link still works and retries the mint on its redeem button).
+  pos_ready?: boolean;
+}
+
+// Same countdown formatting as the /prize page: days, then hours, then MM:SS.
+function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 const DEFAULT_BRAND = "#1e293b"; // slate-800
 const FALLBACK_DISCLOSURE =
   "By checking this box, I agree to receive recurring automated marketing text messages at the phone number provided. Consent is not a condition of purchase. Msg & data rates may apply. Message frequency varies. Reply STOP to opt out, HELP for help. View our Privacy Policy.";
@@ -70,6 +99,20 @@ export default function JoinPage() {
   const [phone, setPhone] = useState("");
   const [consentChecked, setConsentChecked] = useState(false);
   const [error, setError] = useState("");
+  const [result, setResult] = useState<JoinResult | null>(null);
+  const [countdown, setCountdown] = useState("");
+
+  // Live ticking countdown on the success coupon — the movement doubles as a
+  // liveness cue so staff can tell the real page from a screenshot.
+  useEffect(() => {
+    if (pageState !== "success" || !result?.pos_ready || !result?.expires_at)
+      return;
+    const exp = new Date(result.expires_at).getTime();
+    const tick = () => setCountdown(formatRemaining(exp - Date.now()));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [pageState, result]);
 
   useEffect(() => {
     fetch(`${MARKETING_API_BASE_URL}/api/join/${restaurant_slug}`)
@@ -123,11 +166,12 @@ export default function JoinPage() {
           }),
         },
       );
-      const json = await res.json();
+      const json: JoinResult & { detail?: string } = await res.json();
       if (!res.ok)
         throw new Error(
           json.detail || "Something went wrong. Please try again.",
         );
+      setResult(json);
       setPageState(json.already_member ? "already_member" : "success");
     } catch (e: unknown) {
       setError(
@@ -350,17 +394,75 @@ export default function JoinPage() {
           </form>
         )}
 
-        {/* Success */}
-        {pageState === "success" && (
-          <div className="px-6 py-10 text-center space-y-3">
-            <div className="text-4xl mb-1">🎉</div>
-            <p className="font-semibold text-gray-700">You&apos;re in!</p>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              Check your texts — your {pct}% off code from {restaurantName} is
-              on its way.
-            </p>
-          </div>
-        )}
+        {/* Success — the coupon IS this screen (backend already activated it
+            in the POS). Falls back to the old "check your texts" copy only if
+            the POS activation failed (pos_ready=false). */}
+        {pageState === "success" &&
+          (result?.pos_ready ? (
+            <div className="px-6 py-8 text-center space-y-4">
+              <p className="font-semibold text-gray-700">
+                🎉 You&apos;re in!
+              </p>
+              <p
+                className="text-3xl font-extrabold uppercase leading-tight tracking-tight"
+                style={{ color: darken(brand, 0.15) }}
+              >
+                Show to your cashier to get{" "}
+                {result.discount_percent ?? pct}% off
+              </p>
+              <div
+                className="border-2 border-dashed rounded-xl p-4 font-bold text-lg break-all"
+                style={{
+                  borderColor: `${brand}55`,
+                  backgroundColor: `${brand}0f`,
+                  color: darken(brand, 0.15),
+                }}
+              >
+                {result.discount_name || `${pct}% OFF`}
+              </div>
+              <p className="text-xs text-gray-400">
+                <strong className="text-gray-600">Cashier:</strong>{" "}
+                {result.redemption_mode === "show_staff"
+                  ? `apply the "${result.discount_percent ?? pct}%" Belan SMS discount to this order.`
+                  : "search for this name in the discount list and apply it."}
+              </p>
+              {countdown && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">
+                    Time Remaining
+                  </p>
+                  <p className="text-4xl font-extrabold tabular-nums text-amber-700">
+                    {countdown}
+                  </p>
+                </div>
+              )}
+              <p className="text-xs text-gray-400 leading-relaxed">
+                We also texted you a link to this coupon
+                {result.prize_url ? (
+                  <>
+                    {" "}
+                    — or{" "}
+                    <a
+                      href={result.prize_url}
+                      className="underline text-gray-500"
+                    >
+                      open it here
+                    </a>
+                  </>
+                ) : null}
+                .
+              </p>
+            </div>
+          ) : (
+            <div className="px-6 py-10 text-center space-y-3">
+              <div className="text-4xl mb-1">🎉</div>
+              <p className="font-semibold text-gray-700">You&apos;re in!</p>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Check your texts — your {pct}% off code from {restaurantName}{" "}
+                is on its way.
+              </p>
+            </div>
+          ))}
 
         {/* Already a member */}
         {pageState === "already_member" && (
