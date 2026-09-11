@@ -53,7 +53,7 @@ export default async function Image({ params }: { params: Promise<{ prize_code: 
       ? data.brand_color.startsWith("#") ? data.brand_color : `#${data.brand_color}`
       : "#1e293b";
   const fg = data.background_image_url ? "#ffffff" : textOn(brand);
-  const name = data.restaurant_name || "A reward for you";
+  const name = data.restaurant_name || "Belan";
   const headline = data.state === "used" ? "Coupon already used" : data.state === "expired" ? "This offer has expired" : data.is_winner ? "You won! 🎉" : "A reward for you 🎁";
 
   return new ImageResponse(
