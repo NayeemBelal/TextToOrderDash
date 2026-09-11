@@ -21,6 +21,8 @@ type PageState =
 interface JoinData {
   state: "active" | "invalid";
   restaurant_name?: string;
+  // false = opt-in-only restaurant (no coupon): drop the "Get N% off" framing.
+  incentive_enabled?: boolean;
   discount_percent?: number;
   logo_url?: string | null;
   brand_color?: string | null;
@@ -32,6 +34,7 @@ interface JoinData {
 // the success screen shows it immediately instead of "check your texts".
 interface JoinResult {
   already_member: boolean;
+  incentive_enabled?: boolean;
   prize_code?: string;
   prize_url?: string;
   discount_percent?: number;
@@ -194,9 +197,14 @@ export default function JoinPage() {
   const logo = data?.logo_url || null;
   const restaurantName = data?.restaurant_name || "this restaurant";
   const pct = data?.discount_percent ?? 10;
+  const incentive = data?.incentive_enabled !== false;
 
   const headline =
-    pageState === "loading" ? "" : `Get ${pct}% off your next order`;
+    pageState === "loading"
+      ? ""
+      : incentive
+        ? `Get ${pct}% off your next order`
+        : "Be the first to hear about specials & offers";
   const hasHeroImage = Boolean(data?.background_image_url);
 
   if (pageState === "loading") {
@@ -305,6 +313,10 @@ export default function JoinPage() {
                 </label>
                 <input
                   type="text"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- the form
+                  // is this page's sole purpose; landing straight in the first
+                  // field saves a tap for someone standing in line.
+                  autoFocus
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Jane"
@@ -389,7 +401,11 @@ export default function JoinPage() {
               className="w-full font-bold text-base rounded-xl py-4 transition-opacity disabled:opacity-50"
               style={{ backgroundColor: brand, color: onBrand }}
             >
-              {pageState === "submitting" ? "Joining…" : `Get my ${pct}% off`}
+              {pageState === "submitting"
+                ? "Joining…"
+                : incentive
+                  ? `Get my ${pct}% off`
+                  : "Sign me up"}
             </button>
           </form>
         )}
@@ -458,8 +474,9 @@ export default function JoinPage() {
               <div className="text-4xl mb-1">🎉</div>
               <p className="font-semibold text-gray-700">You&apos;re in!</p>
               <p className="text-sm text-gray-400 leading-relaxed">
-                Check your texts — your {pct}% off code from {restaurantName}{" "}
-                is on its way.
+                {result?.incentive_enabled === false || !incentive
+                  ? `Welcome to the ${restaurantName} VIP list — you'll be the first to hear about specials and offers.`
+                  : `Check your texts — your ${pct}% off code from ${restaurantName} is on its way.`}
               </p>
             </div>
           ))}
@@ -472,8 +489,9 @@ export default function JoinPage() {
               Looks like you&apos;re already on our list!
             </p>
             <p className="text-sm text-gray-400 leading-relaxed">
-              You&apos;ve already got an active offer from {restaurantName} —
-              check your texts for your code.
+              {incentive
+                ? `You've already got an active offer from ${restaurantName} — check your texts for your code.`
+                : `You're already on the ${restaurantName} VIP list — keep an eye on your texts for specials.`}
             </p>
           </div>
         )}
