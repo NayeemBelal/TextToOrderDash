@@ -420,11 +420,15 @@ export default function JoinPage() {
                 🎉 You&apos;re in!
               </p>
               <p
-                className="text-3xl font-extrabold uppercase leading-tight tracking-tight"
+                className="text-4xl font-extrabold uppercase leading-tight tracking-tight"
                 style={{ color: darken(brand, 0.15) }}
               >
-                Show to your cashier to get{" "}
                 {result.discount_percent ?? pct}% off
+                <br />
+                your next visit
+              </p>
+              <p className="text-xl font-extrabold uppercase tracking-tight text-gray-700">
+                Show to your cashier
               </p>
               <div
                 className="border-2 border-dashed rounded-xl p-4 font-bold text-lg break-all"
