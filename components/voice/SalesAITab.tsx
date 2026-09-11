@@ -127,7 +127,7 @@ export function SalesAITab() {
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="px-3 py-1.5 text-sm text-capy-text bg-white border border-capy-border rounded-full hover:border-capy-text hover:bg-capy-bg transition-colors shadow-sm"
+                    className="px-3 py-1.5 text-sm text-capy-text bg-capy-card border border-capy-border rounded-full hover:border-capy-text hover:bg-capy-bg transition-colors shadow-sm"
                   >
                     {s}
                   </button>
@@ -138,7 +138,7 @@ export function SalesAITab() {
         </div>
       </div>
 
-      <div className="flex-shrink-0 border-t border-capy-border bg-white px-4 py-3">
+      <div className="flex-shrink-0 border-t border-capy-border bg-capy-card px-4 py-3">
         <form
           className="max-w-3xl mx-auto flex items-end gap-2"
           onSubmit={(e) => {
@@ -162,7 +162,7 @@ export function SalesAITab() {
             }
             rows={1}
             disabled={!restaurantId || pending}
-            className="flex-1 resize-none rounded-2xl border border-capy-border bg-white px-4 py-2.5 text-sm text-capy-text placeholder:text-capy-muted focus:outline-none focus:border-capy-text transition-colors disabled:opacity-60"
+            className="flex-1 resize-none rounded-2xl border border-capy-border bg-capy-card px-4 py-2.5 text-sm text-capy-text placeholder:text-capy-muted focus:outline-none focus:border-capy-text transition-colors disabled:opacity-60"
             style={{ maxHeight: 160 }}
           />
           <button
@@ -188,7 +188,7 @@ function Bubble({ message }: { message: ChatMessage }) {
   }
   if (message.role === "error") {
     return (
-      <div className="self-start max-w-[90%] bg-red-50 border border-red-200 text-red-700 rounded-2xl px-4 py-2.5 text-sm">
+      <div className="self-start max-w-[90%] bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-700 dark:text-red-300 rounded-2xl px-4 py-2.5 text-sm">
         {message.content}
       </div>
     );
@@ -201,7 +201,7 @@ function Bubble({ message }: { message: ChatMessage }) {
 
   return (
     <div className="self-start max-w-[90%] w-full flex flex-col gap-2">
-      <div className="bg-white border border-capy-border rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-capy-text shadow-sm">
+      <div className="bg-capy-card border border-capy-border rounded-2xl rounded-bl-md px-4 py-2.5 text-sm text-capy-text shadow-sm">
         <Markdown>{message.content}</Markdown>
       </div>
       {message.chart && message.chart.data && message.chart.data.length > 0 && (
@@ -221,7 +221,7 @@ function Bubble({ message }: { message: ChatMessage }) {
 
 function ThinkingBubble() {
   return (
-    <div className="self-start bg-white border border-capy-border rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
+    <div className="self-start bg-capy-card border border-capy-border rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
       <div className="flex items-center gap-1.5">
         <Dot delay={0} />
         <Dot delay={0.15} />
@@ -313,7 +313,7 @@ function AnswerDetails({
                     {q.query}
                   </pre>
                   {q.error && (
-                    <p className="text-[11px] text-red-600 break-words">{q.error}</p>
+                    <p className="text-[11px] text-red-600 dark:text-red-300 break-words">{q.error}</p>
                   )}
                 </div>
               ))}

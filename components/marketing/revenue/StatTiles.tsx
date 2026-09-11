@@ -12,7 +12,7 @@ interface Props {
 
 function Tile({ label, value, loading }: { label: string; value: string; loading?: boolean }) {
   return (
-    <div className="bg-white rounded-2xl border border-capy-border p-4 flex flex-col gap-1 shadow-sm">
+    <div className="bg-capy-card rounded-2xl border border-capy-border p-4 flex flex-col gap-1 shadow-sm">
       <p className="text-xs text-capy-muted font-medium uppercase tracking-wide leading-none">
         {label}
       </p>

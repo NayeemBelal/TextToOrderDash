@@ -18,7 +18,7 @@ export function IncomingCallsCard() {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col overflow-hidden min-h-0 h-full shadow-sm">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col overflow-hidden min-h-0 h-full shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-capy-border flex-shrink-0">
         {searchOpen ? (

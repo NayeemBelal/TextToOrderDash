@@ -1,49 +1,33 @@
 # Belan AI
 
-> Belan AI is a B2B SaaS platform providing voice and SMS AI ordering automation for restaurants. The AI answers every incoming call, takes orders, handles upsells, and fires orders directly to the restaurant's POS system — automatically.
+> Belan AI is gamified SMS marketing for restaurants. Instead of blasting coupons, Belan texts customers a quick game — trivia, pick a number, roll the dice, closest guess, a random draw — and turns every reply into a real coupon that becomes a discount at the register. Owners see exactly which orders each campaign brought back.
 
 ## What We Do
 
-Belan AI provides two core ordering channels for restaurants:
+1. **Gamified SMS campaigns** — Pick a game from a curated catalog (or build your own), set prizes and a schedule, test it on your own phone, and launch. Winners get the prize; everyone else can get a consolation discount. "Everyone wins" mode gives every player the prize.
+2. **Promotional messages** — One-off or scheduled texts to any group of customers, with an optional instant coupon.
+3. **Branded coupon pages** — Each coupon link opens a page in the restaurant's own branding (logo, colour, food photo) and creates a real POS discount when redeemed. Link previews carry the restaurant's branding too.
+4. **Referrals and sign-up links** — Customers can invite a friend for a bump on their own coupon; a QR-code web form lets new customers join the text list with proper consent.
+5. **Revenue tracking** — Orders that used a coupon are pulled from the POS and attributed to the campaign.
+6. **Customer timeline** — Every text, reply, game, coupon and POS order for a customer, in one searchable history.
 
-1. **Voice AI Ordering** — Answers every phone call on the first ring, 24/7. Takes the order using the customer's taste profile and allergy history, recommends upsells, and sends a secure SMS payment link. Order prints in the kitchen the moment payment is confirmed.
+## Also available (legacy products)
 
-2. **SMS Text Ordering** — Customers text the restaurant's number to place an order. No app download or login required. Works on iMessage and standard SMS. Belan remembers returning customers and their preferences.
-
-## Products Included
-
-- Voice AI Ordering — unlimited concurrent calls
-- SMS Text-to-Order — unlimited messages
-- Dashboard Analytics — real-time orders, calls, and revenue
-- Marketing AI — one-click SMS campaigns to targeted customer segments
-- Sales AI — natural language queries over restaurant data ("How many of X did we sell last Thursday?")
+Voice AI phone ordering and SMS text ordering — see https://belan.tech/oldprods
 
 ## Pricing
 
-$200 per month, flat rate. No per-order fees. No usage limits.
-$6.67 per day equivalent.
-
-## Key Claims
-
-- 99%+ order accuracy
-- Answers calls within 1 second
-- Setup in 20 minutes
-- Works with existing POS systems
-- No app required for customers
+$200 per month, flat. Includes a dedicated marketing phone number and unlimited campaigns. Branded RCS sender available for a $500/year carrier registration fee.
 
 ## POS Integrations
 
-Clover, Toast, Square, Lightspeed, Revel, TouchBistro, and others.
-
-## Target Audience
-
-Independent restaurant owners, multi-location restaurant operators, ghost kitchen operators, fast-casual and quick-service restaurants.
+Clover today; Toast and Square in progress.
 
 ## Contact & Demo
 
-- Phone / Demo line: (855) 485-2690 — call or text to experience the AI live
-- Book a demo: https://belan.tech/#sandbox
-- Sign up: https://belan.tech/register
+- Try the live demo on the homepage: https://belan.tech/#demo
+- Book a demo: https://calendar.app.google/uCwfd2qfNtjJMSca9
+- Sign up: https://belan.tech/marketing/onboarding
 
 ## Canonical Brand Name
 

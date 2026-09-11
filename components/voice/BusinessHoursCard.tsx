@@ -186,7 +186,7 @@ export function BusinessHoursCard() {
   const specialClosures = hours?.specialClosures ?? [];
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col overflow-hidden flex-shrink-0">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col overflow-hidden flex-shrink-0">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-capy-border flex-shrink-0">
         <div>
@@ -200,7 +200,7 @@ export function BusinessHoursCard() {
             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
               isOpenToday
                 ? 'bg-capy-green-light text-capy-green-dark border-capy-green'
-                : 'bg-red-50 text-red-600 border-red-200'
+                : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-300 border-red-200 dark:border-red-500/30'
             }`}>
               <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: isOpenToday ? '#16a34a' : '#dc2626' }} />
               {isOpenToday ? 'Open now' : 'Closed now'}
@@ -237,8 +237,8 @@ export function BusinessHoursCard() {
           <div className="space-y-2">
             {[...Array(7)].map((_, i) => (
               <div key={i} className="animate-pulse flex justify-between">
-                <div className="h-4 w-24 bg-gray-100 rounded" />
-                <div className="h-4 w-36 bg-gray-100 rounded" />
+                <div className="h-4 w-24 bg-capy-surface-2 rounded" />
+                <div className="h-4 w-36 bg-capy-surface-2 rounded" />
               </div>
             ))}
           </div>
@@ -336,9 +336,9 @@ export function BusinessHoursCard() {
           {specialClosures.length > 0 && (
             <ul className="space-y-1.5 mb-3">
               {specialClosures.map(c => (
-                <li key={c.date} className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                <li key={c.date} className="flex items-center justify-between bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl px-3 py-2">
                   <div>
-                    <span className="text-sm font-medium text-red-700">{c.date}</span>
+                    <span className="text-sm font-medium text-red-700 dark:text-red-300">{c.date}</span>
                     {c.message && <span className="ml-2 text-xs text-red-500">{c.message}</span>}
                   </div>
                   <button

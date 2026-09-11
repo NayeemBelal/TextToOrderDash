@@ -28,9 +28,9 @@ function DeliveryBadge({ status }: { status: string | null }) {
     return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-capy-green-light text-capy-green-dark">Delivered</span>;
   }
   if (status === "delivery_failed" || status === "sending_failed") {
-    return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700">Failed</span>;
+    return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300">Failed</span>;
   }
-  return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-500">Sent</span>;
+  return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-capy-surface-2 text-capy-muted">Sent</span>;
 }
 
 function RowSkeletons({ count = 4 }: { count?: number }) {
@@ -55,7 +55,7 @@ function SentRow({ m }: { m: SentMessage }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-capy-text truncate">{m.name || m.phone || "Unknown"}</p>
-          <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-600">
+          <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-capy-surface-2 text-capy-muted">
             {KIND_LABEL[m.kind] ?? m.kind}
           </span>
         </div>
@@ -77,7 +77,7 @@ function QueuedRow({ m }: { m: QueuedMessage }) {
         <p className="text-sm font-semibold text-capy-text truncate">{m.name || m.phone || "Unknown"}</p>
         <p className="text-xs text-capy-muted truncate mt-0.5">{m.message}</p>
       </div>
-      <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-amber-100 text-amber-700 flex-shrink-0">
+      <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 flex-shrink-0">
         {m.status === "sending" ? "Sending" : "Queued"}
       </span>
     </div>
@@ -189,7 +189,7 @@ export function MessagesTab() {
               className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                 reconciliation.status === "ok"
                   ? "bg-capy-green-light text-capy-green-dark"
-                  : "bg-amber-100 text-amber-700"
+                  : "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300"
               }`}
               title="Cross-checked against Telnyx's own usage reports for the last 7 days. Telnyx reporting can lag several hours, so a mismatch here isn't necessarily a problem."
             >
@@ -199,7 +199,7 @@ export function MessagesTab() {
         </div>
 
         {/* Queued — about to send within the next minute */}
-        <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+        <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-capy-border flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
             <h3 className="text-sm font-semibold text-capy-text">Queued now</h3>
@@ -221,7 +221,7 @@ export function MessagesTab() {
         </div>
 
         {/* Scheduled — future reminders and campaign rounds */}
-        <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+        <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-capy-border flex items-center gap-2">
             <h3 className="text-sm font-semibold text-capy-text">Scheduled</h3>
             {scheduled && (
@@ -242,7 +242,7 @@ export function MessagesTab() {
         </div>
 
         {/* Sent — full history, paginated */}
-        <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+        <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-capy-border">
             <h3 className="text-sm font-semibold text-capy-text">Sent history</h3>
           </div>

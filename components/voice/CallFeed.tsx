@@ -61,7 +61,7 @@ export function CallFeed({ compact = false, filter = '' }: CallFeedProps) {
     return (
       <div className="flex flex-col gap-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-100 rounded-xl h-14 w-full" />
+          <div key={i} className="animate-pulse bg-capy-surface-2 rounded-xl h-14 w-full" />
         ))}
       </div>
     );

@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { fetchAllCampaigns, type CampaignListItem } from "@/lib/campaignsListApi";
+import { OPTIN_SMS_ENABLED } from "@/lib/features";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { GamifiedMarketingTab } from "@/components/voice/GamifiedMarketingTab";
 import { PromoBlastWizard } from "@/components/voice/campaign/PromoBlastWizard";
 import { PromoCampaignDetail } from "@/components/voice/campaign/PromoCampaignDetail";
 import { OptInPanel } from "@/components/voice/campaign/OptInPanel";
+import { ContactsPanel } from "@/components/voice/campaign/ContactsPanel";
+import { NewCampaignPicker, type NewCampaignChoice } from "@/components/voice/campaign/NewCampaignPicker";
 import { ResponsivePanel } from "@/components/ui/ResponsivePanel";
 
-// Terminal states — hidden from the main list, only shown in history view.
+// Terminal states — these go in the History section below the active list.
 const TERMINAL_STATUSES = new Set(["ended", "sent", "canceled", "failed"]);
 
 type View =
@@ -19,40 +22,106 @@ type View =
   | { mode: "new-promo" }
   | { mode: "promo-detail"; promoId: string };
 
-const TYPE_LABEL: Record<CampaignListItem["type"], string> = {
-  classic: "Classic Game",
-  everyone_wins: "Everyone Wins",
-  promo: "Promo",
-};
-
-const TYPE_BADGE_CLASS: Record<CampaignListItem["type"], string> = {
-  classic: "bg-slate-100 text-slate-600",
-  everyone_wins: "bg-capy-green-light text-capy-green-dark",
-  promo: "bg-amber-100 text-amber-700",
+const TYPE_META: Record<CampaignListItem["type"], { label: string; emoji: string; chip: string }> = {
+  classic: { label: "Game", emoji: "🎯", chip: "bg-capy-accent-light text-capy-accent" },
+  everyone_wins: { label: "Everyone wins", emoji: "🎉", chip: "bg-capy-green-light text-capy-green-dark" },
+  promo: { label: "Promo", emoji: "📣", chip: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
 };
 
 function StatusBadge({ status }: { status: string }) {
+  const live = status === "active";
   const cls =
-    status === "active" || status === "sent"
+    live || status === "sent"
       ? "bg-capy-green-light text-capy-green-dark"
       : status === "paused" || status === "pending"
-        ? "bg-amber-100 text-amber-700"
+        ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
         : status === "failed"
-          ? "bg-red-100 text-red-700"
-          : "bg-slate-100 text-slate-500";
-  return <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium capitalize ${cls}`}>{status}</span>;
+          ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300"
+          : "bg-capy-surface-2 text-capy-muted";
+  const label = status === "pending" ? "Scheduled" : status;
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-semibold capitalize ${cls}`}>
+      {live && <span className="w-1.5 h-1.5 rounded-full bg-capy-green animate-pulse" />}
+      {label}
+    </span>
+  );
 }
 
-/** Restaurant-wide list of all campaigns (classic games, everyone-wins games,
- * and promo blasts), each runnable concurrently. Click a row for its detail
- * view; the "+" button picks which of the three types to create next. */
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function CampaignRow({ c, onOpen }: { c: CampaignListItem; onOpen: () => void }) {
+  const meta = TYPE_META[c.type];
+  return (
+    <button
+      onClick={onOpen}
+      className="w-full text-left flex items-center gap-3.5 px-4 py-3.5 hover:bg-capy-surface transition-colors group"
+    >
+      <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${meta.chip}`}>{meta.emoji}</span>
+      <span className="flex-1 min-w-0">
+        <span className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold text-capy-text">{meta.label}</span>
+          <StatusBadge status={c.status} />
+        </span>
+        <span className="block text-xs text-capy-muted mt-0.5 truncate">{c.schedule_label}</span>
+      </span>
+      <span className="text-right shrink-0">
+        <span className="block text-sm font-bold text-capy-text tabular-nums">{c.recipient_count.toLocaleString()}</span>
+        <span className="block text-[11px] text-capy-muted">recipients · {formatDate(c.created_at)}</span>
+      </span>
+      <svg className="w-4 h-4 text-capy-muted group-hover:text-capy-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  );
+}
+
+function Section({
+  title,
+  count,
+  children,
+  collapsible,
+  defaultOpen = true,
+}: {
+  title: string;
+  count: number;
+  children: React.ReactNode;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="app-card overflow-hidden">
+      <button
+        onClick={() => collapsible && setOpen((o) => !o)}
+        className={`w-full flex items-center justify-between px-4 py-3 border-b border-capy-border ${collapsible ? "hover:bg-capy-surface" : "cursor-default"} transition-colors`}
+      >
+        <span className="flex items-center gap-2">
+          <span className="card-heading">{title}</span>
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-capy-surface-2 text-capy-muted">{count}</span>
+        </span>
+        {collapsible && (
+          <svg className={`w-4 h-4 text-capy-muted transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
+      </button>
+      {open && <div className="divide-y divide-capy-border/60">{children}</div>}
+    </div>
+  );
+}
+
+/** Restaurant-wide list of all campaigns — what's running now and what already
+ * ran, on one page — plus the entry points to create one and to manage the
+ * text list. */
 export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
   const [view, setView] = useState<View>({ mode: "list" });
   const [campaigns, setCampaigns] = useState<CampaignListItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [contactsOpen, setContactsOpen] = useState(false);
   const [optInPanelOpen, setOptInPanelOpen] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
 
   const loadCampaigns = () => {
     fetchAllCampaigns(restaurantId)
@@ -76,11 +145,9 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
       />
     );
   }
-
   if (view.mode === "new-promo") {
     return <PromoBlastWizard restaurantId={restaurantId} onExit={backToList} />;
   }
-
   if (view.mode === "promo-detail") {
     return <PromoCampaignDetail restaurantId={restaurantId} promoId={view.promoId} onExit={backToList} />;
   }
@@ -90,154 +157,94 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
     else setView({ mode: "game-detail", campaignId: c.id });
   };
 
-  const visibleCampaigns = (campaigns ?? []).filter((c) =>
-    showHistory ? TERMINAL_STATUSES.has(c.status) : !TERMINAL_STATUSES.has(c.status),
-  );
+  const pick = (choice: NewCampaignChoice) => {
+    setPickerOpen(false);
+    if (choice === "promo") setView({ mode: "new-promo" });
+    else setView({ mode: "new-game", everyoneWins: choice === "everyone_wins" });
+  };
+
+  const active = (campaigns ?? []).filter((c) => !TERMINAL_STATUSES.has(c.status));
+  const history = (campaigns ?? []).filter((c) => TERMINAL_STATUSES.has(c.status));
 
   return (
     <div className="p-4">
       <div className="max-w-4xl mx-auto space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-lg font-bold text-capy-text">Campaigns</h2>
-            <p className="text-xs text-capy-muted">Games and promotional blasts, all in one place</p>
+            <h2 className="text-xl font-bold text-capy-text" style={{ fontFamily: "Tektur, sans-serif" }}>
+              Campaigns
+            </h2>
+            <p className="text-xs text-capy-muted mt-0.5">Games and promotional texts — running now, and everything that already went out.</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setOptInPanelOpen(true)}
-              className="px-3 py-2 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
-            >
-              Opt-In Progress
+            {OPTIN_SMS_ENABLED && (
+              <button onClick={() => setOptInPanelOpen(true)} className="btn-secondary">
+                Opt-in progress
+              </button>
+            )}
+            <button onClick={() => setContactsOpen(true)} className="btn-secondary">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Contacts
             </button>
-            <button
-              onClick={() => setPickerOpen(true)}
-              className="w-9 h-9 rounded-full bg-capy-green text-white text-xl font-bold flex items-center justify-center hover:bg-capy-green-dark transition-colors shrink-0"
-              aria-label="New campaign"
-            >
-              +
+            <button onClick={() => setPickerOpen(true)} className="btn-primary">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              New campaign
             </button>
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
 
-        <button
-          onClick={() => setShowHistory((s) => !s)}
-          className="text-xs font-semibold text-capy-muted hover:text-capy-text transition-colors"
-        >
-          {showHistory ? "← Back to active campaigns" : "View history →"}
-        </button>
-
-        <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
-          {campaigns === null ? (
-            <div className="p-4 space-y-3">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
-          ) : visibleCampaigns.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-sm text-capy-muted mb-3">
-                {showHistory ? "No past campaigns yet." : "No active campaigns yet."}
-              </p>
-              {!showHistory && (
-                <button
-                  onClick={() => setPickerOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-capy-green text-white text-sm font-semibold hover:bg-capy-green-dark transition-colors"
-                >
-                  Create your first campaign
-                </button>
+        {campaigns === null ? (
+          <div className="app-card p-4 space-y-3">
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
+          </div>
+        ) : (
+          <>
+            <Section title="Running now" count={active.length}>
+              {active.length === 0 ? (
+                <div className="px-6 py-10 text-center">
+                  <div className="text-3xl mb-2">🎮</div>
+                  <p className="text-sm font-semibold text-capy-text">Nothing running yet</p>
+                  <p className="text-xs text-capy-muted mt-1 mb-4 max-w-sm mx-auto">
+                    Pick a game, set a prize, test it on your phone, and launch. Belan takes it from there.
+                  </p>
+                  <button onClick={() => setPickerOpen(true)} className="btn-primary">Create your first campaign</button>
+                </div>
+              ) : (
+                active.map((c) => <CampaignRow key={`${c.type}-${c.id}`} c={c} onOpen={() => openCampaign(c)} />)
               )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-capy-muted uppercase tracking-wide border-b border-capy-border">
-                    <th className="px-4 py-2.5 font-medium">Type</th>
-                    <th className="px-4 py-2.5 font-medium">Status</th>
-                    <th className="px-4 py-2.5 font-medium">Schedule</th>
-                    <th className="px-4 py-2.5 font-medium text-right">Recipients</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleCampaigns.map((c) => (
-                    <tr
-                      key={`${c.type}-${c.id}`}
-                      onClick={() => openCampaign(c)}
-                      className="border-t border-capy-border/60 first:border-t-0 cursor-pointer hover:bg-slate-50 transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${TYPE_BADGE_CLASS[c.type]}`}>
-                          {TYPE_LABEL[c.type]}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <StatusBadge status={c.status} />
-                      </td>
-                      <td className="px-4 py-3 text-capy-text">{c.schedule_label}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-capy-text">{c.recipient_count}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+            </Section>
+
+            <Section title="History" count={history.length} collapsible defaultOpen={history.length > 0}>
+              {history.length === 0 ? (
+                <p className="text-xs text-capy-muted text-center py-6">Finished and sent campaigns will show up here.</p>
+              ) : (
+                history.map((c) => <CampaignRow key={`${c.type}-${c.id}`} c={c} onOpen={() => openCampaign(c)} />)
+              )}
+            </Section>
+          </>
+        )}
       </div>
 
-      {pickerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setPickerOpen(false)} aria-hidden />
-          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-xl p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="card-heading">New campaign</p>
-              <button onClick={() => setPickerOpen(false)} className="text-capy-muted hover:text-capy-text" aria-label="Close">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+      <NewCampaignPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={pick} />
 
-            <button
-              onClick={() => {
-                setPickerOpen(false);
-                setView({ mode: "new-game", everyoneWins: false });
-              }}
-              className="w-full text-left px-4 py-3 rounded-xl border border-capy-border hover:border-capy-green hover:bg-slate-50 transition-colors"
-            >
-              <p className="text-sm font-semibold text-capy-text">Classic Game</p>
-              <p className="text-xs text-capy-muted mt-0.5">Trivia, pick-a-number, etc. — one winner per round</p>
-            </button>
-
-            <button
-              onClick={() => {
-                setPickerOpen(false);
-                setView({ mode: "new-game", everyoneWins: true });
-              }}
-              className="w-full text-left px-4 py-3 rounded-xl border border-capy-border hover:border-capy-green hover:bg-slate-50 transition-colors"
-            >
-              <p className="text-sm font-semibold text-capy-text">Everyone Wins Game</p>
-              <p className="text-xs text-capy-muted mt-0.5">Same games, but every reply wins a prize</p>
-            </button>
-
-            <button
-              onClick={() => {
-                setPickerOpen(false);
-                setView({ mode: "new-promo" });
-              }}
-              className="w-full text-left px-4 py-3 rounded-xl border border-capy-border hover:border-capy-green hover:bg-slate-50 transition-colors"
-            >
-              <p className="text-sm font-semibold text-capy-text">Promotional Message</p>
-              <p className="text-xs text-capy-muted mt-0.5">Write your own one-off message, optional coupon</p>
-            </button>
-          </div>
-        </div>
-      )}
-
-      <ResponsivePanel open={optInPanelOpen} onClose={() => setOptInPanelOpen(false)} title="Opt-In Progress">
-        <OptInPanel restaurantId={restaurantId} />
+      <ResponsivePanel open={contactsOpen} onClose={() => setContactsOpen(false)} title="Contacts">
+        <ContactsPanel restaurantId={restaurantId} />
       </ResponsivePanel>
+
+      {OPTIN_SMS_ENABLED && (
+        <ResponsivePanel open={optInPanelOpen} onClose={() => setOptInPanelOpen(false)} title="Opt-In Progress">
+          <OptInPanel restaurantId={restaurantId} />
+        </ResponsivePanel>
+      )}
     </div>
   );
 }

@@ -9,9 +9,9 @@ function DeliveryBadge({ status }: { status: string | null }) {
     return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-capy-green-light text-capy-green-dark">Delivered</span>;
   }
   if (status === "delivery_failed" || status === "sending_failed") {
-    return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700">Failed</span>;
+    return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300">Failed</span>;
   }
-  return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-500">Sent</span>;
+  return <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-capy-surface-2 text-capy-muted">Sent</span>;
 }
 
 export function PromoCampaignDetail({
@@ -42,7 +42,7 @@ export function PromoCampaignDetail({
           ← All Campaigns
         </button>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
 
         {!error && !detail && (
           <div className="space-y-3">
@@ -59,25 +59,25 @@ export function PromoCampaignDetail({
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4">
                 <p className="section-label">Status</p>
                 <p className="text-lg font-bold text-capy-text mt-1 capitalize">{detail.status}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4">
                 <p className="section-label">Delivered</p>
                 <p className="text-lg font-bold text-capy-text mt-1">{detail.delivered}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4">
                 <p className="section-label">Failed</p>
                 <p className="text-lg font-bold text-capy-text mt-1">{detail.failed}</p>
               </div>
-              <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+              <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4">
                 <p className="section-label">Unconfirmed</p>
                 <p className="text-lg font-bold text-capy-text mt-1">{detail.unconfirmed}</p>
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+            <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm overflow-hidden">
               <div className="px-4 py-3 border-b border-capy-border">
                 <h3 className="text-sm font-semibold text-capy-text">Recipients</h3>
               </div>

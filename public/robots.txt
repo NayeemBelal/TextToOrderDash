@@ -3,7 +3,9 @@ Allow: /
 Disallow: /home
 Disallow: /items
 Disallow: /configure
-Disallow: /marketing
+Disallow: /marketing/onboarding
+Disallow: /customers
+Disallow: /admin
 Disallow: /onboarding
 Disallow: /login
 Disallow: /register

@@ -23,7 +23,7 @@ export function ResponsivePanel({
     <div className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} aria-hidden />
       <div
-        className="relative w-full max-h-[50vh] sm:max-h-none sm:w-1/2 sm:h-full bg-white shadow-xl flex flex-col rounded-t-2xl sm:rounded-none animate-[slideup_0.18s_ease-out] sm:animate-[slidein_0.18s_ease-out]"
+        className="relative w-full max-h-[50vh] sm:max-h-none sm:w-1/2 sm:h-full bg-capy-card shadow-xl flex flex-col rounded-t-2xl sm:rounded-none animate-[slideup_0.18s_ease-out] sm:animate-[slidein_0.18s_ease-out]"
       >
         <style>{`
           @keyframes slidein { from { transform: translateX(16px); opacity: .6 } to { transform: none; opacity: 1 } }

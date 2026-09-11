@@ -46,7 +46,7 @@ export function SalesAIChart({ chart }: Props) {
   const yFormatter = formatNumber;
 
   return (
-    <div className="w-full bg-white border border-capy-border rounded-2xl px-3 pt-3 pb-1 shadow-sm">
+    <div className="w-full bg-capy-card border border-capy-border rounded-2xl px-3 pt-3 pb-1 shadow-sm">
       {title && (
         <div className="text-[11px] uppercase tracking-wide text-capy-muted font-medium px-1 mb-1">
           {title}
