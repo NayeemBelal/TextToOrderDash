@@ -67,7 +67,7 @@ export function ConditionalWrapper({ children }: { children: React.ReactNode }) 
   return (
     <AdminViewProvider>
       <MarketingViewProvider>
-        <div className="flex flex-col h-screen bg-capy-bg overflow-hidden font-tektur">
+        <div className="app-shell flex flex-col h-screen bg-capy-bg text-capy-text overflow-hidden font-tektur">
           <ConditionalNav />
           <main className="flex-1 overflow-hidden">{children}</main>
         </div>
