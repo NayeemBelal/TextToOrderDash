@@ -68,3 +68,56 @@ export function updateReferralSettings(restaurantId: string, body: ReferralSetti
     body: JSON.stringify(body),
   });
 }
+
+// ── POS connection ───────────────────────────────────────────────────────────
+
+export type PosProvider = "clover" | "toast";
+
+export interface PosConnectionStatus {
+  provider: PosProvider;
+  merchant_id: string | null;
+  connected: boolean;
+  has_credentials: boolean;
+  toast_supported: boolean;
+  merchant_name?: string | null;
+}
+
+export interface PosConnectRequest {
+  provider: PosProvider;
+  merchant_id: string;
+  api_key?: string;        // Clover API token
+  client_id?: string;      // Toast
+  client_secret?: string;  // Toast
+  api_host?: string;       // Toast (optional)
+}
+
+export interface PosConnectResult {
+  connected: boolean;
+  provider: PosProvider;
+  merchant_id: string;
+  merchant_name: string | null;
+  checks: { orders?: boolean; customers?: boolean; inventory?: boolean };
+}
+
+export function getPosConnection(restaurantId: string): Promise<PosConnectionStatus> {
+  return marketingApiFetch(`/api/marketing/pos-connection?restaurant_id=${restaurantId}`);
+}
+
+export async function connectPos(restaurantId: string, body: PosConnectRequest): Promise<PosConnectResult> {
+  // Read the backend's own error message — it says exactly what the POS rejected.
+  const { supabase } = await import("@/lib/supabase");
+  const { MARKETING_API_BASE_URL } = await import("@/lib/config");
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(`${MARKETING_API_BASE_URL}/api/marketing/pos-connection?restaurant_id=${restaurantId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof json?.detail === "string" ? json.detail : `Couldn't connect (${res.status}).`);
+  return json as PosConnectResult;
+}
+
+export function disconnectPos(restaurantId: string): Promise<{ success: boolean }> {
+  return marketingApiFetch(`/api/marketing/pos-connection?restaurant_id=${restaurantId}`, { method: "DELETE" });
+}
