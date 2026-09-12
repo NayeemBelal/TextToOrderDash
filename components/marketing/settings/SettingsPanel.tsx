@@ -10,17 +10,23 @@ import {
   updateBranding,
   updateJoinSettings,
   updateReferralSettings,
+  getPosConnection,
+  connectPos,
+  disconnectPos,
+  type PosConnectionStatus,
+  type PosProvider,
   type Branding,
   type JoinOptinSettings,
   type ReferralSettings,
 } from "@/lib/settingsApi";
 
-type Section = "branding" | "signup" | "referrals";
+type Section = "branding" | "signup" | "referrals" | "pos";
 
 const SECTIONS: { key: Section; label: string; blurb: string }[] = [
   { key: "branding", label: "Branding", blurb: "How your coupon links and pages look to customers" },
   { key: "signup", label: "Sign-up link", blurb: "The QR / web form customers use to join your list" },
   { key: "referrals", label: "Referrals", blurb: "Let customers earn a bump for bringing a friend" },
+  { key: "pos", label: "POS", blurb: "Connect your register so coupons become real discounts and orders flow in" },
 ];
 
 const inputClass =
@@ -322,6 +328,169 @@ function ReferralsSection({ restaurantId }: { restaurantId: string }) {
   );
 }
 
+/* ── POS connection ───────────────────────────────────────────────────── */
+function PosSection({ restaurantId }: { restaurantId: string }) {
+  const [status, setStatus] = useState<PosConnectionStatus | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<PosProvider>("clover");
+  const [merchantId, setMerchantId] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [apiHost, setApiHost] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; text: string; checks?: Record<string, boolean | undefined> } | null>(null);
+
+  const load = () =>
+    getPosConnection(restaurantId)
+      .then((st) => {
+        setStatus(st);
+        setProvider(st.provider);
+        setMerchantId(st.merchant_id ?? "");
+      })
+      .catch(() => setLoadError("Couldn't load the POS connection."));
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId]);
+
+  const canSubmit =
+    merchantId.trim().length > 0 &&
+    (provider === "clover" ? apiKey.trim().length > 0 : clientId.trim().length > 0 && clientSecret.trim().length > 0);
+
+  const connect = async () => {
+    setBusy(true);
+    setResult(null);
+    try {
+      const r = await connectPos(restaurantId, {
+        provider,
+        merchant_id: merchantId.trim(),
+        api_key: provider === "clover" ? apiKey.trim() : undefined,
+        client_id: provider === "toast" ? clientId.trim() : undefined,
+        client_secret: provider === "toast" ? clientSecret.trim() : undefined,
+        api_host: provider === "toast" && apiHost.trim() ? apiHost.trim() : undefined,
+      });
+      setResult({ ok: true, text: `Connected to ${r.merchant_name || "your POS"}.`, checks: r.checks });
+      setApiKey(""); setClientSecret("");
+      load();
+    } catch (e) {
+      setResult({ ok: false, text: e instanceof Error ? e.message : "Couldn't connect." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disconnect = async () => {
+    setBusy(true);
+    try {
+      await disconnectPos(restaurantId);
+      setResult({ ok: true, text: "Disconnected. Coupons will stop creating POS discounts until you reconnect." });
+      load();
+    } catch {
+      setResult({ ok: false, text: "Couldn't disconnect." });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!status && !loadError) return <div className="space-y-3"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>;
+  if (loadError) return <p className="text-sm text-red-600 dark:text-red-300">{loadError}</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className={`app-card px-4 py-3 flex items-center gap-3 ${status?.connected ? "border-capy-green/50" : ""}`}>
+        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${status?.connected ? "bg-capy-green" : "bg-capy-muted/40"}`} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-capy-text">
+            {status?.connected ? `Connected · ${status.provider === "toast" ? "Toast" : "Clover"}` : "Not connected"}
+          </p>
+          <p className="text-[11px] text-capy-muted">
+            {status?.connected
+              ? `Merchant ${status.merchant_id}. Coupons create real discounts and orders flow into Revenue and the customer timeline.`
+              : "Without a POS, coupon pages still work but can't create a discount at the register, and Revenue stays empty."}
+          </p>
+        </div>
+        {status?.connected && (
+          <button onClick={disconnect} disabled={busy} className="btn-secondary !py-1.5 text-xs shrink-0">Disconnect</button>
+        )}
+      </div>
+
+      <Field label="Point of sale">
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { key: "clover", label: "Clover", enabled: true },
+            { key: "toast", label: "Toast", enabled: !!status?.toast_supported },
+            { key: "square", label: "Square", enabled: false },
+          ] as { key: string; label: string; enabled: boolean }[]).map((o) => (
+            <button
+              key={o.key}
+              disabled={!o.enabled}
+              onClick={() => o.enabled && setProvider(o.key as PosProvider)}
+              className={`px-3 py-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                provider === o.key
+                  ? "border-capy-green bg-capy-green-light text-capy-green-dark"
+                  : "border-capy-border text-capy-muted hover:border-capy-green disabled:opacity-40 disabled:hover:border-capy-border"
+              }`}
+            >
+              {o.label}
+              {!o.enabled && <span className="block text-[10px] font-normal opacity-70">coming soon</span>}
+            </button>
+          ))}
+        </div>
+      </Field>
+
+      {provider === "clover" ? (
+        <>
+          <Field label="Merchant ID" hint="Clover dashboard → Account & Setup → the 13-character id, also in your Clover URL.">
+            <input value={merchantId} onChange={(e) => setMerchantId(e.target.value)} placeholder="e.g. SBSTMYS9MJG36" className={inputClass} autoComplete="off" />
+          </Field>
+          <Field
+            label="API token"
+            hint="Clover dashboard → Account & Setup → API Tokens → Create new token. Tick Customers, Orders, Inventory (read + write) and Merchant (read). Paste the token once; we store it securely and never show it again."
+          >
+            <input type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} placeholder={status?.has_credentials ? "•••••••• (saved — paste a new one to replace)" : "Paste your Clover API token"} className={inputClass} autoComplete="new-password" />
+          </Field>
+        </>
+      ) : (
+        <>
+          <Field label="Restaurant GUID" hint="From Toast Web → Integrations → the restaurant's external id.">
+            <input value={merchantId} onChange={(e) => setMerchantId(e.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" className={inputClass} autoComplete="off" />
+          </Field>
+          <Field label="Client ID" hint="From your Toast standard API access credentials.">
+            <input value={clientId} onChange={(e) => setClientId(e.target.value)} className={inputClass} autoComplete="off" />
+          </Field>
+          <Field label="Client secret">
+            <input type="password" value={clientSecret} onChange={(e) => setClientSecret(e.target.value)} className={inputClass} autoComplete="new-password" />
+          </Field>
+          <Field label="API access URL" hint="Optional — only if Toast gave you one other than the default.">
+            <input value={apiHost} onChange={(e) => setApiHost(e.target.value)} placeholder="https://ws-api.toasttab.com" className={inputClass} autoComplete="off" />
+          </Field>
+        </>
+      )}
+
+      {result && (
+        <div className={`text-xs px-3 py-2.5 rounded-xl space-y-1 ${result.ok ? "bg-capy-green-light text-capy-green-dark" : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300"}`}>
+          <p className="font-semibold">{result.text}</p>
+          {result.checks && (
+            <p>
+              {(["orders", "customers", "inventory"] as const).map((k) => (
+                <span key={k} className="mr-3">{result.checks?.[k] ? "✓" : "✗"} {k === "inventory" ? "discounts" : k}</span>
+              ))}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-end">
+        <button onClick={connect} disabled={!canSubmit || busy} className="btn-primary">
+          {busy ? "Checking with your POS…" : status?.connected ? "Update connection" : "Connect"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Marketing settings drawer (gear icon in the header): branding for the
  * customer-facing coupon / sign-up / referral pages, the QR sign-up link, and
@@ -349,6 +518,7 @@ export function SettingsPanel({ open, onClose, restaurantId }: { open: boolean; 
         {section === "branding" && <BrandingSection restaurantId={restaurantId} />}
         {section === "signup" && <SignupSection restaurantId={restaurantId} />}
         {section === "referrals" && <ReferralsSection restaurantId={restaurantId} />}
+        {section === "pos" && <PosSection restaurantId={restaurantId} />}
       </div>
     </ResponsivePanel>
   );
