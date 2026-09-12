@@ -103,7 +103,6 @@ function CustomersPageInner() {
       try {
         const res = await searchCustomers(restaurantId, q);
         setResults(res.customers);
-        setShowResults(true);
       } catch {
         setResults([]);
       } finally {

@@ -45,7 +45,12 @@ html {
   color-scheme: light;
 }
 
-.dark {
+/* Dark palette — scoped to the logged-in dashboard (.app-shell, set by
+   components/ConditionalWrapper.tsx). `.dark` lives on <html> so Tailwind's
+   dark: variants work, but the token overrides only apply inside the shell:
+   public pages (landing, /oldprods, login, coupon/join/referral) keep their
+   explicit light colours whatever the OS preference is. */
+.dark .app-shell {
   --background: #0a0d14;
   --foreground: #ededed;
 
@@ -61,6 +66,7 @@ html {
   --capy-green-light: 20 55 38;
   --capy-accent: 167 139 250;
   --capy-accent-light: 46 34 84;
+  color: rgb(var(--capy-text));
   color-scheme: dark;
 }
 

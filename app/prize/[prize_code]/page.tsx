@@ -242,7 +242,7 @@ export default function PrizePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
             <div className="relative h-full flex flex-col items-center justify-end pb-5 px-6 text-center text-white">
               <div className="mb-2.5 w-16 h-16 rounded-full bg-white shadow-lg ring-4 ring-white/40 flex items-center justify-center overflow-hidden">
-                {logo && !done ? (
+                {logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
                 ) : (
