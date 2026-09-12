@@ -8,8 +8,8 @@ import { MARKETING_API_BASE_URL } from "@/lib/api";
 type GameType = "pick-number" | "trivia" | "guess-letter" | "roll-dice";
 
 const GAMES: { type: GameType; label: string; emoji: string; hint: string }[] = [
-  { type: "pick-number", label: "Pick a Number", emoji: "🎲", hint: "1–100" },
-  { type: "roll-dice", label: "Roll the Dice", emoji: "🎰", hint: "1–6" },
+  { type: "pick-number", label: "Pick a Number", emoji: "🔢", hint: "1–100" },
+  { type: "roll-dice", label: "Roll the Dice", emoji: "🎲", hint: "1–6" },
   { type: "trivia", label: "Food Trivia", emoji: "🍕", hint: "A / B / C" },
   { type: "guess-letter", label: "Guess the Letter", emoji: "🔤", hint: "A–Z" },
 ];
