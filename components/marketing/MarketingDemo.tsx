@@ -364,18 +364,35 @@ function PhoneMockup({
           </Bubble>
         )}
 
-        {/* incoming: the coupon */}
+        {/* incoming: the coupon — same wording as the real reply, plus the
+            branded link preview the phone renders under it */}
         {phase === "answered" && (
           <Bubble side="in" delay={0.35}>
-            {won ? "🏆 You won! " : "So close! Here's one on us — "}
-            tap to claim {prizeLabel} (valid 7 days):{" "}
+            {won
+              ? `🏆 You won! Your answer matched ours. Tap to claim ${prizeLabel}: `
+              : "So close! You didn't match this time, but here's a consolation discount on us — tap to claim: "}
             {prizeHref ? (
               <a href={prizeHref} target="_blank" rel="noopener noreferrer" className="underline font-black break-all">
-                belan.tech/prize/{code}
+                belan.tech/marketing/demo/prize/{code}
               </a>
             ) : (
-              <span className="underline break-all">belan.tech/prize/{code}</span>
+              <span className="underline break-all">belan.tech/marketing/demo/prize/{code}</span>
             )}
+            <a
+              href={prizeHref || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block border-2 border-black overflow-hidden rounded-lg"
+            >
+              <div className="h-14 flex items-center gap-2 px-2" style={{ background: "#e11d48" }}>
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-base">🍔</div>
+                <div className="leading-tight">
+                  <p className="text-[11px] font-black text-white">Stack &amp; Smash Burgers</p>
+                  <p className="text-[10px] font-bold text-white/90">{won ? "You won! 🎉" : "A treat for you 🎁"} · {prizeLabel}</p>
+                </div>
+              </div>
+              <p className="px-2 py-1 text-[10px] font-bold text-black/50 bg-white">belan.tech</p>
+            </a>
           </Bubble>
         )}
       </div>
