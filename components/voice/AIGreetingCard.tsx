@@ -77,7 +77,7 @@ export function AIGreetingCard({ config, onSave }: AIGreetingCardProps) {
   const currentVoice = VOICES.find((v) => v.id === selectedVoice) ?? VOICES[0];
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col h-full overflow-hidden">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-capy-border flex-shrink-0">
         <h3 className="card-heading text-base">AI Phone Greeting</h3>
         {!editing ? (
@@ -107,8 +107,8 @@ export function AIGreetingCard({ config, onSave }: AIGreetingCardProps) {
       <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 flex flex-col gap-3">
         {config === null ? (
           <>
-            <div className="animate-pulse w-full h-20 bg-gray-100 rounded-xl" />
-            <div className="animate-pulse w-32 h-4 bg-gray-100 rounded mt-2" />
+            <div className="animate-pulse w-full h-20 bg-capy-surface-2 rounded-xl" />
+            <div className="animate-pulse w-32 h-4 bg-capy-surface-2 rounded mt-2" />
           </>
         ) : (
           <>
@@ -142,7 +142,7 @@ export function AIGreetingCard({ config, onSave }: AIGreetingCardProps) {
               <button
                 ref={triggerRef}
                 onClick={handleVoiceOpen}
-                className="w-full flex items-center justify-between px-4 py-2.5 border border-capy-border rounded-lg bg-white hover:border-capy-text transition-colors text-sm"
+                className="w-full flex items-center justify-between px-4 py-2.5 border border-capy-border rounded-lg bg-capy-card hover:border-capy-text transition-colors text-sm"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-capy-text font-semibold">{currentVoice.name}</span>
@@ -158,7 +158,7 @@ export function AIGreetingCard({ config, onSave }: AIGreetingCardProps) {
       </div>
 
       {voiceOpen && typeof window !== 'undefined' && createPortal(
-        <div ref={dropdownRef} style={dropdownStyle} className="bg-white border border-capy-border shadow-lg rounded-lg max-h-60 overflow-y-auto">
+        <div ref={dropdownRef} style={dropdownStyle} className="bg-capy-card border border-capy-border shadow-lg rounded-lg max-h-60 overflow-y-auto">
           {VOICES.map((voice) => {
             const isSelected = selectedVoice === voice.id;
             const isPlaying = playing === voice.id;
@@ -182,7 +182,7 @@ export function AIGreetingCard({ config, onSave }: AIGreetingCardProps) {
                     className={`w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${isPlaying ? 'bg-capy-green border-capy-green text-white' : 'border-capy-border text-capy-muted hover:border-capy-text hover:text-capy-text'}`}
                   >
                     {isPlaying ? (
-                      <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                      <span className="w-2 h-2 rounded-full bg-capy-card animate-pulse" />
                     ) : (
                       <svg className="w-3 h-3 ml-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" clipRule="evenodd" />

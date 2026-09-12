@@ -20,7 +20,7 @@ export function CouponTypeFilter({ selected, onChange }: Props) {
   };
 
   return (
-    <div className="inline-flex items-center gap-1 rounded-xl border border-capy-border bg-white p-1 shadow-sm">
+    <div className="inline-flex items-center gap-1 rounded-xl border border-capy-border bg-capy-card p-1 shadow-sm">
       {COUPON_TYPES.map((t) => {
         const active = selected.includes(t);
         return (

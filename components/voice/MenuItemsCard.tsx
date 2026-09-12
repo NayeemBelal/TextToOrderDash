@@ -20,7 +20,7 @@ function Toggle({ on, onToggle, disabled }: { on: boolean; onToggle: () => void;
       className={`relative block h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 ${on ? 'bg-capy-green' : 'bg-gray-200'}`}
       aria-label={on ? 'Disable item' : 'Enable item'}
     >
-      <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
+      <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-capy-card shadow-sm transition-transform duration-200 ${on ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
   );
 }
@@ -79,14 +79,14 @@ export function MenuItemsCard() {
   const availableCount = items.filter((i) => i.available).length;
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col overflow-hidden h-full">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col overflow-hidden h-full">
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-capy-border flex-shrink-0">
         <div>
           <h2 className="card-heading text-base">Menu Items</h2>
           <p className="text-xs text-capy-muted mt-0.5">Control which items customers can order via SMS</p>
         </div>
         {!loading && (
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${availableCount > 0 ? 'bg-capy-green-light text-capy-green-dark' : 'bg-gray-100 text-capy-muted'}`}>
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${availableCount > 0 ? 'bg-capy-green-light text-capy-green-dark' : 'bg-capy-surface-2 text-capy-muted'}`}>
             {availableCount} / {items.length} available
           </span>
         )}
@@ -113,10 +113,10 @@ export function MenuItemsCard() {
             {[...Array(5)].map((_, i) => (
               <div key={i} className="flex items-center justify-between">
                 <div className="space-y-1.5">
-                  <div className="animate-pulse h-3.5 w-36 bg-gray-100 rounded" />
-                  <div className="animate-pulse h-2.5 w-20 bg-gray-100 rounded" />
+                  <div className="animate-pulse h-3.5 w-36 bg-capy-surface-2 rounded" />
+                  <div className="animate-pulse h-2.5 w-20 bg-capy-surface-2 rounded" />
                 </div>
-                <div className="animate-pulse h-6 w-11 bg-gray-100 rounded-full" />
+                <div className="animate-pulse h-6 w-11 bg-capy-surface-2 rounded-full" />
               </div>
             ))}
           </div>
@@ -127,7 +127,7 @@ export function MenuItemsCard() {
         ) : (
           Array.from(grouped.entries()).map(([category, catItems]) => (
             <div key={category}>
-              <div className="px-5 py-2 bg-gray-50 border-b border-capy-border">
+              <div className="px-5 py-2 bg-capy-surface border-b border-capy-border">
                 <span className="text-xs font-semibold text-capy-muted uppercase tracking-wide">{category}</span>
               </div>
               {catItems.map((item) => (

@@ -61,7 +61,7 @@ export default function ItemDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
+      <div className="min-h-screen bg-capy-surface dark:bg-black transition-colors">
         <Sidebar />
         <div className="lg:pl-64">
           <Navbar onSignOut={handleSignOut} />
@@ -69,7 +69,7 @@ export default function ItemDetailPage() {
             {/* Back Button skeleton */}
             <div className="mb-6 h-6 w-32 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
             {/* Header skeleton */}
-            <div className="bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 p-6 mb-6">
+            <div className="bg-capy-card dark:bg-black rounded-lg border border-capy-border dark:border-gray-800 p-6 mb-6">
               <div className="space-y-3">
                 <div className="h-8 w-64 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
                 <div className="h-4 w-96 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
@@ -84,18 +84,18 @@ export default function ItemDetailPage() {
 
   if (notFound || !item) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
+      <div className="min-h-screen bg-capy-surface dark:bg-black transition-colors">
         <Sidebar />
         <div className="lg:pl-64">
           <Navbar onSignOut={handleSignOut} />
           <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl font-bold text-capy-text dark:text-white">
                 Item not found
               </h1>
               <button
                 onClick={() => router.push("/items")}
-                className="mt-4 text-blue-600 dark:text-blue-400 hover:underline"
+                className="mt-4 text-blue-600 dark:text-blue-300 dark:text-blue-400 hover:underline"
               >
                 Back to Items
               </button>
@@ -107,7 +107,7 @@ export default function ItemDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black transition-colors">
+    <div className="min-h-screen bg-capy-surface dark:bg-black transition-colors">
       <Sidebar />
       <div className="lg:pl-64">
         <Navbar onSignOut={handleSignOut} />
@@ -116,7 +116,7 @@ export default function ItemDetailPage() {
           {/* Back Button */}
           <button
             onClick={() => router.push("/items")}
-            className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="mb-6 flex items-center gap-2 text-capy-muted dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             <svg
               className="w-5 h-5"
@@ -135,32 +135,32 @@ export default function ItemDetailPage() {
           </button>
 
           {/* Item Header */}
-          <div className="bg-white dark:bg-black rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm p-6 mb-6 transition-colors">
+          <div className="bg-capy-card dark:bg-black rounded-lg border border-capy-border dark:border-gray-800 shadow-sm p-6 mb-6 transition-colors">
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-3xl font-bold text-capy-text dark:text-white">
                     {item.name}
                   </h1>
                   {item.category && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-capy-surface-2 dark:bg-gray-800 text-capy-muted dark:text-gray-400">
                       {item.category}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-6 mt-3">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <span className="text-2xl font-bold text-capy-text dark:text-white">
                     {formatCurrency(item.price)}
                   </span>
-                  <div className="flex gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex gap-4 text-sm text-capy-muted dark:text-gray-400">
                     <span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-capy-text dark:text-white">
                         {item.orders.toLocaleString()}
                       </span>{" "}
                       orders
                     </span>
                     <span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
+                      <span className="font-semibold text-capy-text dark:text-white">
                         {formatCurrency(item.revenue)}
                       </span>{" "}
                       revenue (30d)
@@ -171,7 +171,7 @@ export default function ItemDetailPage() {
 
               {/* Text-to-Order Toggle */}
               <div className="flex flex-col items-end gap-2">
-                <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <div className="text-sm font-medium text-capy-muted dark:text-gray-400">
                   Text-to-Order
                 </div>
                 <button
@@ -183,7 +183,7 @@ export default function ItemDetailPage() {
                   }`}
                 >
                   <span
-                    className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${item.available ? "translate-x-7" : "translate-x-1"}`}
+                    className={`inline-block h-6 w-6 transform rounded-full bg-capy-card transition-transform ${item.available ? "translate-x-7" : "translate-x-1"}`}
                   />
                 </button>
               </div>

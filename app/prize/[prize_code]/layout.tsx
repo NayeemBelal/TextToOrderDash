@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { MARKETING_API_BASE_URL } from "@/lib/api";
+import { MARKETING_API_BASE_URL } from "@/lib/config";
 
 // The prize page itself (page.tsx) is a client component, so it can't export
 // metadata. This server-component layout overrides the site-wide OG tags from
 // the root layout so the coupon link unfurls as the reward — not the marketing
 // homepage screenshot — when customers share/receive it.
 //
-// The OG image is per-restaurant: each restaurant can set `og_image_url` in
-// marketing_settings (falls back to the generic /prize-og.png when unset), so
-// a text with a Sayfani Sachse link unfurls with a Sayfani photo, an Epic
-// Pizza link with an Epic Pizza photo, etc.
+// The OG image is per-restaurant. When `og_image_url` is set in
+// marketing_settings that static image is used verbatim; otherwise the
+// image is GENERATED per coupon by ./opengraph-image.tsx from the
+// restaurant's logo, brand colour and hero photo — so every restaurant's
+// coupon links unfurl in its own look without uploading anything.
 
 const DEFAULT_TITLE = "Your Prize!";
 const DEFAULT_DESCRIPTION = "You've got a reward waiting — tap to redeem it in store.";
-const DEFAULT_OG_IMAGE = "/prize-og.png";
 
 interface PrizeBranding {
   restaurant_name?: string;
@@ -44,7 +44,9 @@ export async function generateMetadata({
   const description = data?.restaurant_name
     ? `${data.restaurant_name} has a reward waiting for you — tap to redeem it in store.`
     : DEFAULT_DESCRIPTION;
-  const image = data?.og_image_url || DEFAULT_OG_IMAGE;
+  // Only pin an explicit image when the restaurant set one; leaving `images`
+  // out lets Next attach the generated ./opengraph-image.tsx route instead.
+  const custom = data?.og_image_url || null;
 
   return {
     title,
@@ -52,19 +54,14 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      images: [
-        // No width/height hint — per-restaurant og_image_url photos vary in
-        // aspect ratio (square, portrait, etc.), so a fixed dimension here
-        // would misrepresent some of them to crawlers.
-        { url: image, alt: title },
-      ],
       type: "website",
+      ...(custom ? { images: [{ url: custom, alt: title }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [image],
+      ...(custom ? { images: [custom] } : {}),
     },
   };
 }

@@ -124,7 +124,7 @@ export function GameTemplatePicker({
       )}
 
       {error && !loading && (
-        <p className="text-xs text-red-600 py-3">{error}</p>
+        <p className="text-xs text-red-600 dark:text-red-300 py-3">{error}</p>
       )}
 
       {!loading && !error && data && (

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { MARKETING_API_BASE_URL } from "@/lib/api";
+import { MARKETING_API_BASE_URL } from "@/lib/config";
 
 // The referral page itself (page.tsx) is a client component, so it can't
 // export metadata. This server-component layout overrides the site-wide OG

@@ -49,7 +49,7 @@ function MenuItemDropdown({ value, onChange, menuItems, placeholder = "Select an
       <div
         ref={triggerRef}
         onClick={openDropdown}
-        className={`mt-1 w-full flex items-center justify-between px-4 py-2.5 border border-capy-border rounded-lg bg-white hover:border-capy-text transition-colors text-sm ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`mt-1 w-full flex items-center justify-between px-4 py-2.5 border border-capy-border rounded-lg bg-capy-card hover:border-capy-text transition-colors text-sm ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         {open ? (
           <input
@@ -70,7 +70,7 @@ function MenuItemDropdown({ value, onChange, menuItems, placeholder = "Select an
       </div>
 
       {open && typeof window !== "undefined" && createPortal(
-        <div ref={dropdownRef} style={dropdownStyle} className="bg-white border border-capy-border shadow-lg rounded-lg max-h-60 overflow-y-auto">
+        <div ref={dropdownRef} style={dropdownStyle} className="bg-capy-card border border-capy-border shadow-lg rounded-lg max-h-60 overflow-y-auto">
           {filtered.length === 0 ? (
             <div>
               <p className="px-4 py-2 text-sm text-capy-muted">No matches. Use as typed:</p>
@@ -203,7 +203,7 @@ export function UpsellRuleEditor() {
     return (
       <div className="space-y-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-14 w-full" />
+          <div key={i} className="animate-pulse bg-capy-surface-2 rounded-2xl h-14 w-full" />
         ))}
       </div>
     );
@@ -221,7 +221,7 @@ export function UpsellRuleEditor() {
             placeholder="Search upsell rules..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-capy-border rounded-xl focus:outline-none focus:ring-2 focus:ring-capy-green text-capy-text placeholder-capy-muted bg-white"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-capy-border rounded-xl focus:outline-none focus:ring-2 focus:ring-capy-green text-capy-text placeholder-capy-muted bg-capy-card"
           />
         </div>
         <button
@@ -252,7 +252,7 @@ export function UpsellRuleEditor() {
       ) : (
         <div className="space-y-3">
           {filtered.map((rule) => (
-            <div key={rule.id} className={`bg-white rounded-2xl border border-capy-border p-5 transition-opacity ${rule.active ? "opacity-100" : "opacity-60"}`}>
+            <div key={rule.id} className={`bg-capy-card rounded-2xl border border-capy-border p-5 transition-opacity ${rule.active ? "opacity-100" : "opacity-60"}`}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap mb-2">
@@ -276,7 +276,7 @@ export function UpsellRuleEditor() {
                     aria-checked={rule.active}
                     className={`relative block h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none ${rule.active ? "bg-capy-green" : "bg-gray-200"}`}
                   >
-                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${rule.active ? "translate-x-5" : "translate-x-0"}`} />
+                    <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-capy-card shadow-sm transition-transform duration-200 ${rule.active ? "translate-x-5" : "translate-x-0"}`} />
                   </button>
                   <button onClick={() => openEdit(rule)} className="text-xs text-capy-brown hover:text-capy-text font-medium transition-colors">Edit</button>
                   <button onClick={() => handleDelete(rule.id)} className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors">Delete</button>
@@ -290,7 +290,7 @@ export function UpsellRuleEditor() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="relative bg-capy-card rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h3 className="font-bold text-capy-text mb-5">{editingRule ? "Edit Upsell Rule" : "New Upsell Rule"}</h3>
             <div className="space-y-4">
               <div>

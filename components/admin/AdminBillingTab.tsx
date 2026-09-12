@@ -16,7 +16,7 @@ const RANGES: { key: BillingRangeKey; label: string }[] = [
 
 function Tile({ label, value, loading }: { label: string; value: string; loading?: boolean }) {
   return (
-    <div className="bg-white rounded-2xl border border-capy-border p-4 flex flex-col gap-1 shadow-sm">
+    <div className="bg-capy-card rounded-2xl border border-capy-border p-4 flex flex-col gap-1 shadow-sm">
       <p className="text-xs text-capy-muted font-medium uppercase tracking-wide leading-none">
         {label}
       </p>
@@ -92,7 +92,7 @@ export function AdminBillingTab() {
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Tile
@@ -112,7 +112,7 @@ export function AdminBillingTab() {
           />
         </div>
 
-        <div className="bg-white rounded-2xl border border-capy-border shadow-sm">
+        <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm">
           <div className="px-4 py-3 border-b border-capy-border">
             <h3 className="text-sm font-semibold text-capy-text">By restaurant</h3>
           </div>

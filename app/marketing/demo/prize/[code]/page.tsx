@@ -134,7 +134,7 @@ function DemoPrizeContent() {
               {discountName}
             </div>
             <p className="text-xs text-gray-400">
-              <strong className="text-gray-600">Cashier:</strong> search for this name in the Clover discount list and apply it.
+              <strong className="text-gray-600">Cashier:</strong> search for this name in the POS discount list and apply it.
             </p>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
               <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Time Remaining</p>

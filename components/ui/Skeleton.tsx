@@ -8,5 +8,5 @@ export function Skeleton({
   className?: string;
   style?: React.CSSProperties;
 }) {
-  return <div className={`animate-pulse bg-slate-100 rounded ${className}`} style={style} />;
+  return <div className={`animate-pulse bg-capy-surface-2 rounded ${className}`} style={style} />;
 }

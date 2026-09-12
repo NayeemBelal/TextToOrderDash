@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useAdminView, type AdminView } from "@/lib/admin-view-context";
+import { ThemeToggle } from "@/lib/theme-context";
 
 const ADMIN_TABS: { key: AdminView; label: string }[] = [
   { key: "restaurants", label: "Restaurants" },
@@ -23,7 +24,7 @@ export function AdminTopNav() {
   const onGrid = pathname === "/admin";
 
   return (
-    <header className="bg-white flex-shrink-0 relative">
+    <header className="bg-capy-card border-b border-capy-border flex-shrink-0 relative">
       <div className="flex items-center h-16 px-6">
         <div className="flex-1 flex items-center justify-start">
           {onGrid ? (
@@ -48,7 +49,7 @@ export function AdminTopNav() {
             <button
               onClick={() => router.push("/admin")}
               aria-label="Back to all restaurants"
-              className="p-2 -ml-2 rounded-lg text-capy-muted hover:text-capy-text hover:bg-slate-50 transition-colors"
+              className="p-2 -ml-2 rounded-lg text-capy-muted hover:text-capy-text hover:bg-capy-surface transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -57,7 +58,8 @@ export function AdminTopNav() {
           )}
         </div>
 
-        <div className="flex-1 flex items-center justify-end gap-4 py-3">
+        <div className="flex-1 flex items-center justify-end gap-3 py-3">
+          <ThemeToggle />
           <button
             onClick={signOut}
             className="text-sm text-capy-muted hover:text-capy-text transition-colors"

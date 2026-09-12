@@ -50,7 +50,7 @@ export function TaxExportCard({ restaurantId }: TaxExportCardProps) {
   const isValid = startDate && endDate && startDate <= endDate;
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col overflow-hidden">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col overflow-hidden">
       <div className="px-5 pt-5 pb-3 border-b border-capy-border">
         <h2 className="card-heading text-base">Tax &amp; Revenue Export</h2>
         <p className="text-xs text-capy-muted mt-0.5">
@@ -83,7 +83,7 @@ export function TaxExportCard({ restaurantId }: TaxExportCardProps) {
           </div>
         </div>
 
-        <div className="bg-slate-50 rounded-xl px-4 py-3 text-xs text-capy-muted">
+        <div className="bg-capy-surface rounded-xl px-4 py-3 text-xs text-capy-muted">
           <p className="font-medium text-capy-text mb-1">Included in the report</p>
           <ul className="space-y-0.5">
             <li>• Gross revenue &amp; tax collected — by product (TextToOrder, Voice AI)</li>

@@ -39,7 +39,7 @@ export function BrandSnapshotCard({ config, onSave }: BrandSnapshotCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col h-full overflow-hidden">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-capy-border flex-shrink-0">
         <h2 className="card-heading text-base">Brand</h2>
         {!editing ? (
@@ -69,10 +69,10 @@ export function BrandSnapshotCard({ config, onSave }: BrandSnapshotCardProps) {
       <div className="relative flex-1 min-h-0">
         {config === null ? (
           <div className="h-full px-4 pt-3 pb-4 flex flex-col gap-3">
-            <div className="animate-pulse w-40 h-5 bg-gray-100 rounded" />
-            <div className="animate-pulse w-full h-3 bg-gray-100 rounded" />
-            <div className="animate-pulse w-full h-3 bg-gray-100 rounded" />
-            <div className="animate-pulse w-3/4 h-3 bg-gray-100 rounded" />
+            <div className="animate-pulse w-40 h-5 bg-capy-surface-2 rounded" />
+            <div className="animate-pulse w-full h-3 bg-capy-surface-2 rounded" />
+            <div className="animate-pulse w-full h-3 bg-capy-surface-2 rounded" />
+            <div className="animate-pulse w-3/4 h-3 bg-capy-surface-2 rounded" />
           </div>
         ) : (
           <div className="h-full overflow-y-auto px-4 pb-4 pt-3 flex flex-col gap-3">

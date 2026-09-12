@@ -96,13 +96,13 @@ export function RosterUploadCard({ restaurantId, result, onResult }: Props) {
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-xl">
+        <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-300 text-xs px-3 py-2 rounded-xl">
           {error}
         </div>
       )}
 
       {result && (
-        <div className="bg-white rounded-2xl border border-capy-border p-4 space-y-3">
+        <div className="bg-capy-card rounded-2xl border border-capy-border p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-capy-text truncate">
@@ -130,7 +130,7 @@ export function RosterUploadCard({ restaurantId, result, onResult }: Props) {
                 new — will be texted
               </p>
             </div>
-            <div className="bg-slate-50 rounded-xl px-3 py-2">
+            <div className="bg-capy-surface rounded-xl px-3 py-2">
               <p className="text-lg font-bold text-capy-muted leading-none">
                 {result.already_contacted}
               </p>

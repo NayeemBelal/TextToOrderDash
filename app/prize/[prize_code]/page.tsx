@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
 import ReferralModal from "./ReferralModal";
 
-const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
 
 type PrizeState = "loading" | "pending" | "active" | "expired" | "used" | "not_found";
 
@@ -33,9 +33,8 @@ interface PrizeData {
 }
 
 // Neutral, professional fallback when a restaurant hasn't set a brand color.
-const DEFAULT_BRAND = "#1e293b"; // slate-800
+const DEFAULT_BRAND = "#1e293b";
 
-// Darken a #rrggbb hex by `amount` (0..1) for a subtle header gradient.
 function darken(hex: string, amount = 0.18): string {
   const h = hex.replace("#", "");
   if (!/^[0-9a-fA-F]{6}$/.test(h)) return hex;
@@ -46,11 +45,15 @@ function darken(hex: string, amount = 0.18): string {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
-// Format milliseconds remaining as a friendly countdown — the actual window
-// (days/hours/minutes, restaurant-configured) comes from redemption_expires_at,
-// not a fixed 24h. Rolls over to days once it clears 24h (so a week-long
-// window reads "6d 23h" instead of "167h"), then hours, then MM:SS in the
-// final hour.
+function textOn(hex: string): string {
+  const h = hex.replace("#", "");
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return "#ffffff";
+  const n = parseInt(h, 16);
+  const L = (0.299 * ((n >> 16) & 0xff) + 0.587 * ((n >> 8) & 0xff) + 0.114 * (n & 0xff)) / 255;
+  return L > 0.6 ? "#111827" : "#ffffff";
+}
+
+// Countdown: days once past 24h, then hours, then MM:SS in the final hour.
 function formatRemaining(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
   const d = Math.floor(total / 86400);
@@ -62,24 +65,48 @@ function formatRemaining(ms: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-// "Use this by 10:42 AM" (today) or "10:42 AM on Mon, Jul 27" if past midnight.
 function formatUseBy(exp: Date): string {
   const time = exp.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   const sameDay = exp.toDateString() === new Date().toDateString();
-  if (sameDay) return `Use this by ${time}`;
-  const date = exp.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  return `Use this by ${time} on ${date}`;
+  if (sameDay) return `today by ${time}`;
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+  if (exp.toDateString() === tomorrow.toDateString()) return `tomorrow by ${time}`;
+  return `by ${time} on ${exp.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
 }
 
-// Pick readable text color (black/white) for a given background hex.
-function textOn(hex: string): string {
-  const h = hex.replace("#", "");
-  if (!/^[0-9a-fA-F]{6}$/.test(h)) return "#ffffff";
-  const n = parseInt(h, 16);
-  const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
-  // Relative luminance
-  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return L > 0.6 ? "#111827" : "#ffffff";
+/** A one-shot confetti burst for winners — pure CSS, no library. */
+function Confetti({ colors }: { colors: string[] }) {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 34 }, (_, i) => ({
+        left: `${(i * 37) % 100}%`,
+        delay: `${(i % 9) * 0.09}s`,
+        duration: `${2.4 + (i % 5) * 0.35}s`,
+        color: colors[i % colors.length],
+        rotate: `${(i * 53) % 360}deg`,
+        size: 6 + (i % 4) * 2,
+      })),
+    [colors],
+  );
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-0" aria-hidden>
+      <style>{`@keyframes belan-confetti{0%{transform:translateY(-12vh) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}`}</style>
+      {pieces.map((p, i) => (
+        <span
+          key={i}
+          className="absolute top-0 block rounded-[2px]"
+          style={{
+            left: p.left,
+            width: p.size,
+            height: p.size * 1.6,
+            background: p.color,
+            transform: `rotate(${p.rotate})`,
+            animation: `belan-confetti ${p.duration} ease-in ${p.delay} 1 both`,
+          }}
+        />
+      ))}
+    </div>
+  );
 }
 
 export default function PrizePage() {
@@ -92,6 +119,8 @@ export default function PrizePage() {
   const [isUrgent, setIsUrgent] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
   const [error, setError] = useState("");
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -103,37 +132,23 @@ export default function PrizePage() {
       .then((d: PrizeData | null) => {
         if (!d) return;
         setData(d);
-        if (d.state === "used") {
-          setPageState("used");
-        } else if (d.state === "active" && d.redemption_expires_at) {
+        setDiscountName(d.discount_name);
+        if (d.redemption_expires_at) {
           const exp = new Date(d.redemption_expires_at);
-          setDiscountName(d.discount_name);
           setExpiresAt(exp);
           setCountdown(formatRemaining(exp.getTime() - Date.now()));
-          setPageState("active");
-        } else if (d.state === "expired") {
-          setPageState("expired");
-        } else {
-          if (d.redemption_expires_at) {
-            const exp = new Date(d.redemption_expires_at);
-            setExpiresAt(exp);
-            setCountdown(formatRemaining(exp.getTime() - Date.now()));
-          }
-          setPageState("pending");
         }
+        setPageState(d.state === "used" ? "used" : d.state === "active" && d.redemption_expires_at ? "active" : d.state === "expired" ? "expired" : "pending");
       })
       .catch(() => setPageState("not_found"));
   }, [prize_code]);
 
-  // Countdown ticker — runs for both "pending" (offer not yet redeemed in
-  // store) and "active" (post-redeem, waiting on the cashier) states, since
-  // redemption_expires_at is the same deadline for both.
   useEffect(() => {
     if ((pageState !== "active" && pageState !== "pending") || !expiresAt) return;
     timerRef.current = setInterval(() => {
       const remaining = Math.max(0, expiresAt.getTime() - Date.now());
       setCountdown(formatRemaining(remaining));
-      setIsUrgent(remaining < 900000); // last 15 minutes
+      setIsUrgent(remaining < 900_000);
       if (remaining <= 0) {
         clearInterval(timerRef.current!);
         setPageState("expired");
@@ -167,240 +182,183 @@ export default function PrizePage() {
   const prizeLabel = () => {
     if (!data) return "";
     if (data.is_winner) {
-      if (data.prize_config?.type === "free-item")
-        return `Free ${data.prize_config.itemName || "Item"}`;
-      return `${data.prize_config?.percent || 10}% Off Your Order`;
+      if (data.prize_config?.type === "free-item") return `Free ${data.prize_config.itemName || "Item"}`;
+      return `${data.prize_config?.percent || 10}% off`;
     }
-    return `${data.loser_discount}% Off Your Next Order`;
+    return `${data.loser_discount}% off`;
   };
-
-  const prizeSubtitle = () => {
+  const prizeSub = () => {
     if (!data) return "";
-    if (data.is_winner) {
-      if (data.prize_config?.type === "free-item")
-        return `100% off your ${data.prize_config.itemName || "prize item"}`;
-      return "Applied to your entire order";
-    }
-    return "Thanks for playing!";
+    if (data.is_winner) return data.prize_config?.type === "free-item" ? "on us — 100% off that item" : "your whole order";
+    return "your next order";
   };
 
-  const [showReferralModal, setShowReferralModal] = useState(false);
-
-  // ── Branding ──────────────────────────────────────────────────────────────
-  const brand = (data?.brand_color && /^#?[0-9a-fA-F]{6}$/.test(data.brand_color))
+  // ── Branding ──
+  const brand = data?.brand_color && /^#?[0-9a-fA-F]{6}$/.test(data.brand_color)
     ? (data.brand_color.startsWith("#") ? data.brand_color : `#${data.brand_color}`)
     : DEFAULT_BRAND;
-  const headerBg =
-    pageState === "expired"
-      ? "linear-gradient(135deg, #64748b, #475569)"
-      : pageState === "used"
-      ? "linear-gradient(135deg, #16a34a, #15803d)"
-      : `linear-gradient(135deg, ${brand}, ${darken(brand)})`;
   const onBrand = textOn(brand);
   const logo = data?.logo_url || null;
-  const hasHeroImage = Boolean(data?.background_image_url);
+  const hero = data?.background_image_url || null;
+  const isWinner = !!data?.is_winner;
+  const done = pageState === "expired" || pageState === "used";
 
   if (pageState === "loading") {
     return (
       <div className={`min-h-screen bg-slate-100 flex items-center justify-center p-5 ${poppins.className}`}>
-        <div
-          className="w-10 h-10 rounded-full border-[3px] border-slate-300 animate-spin"
-          style={{ borderTopColor: DEFAULT_BRAND }}
-        />
+        <div className="w-10 h-10 rounded-full border-[3px] border-slate-300 animate-spin" style={{ borderTopColor: DEFAULT_BRAND }} />
       </div>
     );
   }
 
-  return (
-    <div className={`min-h-screen bg-slate-100 flex items-start justify-center p-5 ${poppins.className}`}>
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden">
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(discountName);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
 
-        {/* Header — a full, unobstructed shot of the food when the restaurant
-            has one (the whole point: make them hungry before they even read
-            the offer), falling back to the plain brand-color header otherwise. */}
-        {hasHeroImage ? (
-          <div className="relative h-64">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url(${data!.background_image_url})`,
-                backgroundSize: "cover",
-                backgroundPosition:
-                  data!.restaurant_name === "Lime N Dime"
-                    ? "center bottom -100px"
-                    : "center bottom",
-              }}
-            />
-            {/* Scrim only over the bottom third, where the name/status sit —
-                the rest of the photo stays untouched and vivid. */}
-            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-            <div className="relative h-full flex flex-col items-center justify-end pb-4 px-6 text-center text-white">
-              <div className="mb-2 w-14 h-14 rounded-full bg-white shadow-md ring-2 ring-white/60 flex items-center justify-center overflow-hidden">
-                {logo && pageState !== "used" ? (
+  return (
+    <div
+      className={`min-h-screen flex items-start justify-center px-4 py-6 sm:py-10 ${poppins.className}`}
+      style={{ background: `radial-gradient(1200px 600px at 50% -10%, ${brand}33, transparent 60%), #f1f3f7` }}
+    >
+      {pageState === "active" && isWinner && <Confetti colors={[brand, "#f59e0b", "#22c55e", "#ffffff", darken(brand, 0.3)]} />}
+
+      <div className="relative w-full max-w-sm">
+        {/* ── The ticket ── */}
+        <div className="bg-white rounded-3xl shadow-[0_20px_60px_-20px_rgba(0,0,0,0.35)] ring-1 ring-black/5 overflow-hidden">
+          {/* Header: hero photo or brand gradient */}
+          <div className="relative h-56">
+            {hero ? (
+              <div
+                className="absolute inset-0"
+                style={{ backgroundImage: `url(${hero})`, backgroundSize: "cover", backgroundPosition: data?.restaurant_name === "Lime N Dime" ? "center bottom -100px" : "center" }}
+              />
+            ) : (
+              <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${brand}, ${darken(brand, 0.35)})` }} />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+            <div className="relative h-full flex flex-col items-center justify-end pb-5 px-6 text-center text-white">
+              <div className="mb-2.5 w-16 h-16 rounded-full bg-white shadow-lg ring-4 ring-white/40 flex items-center justify-center overflow-hidden">
+                {logo && !done ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
                 ) : (
-                  <span className="text-2xl">
-                    {pageState === "used" ? "✅" : pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}
-                  </span>
+                  <span className="text-2xl">{pageState === "used" ? "✅" : pageState === "expired" ? "⏰" : isWinner ? "🏆" : "🎁"}</span>
                 )}
               </div>
-              <h1 className="text-lg font-bold leading-tight drop-shadow-sm">{data?.restaurant_name ?? ""}</h1>
-              <p className="text-sm mt-0.5 text-white/90">
-                {pageState === "used"
-                  ? "Coupon used"
-                  : pageState === "expired"
-                  ? "Offer expired"
-                  : data?.is_winner
-                  ? "You won a reward!"
-                  : "A reward for you"}
-              </p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">{data?.restaurant_name ?? ""}</p>
+              <h1 className="text-2xl font-black leading-tight mt-0.5 drop-shadow-sm">
+                {pageState === "used" ? "Already used" : pageState === "expired" ? "This one's expired" : pageState === "not_found" ? "Hmm…" : isWinner ? "You won! 🎉" : "A treat for you 🎁"}
+              </h1>
             </div>
           </div>
-        ) : (
-          <div className="px-6 py-8 text-center" style={{ backgroundImage: headerBg, color: onBrand }}>
-            {/* Logo badge (falls back to an emoji when no logo is set) */}
-            <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center overflow-hidden">
-              {logo && pageState !== "used" ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo} alt={data?.restaurant_name ?? "Logo"} className="w-full h-full object-contain p-1.5" />
-              ) : (
-                <span className="text-3xl">
-                  {pageState === "used" ? "✅" : pageState === "expired" ? "⏰" : data?.is_winner ? "🏆" : "🎁"}
-                </span>
-              )}
+
+          {/* Perforation */}
+          <div className="relative">
+            <div className="absolute -left-3 -top-3 w-6 h-6 rounded-full" style={{ background: "#f1f3f7" }} />
+            <div className="absolute -right-3 -top-3 w-6 h-6 rounded-full" style={{ background: "#f1f3f7" }} />
+            <div className="mx-5 border-t-2 border-dashed border-slate-200" />
+          </div>
+
+          {/* Body */}
+          {pageState === "not_found" && (
+            <div className="px-6 py-10 text-center">
+              <p className="font-bold text-slate-800 mb-1">Reward not found</p>
+              <p className="text-sm text-slate-500">This link doesn&apos;t exist or has been removed.</p>
             </div>
-            <h1 className="text-lg font-bold leading-tight">{data?.restaurant_name ?? ""}</h1>
-            <p className="text-sm mt-0.5" style={{ opacity: 0.85 }}>
-              {pageState === "used"
-                ? "Coupon used"
-                : pageState === "expired"
-                ? "Offer expired"
-                : data?.is_winner
-                ? "You won a reward!"
-                : "A reward for you"}
-            </p>
-          </div>
-        )}
+          )}
 
-        {/* Prize summary — shown while the coupon is still claimable/active */}
-        {pageState !== "expired" && pageState !== "used" && pageState !== "not_found" && data && (
-          <div className="px-6 py-5 border-b border-gray-100 text-center">
-            <span
-              className="inline-block rounded-full px-5 py-2 text-sm font-semibold"
-              style={{ backgroundColor: `${brand}14`, color: darken(brand, 0.1) }}
-            >
-              {prizeLabel()}
-            </span>
-            <p className="text-xs text-gray-400 mt-2">{prizeSubtitle()}</p>
-          </div>
-        )}
-
-        {/* Not found */}
-        {pageState === "not_found" && (
-          <div className="px-6 py-10 text-center">
-            <div className="text-4xl mb-4">🤔</div>
-            <p className="font-semibold text-gray-700 mb-2">Reward Not Found</p>
-            <p className="text-sm text-gray-400">This link doesn&apos;t exist or has been removed.</p>
-          </div>
-        )}
-
-        {/* Pending — show redeem button */}
-        {pageState === "pending" && (
-          <div className="px-6 py-6 space-y-4">
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800 text-center leading-relaxed">
-              {expiresAt ? (
-                <>⏱ <strong>{formatUseBy(expiresAt)}</strong></>
-              ) : (
-                <>⏱ This offer won&apos;t last forever.</>
-              )}
-              <br />Tap <strong>Redeem</strong> when you&apos;re ready at the register!
-            </div>
-            {expiresAt && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Time Remaining</p>
-                <p className={`text-4xl font-extrabold tabular-nums ${isUrgent ? "text-red-600" : "text-amber-700"}`}>
-                  {countdown}
-                </p>
+          {(pageState === "pending" || pageState === "active") && data && (
+            <div className="px-6 pt-6 pb-5 space-y-5">
+              {/* The prize, big */}
+              <div className="text-center">
+                <p className="text-5xl font-black tracking-tight leading-none" style={{ color: brand }}>{prizeLabel()}</p>
+                <p className="text-sm font-medium text-slate-500 mt-1.5">{prizeSub()}</p>
               </div>
-            )}
-            <button
-              onClick={handleRedeem}
-              disabled={redeeming}
-              className="w-full font-bold text-base rounded-xl py-4 transition-opacity disabled:opacity-50"
-              style={{ backgroundColor: brand, color: onBrand }}
-            >
-              {redeeming ? "Creating discount…" : "Redeem in Store Now"}
-            </button>
-            {error && (
-              <p className="text-sm text-red-600 text-center bg-red-50 rounded-lg px-4 py-2">{error}</p>
-            )}
-          </div>
-        )}
 
-        {/* Active — show discount name + countdown */}
-        {pageState === "active" && (
-          <div className="px-6 py-6 space-y-4 text-center">
-            <p className="text-sm text-gray-500">Show this screen to the cashier and ask them to apply:</p>
-            <div
-              className="border-2 border-dashed rounded-xl p-4 font-bold text-lg break-all"
-              style={{ borderColor: `${brand}55`, backgroundColor: `${brand}0f`, color: darken(brand, 0.15) }}
-            >
-              {discountName}
+              {pageState === "pending" ? (
+                <>
+                  {expiresAt && (
+                    <div className="flex items-center justify-between rounded-2xl px-4 py-3" style={{ background: `${brand}0f` }}>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Use it</p>
+                        <p className="text-sm font-bold text-slate-800">{formatUseBy(expiresAt)}</p>
+                      </div>
+                      <p className={`text-2xl font-black tabular-nums ${isUrgent ? "text-red-600" : ""}`} style={isUrgent ? undefined : { color: brand }}>{countdown}</p>
+                    </div>
+                  )}
+                  <button
+                    onClick={handleRedeem}
+                    disabled={redeeming}
+                    className="w-full font-black text-base rounded-2xl py-4 shadow-lg transition-transform active:scale-[0.98] disabled:opacity-60"
+                    style={{ backgroundColor: brand, color: onBrand, boxShadow: `0 12px 30px -10px ${brand}` }}
+                  >
+                    {redeeming ? "Getting your code…" : "I'm at the register — redeem"}
+                  </button>
+                  <p className="text-[12px] text-slate-400 text-center leading-relaxed">Tap when you&apos;re ordering. You&apos;ll get a code to show the cashier.</p>
+                  {error && <p className="text-sm text-red-600 text-center bg-red-50 rounded-xl px-4 py-2">{error}</p>}
+                </>
+              ) : (
+                <>
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-slate-500">Show this to the cashier</p>
+                    <button
+                      onClick={copyCode}
+                      className="w-full border-2 border-dashed rounded-2xl px-4 py-4 font-black text-lg break-all tracking-wide"
+                      style={{ borderColor: `${brand}66`, backgroundColor: `${brand}0d`, color: darken(brand, 0.15) }}
+                    >
+                      {discountName}
+                      <span className="block text-[11px] font-semibold mt-1 opacity-70">{copied ? "Copied ✓" : "tap to copy"}</span>
+                    </button>
+                    <p className="text-[12px] text-slate-400 leading-relaxed">
+                      <span className="font-semibold text-slate-600">Cashier:</span> find this name in your POS discount list and apply it.
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between rounded-2xl px-4 py-3" style={{ background: `${brand}0f` }}>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Time left</p>
+                    <p className={`text-2xl font-black tabular-nums ${isUrgent ? "text-red-600" : ""}`} style={isUrgent ? undefined : { color: brand }}>{countdown}</p>
+                  </div>
+                </>
+              )}
             </div>
-            <p className="text-xs text-gray-400">
-              <strong className="text-gray-600">Cashier:</strong> search for this name in the Clover discount list and apply it.
-            </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Time Remaining</p>
-              <p className={`text-4xl font-extrabold tabular-nums ${isUrgent ? "text-red-600" : "text-amber-700"}`}>
-                {countdown}
-              </p>
+          )}
+
+          {pageState === "used" && (
+            <div className="px-6 py-10 text-center space-y-2">
+              <div className="text-4xl">🎉</div>
+              <p className="font-bold text-slate-800">This coupon has been used</p>
+              <p className="text-sm text-slate-500 leading-relaxed">Thanks for stopping by! Keep an eye on your texts for the next one.</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Used — coupon was applied to an order and retired */}
-        {pageState === "used" && (
-          <div className="px-6 py-10 text-center space-y-3">
-            <div className="text-4xl mb-1">🎉</div>
-            <p className="font-semibold text-gray-700">This coupon has been used</p>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              Thanks for stopping by! This reward has been redeemed and can&apos;t be used again.<br />
-              <strong className="text-gray-600">Look out for your next coupon in your messages!</strong>
-            </p>
-          </div>
-        )}
+          {pageState === "expired" && (
+            <div className="px-6 py-10 text-center space-y-2">
+              <div className="text-4xl">⏰</div>
+              <p className="font-bold text-slate-800">This offer has expired</p>
+              <p className="text-sm text-slate-500 leading-relaxed">The window has closed — but there&apos;s always a next game.</p>
+            </div>
+          )}
 
-        {/* Expired */}
-        {pageState === "expired" && (
-          <div className="px-6 py-10 text-center space-y-3">
-            <p className="font-semibold text-gray-700">This offer has expired</p>
-            <p className="text-sm text-gray-400 leading-relaxed">
-              The redemption window has passed.<br />
-              Keep an eye out for the next one!
-            </p>
-          </div>
-        )}
+          {/* Referral CTA — only where a bump still means something */}
+          {data?.referral && (pageState === "pending" || pageState === "active" || pageState === "used") && (
+            <div className="px-6 pb-5">
+              <button
+                onClick={() => setShowReferralModal(true)}
+                className="w-full flex items-center justify-center gap-2.5 rounded-2xl border-2 py-3 px-4 font-bold text-sm transition-colors"
+                style={{ borderColor: `${brand}55`, color: darken(brand, 0.1) }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/refer.webp" alt="" className="w-5 h-5" />
+                Invite a friend, get +{data.referral.bonus_percent}%
+              </button>
+            </div>
+          )}
 
-        {/* Referral CTA — only on states where bumping this coupon still means
-            something (an expired coupon can't be un-expired by a bump). Opens
-            the full explainer card rather than sharing directly. */}
-        {data?.referral && (pageState === "pending" || pageState === "active" || pageState === "used") && (
-          <div className="px-6 py-5 border-t border-gray-100">
-            <button
-              onClick={() => setShowReferralModal(true)}
-              className="w-full flex items-center justify-center gap-2.5 rounded-full border-2 py-3 px-4 font-semibold text-sm transition-colors"
-              style={{ borderColor: brand, color: darken(brand, 0.1) }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icons/refer.webp" alt="" className="w-5 h-5" />
-              Want +{data.referral.bonus_percent}% on the coupon?
-            </button>
-          </div>
-        )}
-
-        <div className="px-6 py-4 text-center text-xs text-gray-300">Powered by Belan</div>
+          <div className="px-6 py-3 text-center text-[11px] text-slate-300 border-t border-slate-100">Powered by Belan</div>
+        </div>
       </div>
 
       {data?.referral && (

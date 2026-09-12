@@ -247,7 +247,7 @@ export function PromoBlastWizard({
           </div>
           <button
             onClick={onExit}
-            className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 transition-colors shrink-0"
+            className="px-3 py-2 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-capy-surface transition-colors shrink-0"
           >
             Cancel
           </button>
@@ -262,7 +262,7 @@ export function PromoBlastWizard({
                 <div className="flex flex-col items-center flex-1">
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      done ? "bg-capy-green text-white" : active ? "bg-capy-text text-white" : "bg-slate-100 text-capy-muted"
+                      done ? "bg-capy-green text-white" : active ? "bg-capy-text text-capy-card" : "bg-capy-surface-2 text-capy-muted"
                     }`}
                     style={{ fontFamily: "Tektur, sans-serif" }}
                   >
@@ -282,7 +282,7 @@ export function PromoBlastWizard({
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className={`h-px flex-1 mx-1.5 mb-3 ${i < stepIndex ? "bg-capy-green" : "bg-slate-200"}`} />
+                  <div className={`h-px flex-1 mx-1.5 mb-3 ${i < stepIndex ? "bg-capy-green" : "bg-capy-border"}`} />
                 )}
               </div>
             );
@@ -293,7 +293,7 @@ export function PromoBlastWizard({
       <div className="px-4 py-4 space-y-4">
         {step === "roster" && (
           <>
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+            <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-capy-border">
                 <p className="card-heading">Opted In</p>
                 <div className="flex items-center gap-2">
@@ -320,7 +320,7 @@ export function PromoBlastWizard({
                         className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
                           active
                             ? "bg-capy-green-light border-capy-green text-capy-green-dark"
-                            : "bg-white border-capy-border text-capy-muted hover:text-capy-text"
+                            : "bg-capy-card border-capy-border text-capy-muted hover:text-capy-text"
                         }`}
                       >
                         {g.name} · {g.member_count}
@@ -332,7 +332,7 @@ export function PromoBlastWizard({
 
               {!rosterLoading && optedInCustomers.length > 0 && (
                 <div
-                  className="flex items-center gap-3 px-4 py-2.5 border-b border-capy-border cursor-pointer hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-3 px-4 py-2.5 border-b border-capy-border cursor-pointer hover:bg-capy-surface transition-colors"
                   onClick={() => {
                     const allSelected = selectedCustomerIds.size === optedInCustomers.length;
                     setSelectedCustomerIds(allSelected ? new Set() : new Set(optedInCustomers.map((c) => c.id)));
@@ -344,7 +344,7 @@ export function PromoBlastWizard({
                         ? "bg-capy-green border-capy-green"
                         : selectedCustomerIds.size > 0
                           ? "bg-capy-green/30 border-capy-green"
-                          : "border-capy-border bg-white"
+                          : "border-capy-border bg-capy-card"
                     }`}
                   >
                     {selectedCustomerIds.size === optedInCustomers.length ? (
@@ -362,7 +362,7 @@ export function PromoBlastWizard({
               )}
 
               <div className="px-4 py-2.5 border-b border-capy-border">
-                <div className="flex items-center gap-2 bg-slate-50 border border-capy-border rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2 bg-capy-surface border border-capy-border rounded-xl px-3 py-2">
                   <svg className="w-3.5 h-3.5 text-capy-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -392,7 +392,7 @@ export function PromoBlastWizard({
                     return (
                       <div
                         key={customer.id}
-                        className="flex items-center gap-3 px-4 py-3 border-b border-capy-border/60 last:border-0 cursor-pointer hover:bg-slate-50 transition-colors"
+                        className="flex items-center gap-3 px-4 py-3 border-b border-capy-border/60 last:border-0 cursor-pointer hover:bg-capy-surface transition-colors"
                         onClick={() =>
                           setSelectedCustomerIds((prev) => {
                             const next = new Set(prev);
@@ -403,7 +403,7 @@ export function PromoBlastWizard({
                       >
                         <div
                           className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                            isChecked ? "bg-capy-green border-capy-green" : "border-capy-border bg-white"
+                            isChecked ? "bg-capy-green border-capy-green" : "border-capy-border bg-capy-card"
                           }`}
                         >
                           {isChecked && (
@@ -426,7 +426,7 @@ export function PromoBlastWizard({
             <button
               onClick={() => setStep("compose")}
               disabled={selectedCustomerIds.size === 0}
-              className="w-full py-2.5 rounded-xl bg-capy-text text-white text-sm font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
+              className="w-full py-2.5 rounded-xl bg-capy-text text-capy-card text-sm font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
               style={{ fontFamily: "Tektur, sans-serif" }}
             >
               Continue
@@ -436,14 +436,14 @@ export function PromoBlastWizard({
 
         {step === "compose" && (
           <>
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-2">
+            <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 space-y-2">
               <p className="section-label">Message</p>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={5}
                 placeholder="Write your exact message here..."
-                className="w-full bg-slate-50 border border-capy-border rounded-xl px-3 py-2 text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
+                className="w-full bg-capy-surface border border-capy-border rounded-xl px-3 py-2 text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
               />
               <div className="flex items-center justify-between text-[11px] text-capy-muted">
                 <span className="font-mono truncate">{PLACEHOLDERS}</span>
@@ -453,7 +453,7 @@ export function PromoBlastWizard({
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+            <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
                   <p className="section-label">Include a coupon</p>
@@ -479,7 +479,7 @@ export function PromoBlastWizard({
                       max={100}
                       value={discountPercent}
                       onChange={(e) => setDiscountPercent(Math.max(1, Math.min(100, parseInt(e.target.value) || 0)))}
-                      className="w-20 px-2.5 py-1.5 bg-slate-50 border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                      className="w-20 px-2.5 py-1.5 bg-capy-surface border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                     />
                   </div>
                   <div>
@@ -492,7 +492,7 @@ export function PromoBlastWizard({
                           className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${
                             couponExpiryMode === "days"
                               ? "bg-capy-green text-white"
-                              : "bg-slate-50 text-capy-muted hover:bg-slate-100"
+                              : "bg-capy-surface text-capy-muted hover:bg-capy-surface-2"
                           }`}
                         >
                           Days
@@ -503,7 +503,7 @@ export function PromoBlastWizard({
                           className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${
                             couponExpiryMode === "hours"
                               ? "bg-capy-green text-white"
-                              : "bg-slate-50 text-capy-muted hover:bg-slate-100"
+                              : "bg-capy-surface text-capy-muted hover:bg-capy-surface-2"
                           }`}
                         >
                           Hours
@@ -518,7 +518,7 @@ export function PromoBlastWizard({
                           onChange={(e) =>
                             setCouponExpiryDays(Math.max(1, Math.min(90, parseInt(e.target.value) || 0)))
                           }
-                          className="w-20 px-2.5 py-1.5 bg-slate-50 border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                          className="w-20 px-2.5 py-1.5 bg-capy-surface border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                         />
                       ) : (
                         <input
@@ -529,7 +529,7 @@ export function PromoBlastWizard({
                           onChange={(e) =>
                             setCouponExpiryHours(Math.max(1, Math.min(72, parseInt(e.target.value) || 0)))
                           }
-                          className="w-20 px-2.5 py-1.5 bg-slate-50 border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                          className="w-20 px-2.5 py-1.5 bg-capy-surface border border-capy-border rounded-lg text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                         />
                       )}
                     </div>
@@ -541,14 +541,14 @@ export function PromoBlastWizard({
             <div className="flex gap-2">
               <button
                 onClick={() => setStep("roster")}
-                className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
+                className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-capy-surface transition-colors"
               >
                 Back
               </button>
               <button
                 onClick={() => setStep("send")}
                 disabled={!message.trim()}
-                className="flex-1 py-2.5 rounded-xl bg-capy-text text-white text-sm font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
+                className="flex-1 py-2.5 rounded-xl bg-capy-text text-capy-card text-sm font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
                 style={{ fontFamily: "Tektur, sans-serif" }}
               >
                 Continue
@@ -559,15 +559,15 @@ export function PromoBlastWizard({
 
         {step === "send" && (
           <>
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+            <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
               <p className="section-label">When</p>
-              <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit">
+              <div className="flex items-center gap-1 p-1 bg-capy-surface-2 rounded-xl w-fit">
                 {(["now", "schedule"] as const).map((m) => (
                   <button
                     key={m}
                     onClick={() => setSendMode(m)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                      sendMode === m ? "bg-white text-capy-text shadow-sm" : "text-capy-muted"
+                      sendMode === m ? "bg-capy-card text-capy-text shadow-sm" : "text-capy-muted"
                     }`}
                   >
                     {m === "now" ? "Send now" : "Schedule"}
@@ -576,18 +576,18 @@ export function PromoBlastWizard({
               </div>
 
               {sendMode === "schedule" && (
-                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+                <div className="flex items-center gap-2 p-3 bg-capy-surface rounded-xl">
                   <input
                     type="date"
                     value={sendDate}
                     min={today}
                     onChange={(e) => setSendDate(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                   />
                   <select
                     value={sendHour}
                     onChange={(e) => setSendHour(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                   >
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
                       <option key={h} value={String(h)}>{h}</option>
@@ -597,7 +597,7 @@ export function PromoBlastWizard({
                   <select
                     value={sendMinute}
                     onChange={(e) => setSendMinute(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                   >
                     {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map((m) => (
                       <option key={m} value={m}>{m}</option>
@@ -606,7 +606,7 @@ export function PromoBlastWizard({
                   <select
                     value={sendAmPm}
                     onChange={(e) => setSendAmPm(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                   >
                     <option>AM</option>
                     <option>PM</option>
@@ -616,19 +616,19 @@ export function PromoBlastWizard({
             </div>
 
             <div className="border-t border-capy-border pt-3 space-y-2">
-              <p className="section-label">Send a test text</p>
+              <p className="section-label">📲 Send it to my phone first</p>
               <div className="flex gap-2">
                 <input
                   type="tel"
                   value={testPhone}
                   onChange={(e) => setTestPhone(e.target.value)}
                   placeholder="(555) 123-4567"
-                  className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                  className="flex-1 px-3 py-2 bg-capy-surface border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                 />
                 <button
                   onClick={handleSendTest}
                   disabled={testSending || !testPhone.trim()}
-                  className="px-4 py-2 rounded-xl bg-capy-text text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
+                  className="px-4 py-2 rounded-xl bg-capy-text text-capy-card text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
                 >
                   {testSending ? "Sending…" : "Send test"}
                 </button>
@@ -641,13 +641,13 @@ export function PromoBlastWizard({
                     onChange={(e) => setTestCreateClover(e.target.checked)}
                     className="w-3.5 h-3.5 accent-capy-green"
                   />
-                  Create real coupon in Clover when redeemed
+                  Create a real coupon in your POS when redeemed
                 </label>
               )}
               {testStatus && (
                 <div
                   className={`text-xs px-3 py-2 rounded-xl ${
-                    testStatus.startsWith("Sent") ? "bg-capy-green-light text-capy-green-dark" : "bg-red-50 text-red-600"
+                    testStatus.startsWith("Sent") ? "bg-capy-green-light text-capy-green-dark" : "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-300"
                   }`}
                 >
                   {testStatus}
@@ -655,9 +655,9 @@ export function PromoBlastWizard({
               )}
             </div>
 
-            <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+            <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
               <p className="section-label">Cost estimate</p>
-              {previewError && <p className="text-xs text-red-600">{previewError}</p>}
+              {previewError && <p className="text-xs text-red-600 dark:text-red-300">{previewError}</p>}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-[11px] text-capy-muted">Recipients</p>
@@ -688,7 +688,7 @@ export function PromoBlastWizard({
               </div>
             </div>
 
-            {sendError && <p className="text-xs text-red-600">{sendError}</p>}
+            {sendError && <p className="text-xs text-red-600 dark:text-red-300">{sendError}</p>}
             {sentResult && (
               <div className="text-sm px-3 py-2.5 rounded-xl bg-capy-green-light text-capy-green-dark">{sentResult}</div>
             )}
@@ -696,7 +696,7 @@ export function PromoBlastWizard({
             {sentResult ? (
               <button
                 onClick={onExit}
-                className="w-full py-2.5 rounded-xl bg-capy-text text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                className="w-full py-2.5 rounded-xl bg-capy-text text-capy-card text-sm font-semibold hover:opacity-90 transition-opacity"
                 style={{ fontFamily: "Tektur, sans-serif" }}
               >
                 Done
@@ -705,7 +705,7 @@ export function PromoBlastWizard({
               <div className="flex gap-2">
                 <button
                   onClick={() => setStep("compose")}
-                  className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2.5 rounded-xl border border-capy-border text-sm font-semibold text-capy-text hover:bg-capy-surface transition-colors"
                 >
                   Back
                 </button>

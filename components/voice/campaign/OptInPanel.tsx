@@ -138,7 +138,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
       });
       setScanResult({ new_customers: data.new_customers ?? 0 });
     } catch {
-      setScanError("Scan failed. Check the Clover connection and try again.");
+      setScanError("Scan failed. Check the POS connection and try again.");
     } finally {
       setScanLoading(false);
     }
@@ -215,7 +215,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+      <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
         {hasBlasted && optinStatus ? (
           <>
             <div className="flex items-center justify-between">
@@ -227,7 +227,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                 onClick={() => refreshOptinStatus(restaurantId)}
                 disabled={optinRefreshing}
                 title="Refresh"
-                className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-capy-surface disabled:opacity-50 transition-colors"
               >
                 <svg className={`w-4 h-4 ${optinRefreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -251,7 +251,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
             </div>
 
             <div>
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-capy-surface-2 rounded-full overflow-hidden">
                 <div className="h-full bg-capy-green rounded-full transition-all" style={{ width: `${conversion}%` }} />
               </div>
               <p className="text-xs text-capy-muted mt-1">{conversion}% opted in</p>
@@ -279,7 +279,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
           <div className="flex items-center justify-between">
             <div>
               <p className="card-heading text-sm">Opt-In Your Customer List</p>
-              <p className="text-xs text-capy-muted mt-0.5">Send a compliant opt-in invite to your Clover contacts</p>
+              <p className="text-xs text-capy-muted mt-0.5">Send a compliant opt-in invite to your POS contacts</p>
             </div>
             {optinStatus && (
               <div className="flex gap-3 text-xs text-right">
@@ -288,11 +288,11 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                   <p className="text-capy-muted">opted in</p>
                 </div>
                 <div>
-                  <p className="font-semibold text-amber-600">{optinStatus.pending}</p>
+                  <p className="font-semibold text-amber-600 dark:text-amber-300">{optinStatus.pending}</p>
                   <p className="text-capy-muted">pending</p>
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-400">{optinStatus.opted_out}</p>
+                  <p className="font-semibold text-capy-muted">{optinStatus.opted_out}</p>
                   <p className="text-capy-muted">opted out</p>
                 </div>
               </div>
@@ -311,7 +311,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                   : "border border-capy-border text-capy-muted hover:border-capy-green hover:text-capy-green-dark"
               }`}
             >
-              {s === "clover" ? "From Clover" : "From a spreadsheet"}
+              {s === "clover" ? "From your POS" : "From a spreadsheet"}
             </button>
           ))}
         </div>
@@ -330,7 +330,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
           </p>
         )}
         {source === "clover" && scanError && (
-          <div className="flex items-center gap-2 text-sm text-red-600">
+          <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-300">
             <span className="font-semibold">!</span>
             <span>{scanError}</span>
           </div>
@@ -341,7 +341,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
             {newCustomers > 0 ? (
               <span className="text-capy-text">{newCustomers} new customer{newCustomers !== 1 ? "s" : ""} ready to receive opt-in</span>
             ) : (
-              <span className="text-capy-muted">All Clover customers have already been contacted</span>
+              <span className="text-capy-muted">All POS customers have already been contacted</span>
             )}
           </div>
         )}
@@ -368,7 +368,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                   value={optinMessage}
                   onChange={(e) => setOptinMessage(e.target.value)}
                   rows={4}
-                  className="w-full bg-slate-50 border border-capy-border rounded-xl px-3 py-2 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
+                  className="w-full bg-capy-surface border border-capy-border rounded-xl px-3 py-2 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
                 />
                 <div className="flex items-center justify-between text-[11px] text-capy-muted mt-1">
                   <span>{seg.chars} char{seg.chars !== 1 ? "s" : ""} · {seg.segments} SMS segment{seg.segments !== 1 ? "s" : ""} · {seg.encoding}</span>
@@ -385,7 +385,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                     max={100}
                     value={optinDiscount}
                     onChange={(e) => setOptinDiscount(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
+                    className="w-full px-3 py-2 bg-capy-surface border border-capy-border rounded-xl text-capy-text text-xs focus:outline-none focus:ring-2 focus:ring-capy-green pr-7"
                   />
                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-capy-muted text-xs">%</span>
                 </div>
@@ -397,7 +397,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                   <select
                     value={optinExpiryDays}
                     onChange={(e) => setOptinExpiryDays(Number(e.target.value))}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
                   >
                     {Array.from({ length: 30 }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>{d}</option>
@@ -407,7 +407,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                   <select
                     value={optinExpiryHour}
                     onChange={(e) => setOptinExpiryHour(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
                   >
                     {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
                       <option key={h} value={String(h)}>{h}</option>
@@ -417,7 +417,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                   <select
                     value={optinExpiryMinute}
                     onChange={(e) => setOptinExpiryMinute(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
                   >
                     {["00", "15", "30", "45"].map((m) => (
                       <option key={m} value={m}>{m}</option>
@@ -426,7 +426,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                   <select
                     value={optinExpiryAmPm}
                     onChange={(e) => setOptinExpiryAmPm(e.target.value)}
-                    className="bg-white border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-capy-green"
                   >
                     <option>AM</option>
                     <option>PM</option>
@@ -435,19 +435,19 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
               </div>
 
               <div className="border-t border-capy-border pt-3 space-y-2">
-                <p className="section-label">Send a test text</p>
+                <p className="section-label">📲 Send it to my phone first</p>
                 <div className="flex gap-2">
                   <input
                     type="tel"
                     value={optinTestPhone}
                     onChange={(e) => setOptinTestPhone(e.target.value)}
                     placeholder="(555) 123-4567"
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                    className="flex-1 px-3 py-2 bg-capy-surface border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                   />
                   <button
                     onClick={handleSendTestOptin}
                     disabled={optinTestSending || !optinTestPhone.trim()}
-                    className="px-4 py-2 rounded-xl bg-capy-text text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
+                    className="px-4 py-2 rounded-xl bg-capy-text text-capy-card text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
                   >
                     {optinTestSending ? "Sending…" : "Send test"}
                   </button>
@@ -459,14 +459,14 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
                     onChange={(e) => setOptinTestClover(e.target.checked)}
                     className="w-3.5 h-3.5 accent-capy-green"
                   />
-                  Create real coupon in Clover when redeemed
+                  Create a real coupon in your POS when redeemed
                 </label>
                 <p className="text-[11px] text-capy-muted">
                   Runs the real opt-in flow with the settings above and resets this number&apos;s opt-in state first — use a number you control.
                   Reply YES to get the coupon (test coupons last 3 minutes).
                 </p>
                 {optinTestStatus && (
-                  <div className={`text-xs px-3 py-2 rounded-xl ${optinTestStatus.startsWith("Sent") ? "bg-capy-green-light text-capy-green-dark" : "bg-red-50 text-red-600"}`}>
+                  <div className={`text-xs px-3 py-2 rounded-xl ${optinTestStatus.startsWith("Sent") ? "bg-capy-green-light text-capy-green-dark" : "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-300"}`}>
                     {optinTestStatus}
                   </div>
                 )}
@@ -480,9 +480,9 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
             <button
               onClick={handleScanClover}
               disabled={scanLoading || blastLoading}
-              className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-slate-50 disabled:opacity-50 transition-colors"
+              className="flex-1 py-2 px-3 rounded-xl border border-capy-border text-xs font-semibold text-capy-text hover:bg-capy-surface disabled:opacity-50 transition-colors"
             >
-              {scanLoading ? "Scanning…" : "Scan Clover"}
+              {scanLoading ? "Scanning…" : "Scan POS"}
             </button>
           )}
           {newCustomers > 0 && (
@@ -497,7 +497,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden">
+      <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-capy-border">
           <p className="card-heading text-sm">All Opted-In Customers</p>
           <p className="text-xs text-capy-muted mt-0.5">{optedInCustomers.length} total</p>

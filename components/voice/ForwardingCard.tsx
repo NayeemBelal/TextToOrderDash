@@ -36,7 +36,7 @@ export function ForwardingCard({ config, onSave }: ForwardingCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col overflow-hidden">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col overflow-hidden">
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-capy-border flex-shrink-0">
         <div>
           <h2 className="card-heading text-base">Call Forwarding</h2>
@@ -68,7 +68,7 @@ export function ForwardingCard({ config, onSave }: ForwardingCardProps) {
 
       <div className="px-5 py-4">
         {config === null ? (
-          <div className="animate-pulse w-48 h-8 bg-gray-100 rounded-xl" />
+          <div className="animate-pulse w-48 h-8 bg-capy-surface-2 rounded-xl" />
         ) : editing ? (
           <>
             <input
@@ -85,7 +85,7 @@ export function ForwardingCard({ config, onSave }: ForwardingCardProps) {
             {saveError && <p className="text-red-500 text-xs mt-1">{saveError}</p>}
           </>
         ) : (
-          <span className="block font-mono text-sm text-capy-text bg-slate-50 border border-capy-border px-3 py-2 rounded-xl">
+          <span className="block font-mono text-sm text-capy-text bg-capy-surface border border-capy-border px-3 py-2 rounded-xl">
             {config.forwardingNumber ?? '—'}
           </span>
         )}

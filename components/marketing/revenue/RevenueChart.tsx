@@ -36,7 +36,7 @@ function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const p: SummaryPoint = payload[0].payload;
   return (
-    <div className="rounded-lg border border-capy-border bg-white px-3 py-2 shadow-md text-xs">
+    <div className="rounded-lg border border-capy-border bg-capy-card px-3 py-2 shadow-md text-xs">
       <p className="font-semibold text-capy-text">{shortDate(label)}</p>
       <p className="text-capy-text tabular-nums mt-0.5">{formatUSD(p.revenue_cents)}</p>
       <p className="text-capy-muted tabular-nums">
@@ -59,7 +59,7 @@ export function RevenueChart({ series, range, onRangeChange, loading }: Props) {
   const tickInterval = Math.max(0, Math.floor(series.length / 6) - 1);
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 flex flex-col">
+    <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-capy-text">Revenue from marketing</h3>
         <div className="inline-flex items-center gap-1 rounded-lg border border-capy-border p-0.5">

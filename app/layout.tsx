@@ -3,6 +3,7 @@ import { Tektur } from "next/font/google";
 import "./globals.css";
 import { ConditionalWrapper } from "@/components/ConditionalWrapper";
 import { AuthProvider } from "@/lib/auth-context";
+import { ThemeProvider } from "@/lib/theme-context";
 
 const tektur = Tektur({
   subsets: ["latin"],
@@ -13,16 +14,16 @@ const tektur = Tektur({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://belan.tech"),
-  title: "Restaurant Voice AI That Answers Every Call | Belan AI",
+  title: "Gamified SMS Marketing for Restaurants | Belan AI",
   description:
-    "Belan AI answers every restaurant call, takes the order, and fires it to your POS — automatically. $200/month all-in. No per-order fees.",
+    "Belan texts your customers a quick game — trivia, pick a number, roll the dice — and turns every reply into a coupon they redeem at your register. $200/month flat.",
   alternates: {
     canonical: "https://belan.tech",
   },
   openGraph: {
-    title: "Restaurant AI Ordering — Every Call Answered | Belan AI",
+    title: "Gamified SMS Marketing — Games, Not Spam | Belan AI",
     description:
-      "Belan AI picks up every call, upsells every order, and fires it to your POS. $200/month flat. No per-order fees.",
+      "Text your customers a game, not a coupon blast. Winners and players alike walk in with a real POS coupon. $200/month flat, phone number included.",
     url: "https://belan.tech",
     siteName: "Belan AI",
     images: [
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
         url: "https://belan.tech/og-screenshot.png",
         width: 3024,
         height: 1640,
-        alt: "Belan AI restaurant phone ordering dashboard",
+        alt: "Belan AI gamified SMS marketing dashboard",
       },
     ],
     type: "website",
@@ -56,7 +57,7 @@ const softwareApplicationSchema = {
   name: "Belan AI",
   url: "https://belan.tech",
   description:
-    "AI-powered voice and SMS ordering automation for restaurants. Belan AI answers every call, takes orders, handles upsells, and fires them directly to your POS system.",
+    "Gamified SMS marketing for restaurants: Belan texts customers a quick game, turns every reply into a real POS coupon, tracks the revenue it brings back, and keeps a full per-customer timeline.",
   applicationCategory: "BusinessApplication",
   applicationSubCategory: "Restaurant Management Software",
   operatingSystem: "Web",
@@ -74,18 +75,19 @@ const softwareApplicationSchema = {
       unitCode: "MON",
     },
     description:
-      "Flat rate $200/month. Includes Voice AI, SMS Text AI, Dashboard Analytics, Marketing AI, and Sales AI. No per-order fees.",
+      "Flat rate $200/month. Includes your own marketing phone number, unlimited game and promo campaigns, branded coupon pages, POS revenue tracking, and the customer timeline. Branded RCS sender available for a $500/year carrier registration fee.",
     url: "https://belan.tech",
     availability: "https://schema.org/InStock",
   },
   featureList: [
-    "Restaurant voice AI ordering — answers every call 24/7",
-    "Voice AI for restaurants — no app, no staff needed",
-    "SMS text ordering — no app required",
-    "Real-time revenue and orders dashboard",
-    "AI-powered SMS marketing campaigns",
-    "Natural language sales analytics",
-    "POS integration with Clover, Toast, Square, Lightspeed, Revel, TouchBistro",
+    "Gamified SMS campaigns — trivia, pick-a-number, dice, closest-guess, random draws",
+    "Curated game catalog plus a build-your-own game creator",
+    "Everyone-wins and promotional message campaigns",
+    "Branded coupon pages that become real POS discounts",
+    "Referral bonuses and QR-code sign-up forms",
+    "Revenue attribution from POS orders that used a coupon",
+    "Per-customer timeline: texts, games, coupons, and orders",
+    "POS integration with Clover (Toast and Square coming)",
   ],
   screenshot: "https://belan.tech/og-screenshot.png",
   provider: {
@@ -107,7 +109,7 @@ const organizationSchema = {
     height: 192,
   },
   description:
-    "Belan AI builds restaurant ordering automation — voice AI, SMS ordering, and marketing campaigns powered by artificial intelligence.",
+    "Belan AI builds gamified SMS marketing for restaurants — text games that bring customers back with real POS coupons — alongside voice and text ordering automation.",
   areaServed: "US",
   contactPoint: {
     "@type": "ContactPoint",
@@ -121,10 +123,10 @@ const organizationSchema = {
 const serviceSchema = {
   "@context": "https://schema.org",
   "@type": "Service",
-  name: "Belan AI Restaurant Voice AI Ordering",
-  serviceType: "Restaurant Voice AI Phone and SMS Ordering",
+  name: "Belan AI Gamified SMS Marketing",
+  serviceType: "Restaurant SMS Marketing Automation",
   description:
-    "Belan AI answers every restaurant call, takes orders via voice and SMS, upsells automatically, and fires orders to your POS. $200/month flat rate.",
+    "Belan AI runs gamified text-message campaigns for restaurants: customers play a quick game by text and redeem a real POS coupon. $200/month flat rate.",
   url: "https://belan.tech",
   provider: {
     "@type": "Organization",
@@ -155,7 +157,7 @@ const websiteSchema = {
   name: "Belan AI",
   url: "https://belan.tech",
   description:
-    "AI-powered ordering automation for restaurants. Voice AI, Text AI, and marketing campaigns — $200/month flat rate.",
+    "Gamified SMS marketing for restaurants — plus voice and text ordering — $200/month flat rate.",
   inLanguage: "en-US",
   publisher: {
     "@type": "Organization",
@@ -170,8 +172,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={tektur.variable}>
+    <html lang="en" className={tektur.variable} suppressHydrationWarning>
       <body className="antialiased">
+        <script
+          // Apply the saved dashboard theme before first paint (no flash).
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -196,9 +205,11 @@ export default function RootLayout({
             __html: JSON.stringify(serviceSchema),
           }}
         />
-        <AuthProvider>
-          <ConditionalWrapper>{children}</ConditionalWrapper>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ConditionalWrapper>{children}</ConditionalWrapper>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

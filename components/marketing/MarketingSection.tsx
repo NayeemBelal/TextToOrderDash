@@ -9,7 +9,7 @@ import { CouponTimelineTab } from "@/components/marketing/timeline/CouponTimelin
 import { MessagesTab } from "@/components/marketing/messages/MessagesTab";
 
 const BASE_VIEWS: { key: MarketingView; label: string }[] = [
-  { key: "campaign", label: "Campaign" },
+  { key: "campaign", label: "Campaigns" },
   { key: "revenue", label: "Revenue" },
 ];
 

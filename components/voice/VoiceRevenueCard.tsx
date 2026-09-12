@@ -65,7 +65,7 @@ export function VoiceRevenueCard() {
     : null;
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col h-full min-h-0 overflow-hidden shadow-sm">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col h-full min-h-0 overflow-hidden shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-capy-border flex-shrink-0">
         <h2 className="card-heading text-base">Today at a Glance</h2>
@@ -134,7 +134,7 @@ export function VoiceRevenueCard() {
             onClick={() => handleFilterChange(f.value)}
             className={`px-2.5 py-1 text-xs font-medium transition-colors border ${
               activeFilter === f.value
-                ? 'bg-capy-text text-white border-capy-text'
+                ? 'bg-capy-text text-capy-card border-capy-text'
                 : 'text-capy-muted border-capy-border hover:text-capy-text hover:border-capy-text'
             }`}
           >

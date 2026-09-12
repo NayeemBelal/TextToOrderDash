@@ -86,7 +86,7 @@ export function FAQEditor() {
     return (
       <div className="flex flex-col gap-4">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="animate-pulse bg-gray-100 rounded-2xl h-14 w-full" />
+          <div key={i} className="animate-pulse bg-capy-surface-2 rounded-2xl h-14 w-full" />
         ))}
       </div>
     );
@@ -104,7 +104,7 @@ export function FAQEditor() {
             placeholder="Search FAQs..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-sm border border-capy-border rounded-xl focus:outline-none focus:ring-2 focus:ring-capy-green text-capy-text placeholder-capy-muted bg-white"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-capy-border rounded-xl focus:outline-none focus:ring-2 focus:ring-capy-green text-capy-text placeholder-capy-muted bg-capy-card"
           />
         </div>
         <button
@@ -135,7 +135,7 @@ export function FAQEditor() {
           {filtered.map((faq) => (
             <div
               key={faq.id}
-              className={`bg-white rounded-2xl border border-capy-border p-5 hover:shadow-sm transition-all ${deletingId === faq.id ? 'opacity-0 duration-200' : ''}`}
+              className={`bg-capy-card rounded-2xl border border-capy-border p-5 hover:shadow-sm transition-all ${deletingId === faq.id ? 'opacity-0 duration-200' : ''}`}
             >
               <div className="flex items-start justify-between gap-3 mb-2">
                 <p className="font-semibold text-capy-text text-sm leading-snug flex-1">{faq.question}</p>
@@ -166,7 +166,7 @@ export function FAQEditor() {
       {showPanel && (
         <div className="fixed inset-0 z-50 flex">
           <div className="flex-1 bg-black/30" onClick={() => setShowPanel(false)} />
-          <div className="w-full max-w-md bg-white shadow-2xl flex flex-col">
+          <div className="w-full max-w-md bg-capy-card shadow-2xl flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-capy-border">
               <h3 className="font-bold text-capy-text">{editingFaq ? 'Edit FAQ' : 'Add FAQ'}</h3>
               <button onClick={() => setShowPanel(false)} className="text-capy-muted hover:text-capy-text">
@@ -200,7 +200,7 @@ export function FAQEditor() {
               <div>
                 <label className="text-xs font-semibold text-capy-muted uppercase tracking-wide">Category</label>
                 <select
-                  className="mt-1 w-full border border-capy-border rounded-xl px-3 py-2.5 text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green bg-white"
+                  className="mt-1 w-full border border-capy-border rounded-xl px-3 py-2.5 text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green bg-capy-card"
                   value={draft.category}
                   onChange={(e) => setDraft({ ...draft, category: e.target.value })}
                   disabled={isSaving}

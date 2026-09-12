@@ -84,7 +84,7 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} aria-hidden />
-      <div className="relative w-full max-w-md bg-white h-full shadow-xl flex flex-col animate-[slidein_0.18s_ease-out]">
+      <div className="relative w-full max-w-md bg-capy-card h-full shadow-xl flex flex-col animate-[slidein_0.18s_ease-out]">
         <style>{`@keyframes slidein{from{transform:translateX(16px);opacity:.6}to{transform:none;opacity:1}}`}</style>
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-capy-border">
@@ -110,7 +110,7 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
               </div>
             </div>
           )}
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
 
           {detail && (
             <>
@@ -132,7 +132,7 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
                   </p>
                 )}
                 {detail.flagged && (
-                  <p className="mt-2 text-xs px-2 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                  <p className="mt-2 text-xs px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30">
                     ⚠ More than one marketing coupon was applied to this order — review at the register.
                   </p>
                 )}
