@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Belan Onboarding Playbook</title>
+<meta name="description" content="How to take a restaurant from sign-up to a launched campaign on Belan: account, payment, POS API key, branding, QR sign-up, spreadsheet import and the first game.">
+<meta property="og:title" content="Belan Onboarding Playbook">
+<meta property="og:description" content="Step-by-step onboarding guide for Belan sales reps and partners, with annotated screenshots.">
+<meta property="og:image" content="https://belan.tech/og-screenshot.png">
+<meta property="og:url" content="https://belan.tech/docs/onboarding-playbook.html">
+<link rel="icon" href="/BelanLogo.png">
+<style>
+@font-face{font-family:Tektur;font-style:normal;font-weight:400 900;font-display:swap;src:url(/docs/fonts/tektur-latin.woff2) format("woff2")}
+@font-face{font-family:Helvetica;font-weight:400 600;font-display:swap;src:url(/fonts/Helvetica.ttf) format("truetype")}
+@font-face{font-family:Helvetica;font-weight:700 900;font-display:swap;src:url(/fonts/Helvetica-Bold.ttf) format("truetype")}
+.sitebar{max-width:1240px;margin:0 auto 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;font:700 12px Tektur,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.sitebar a{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border:2px solid currentColor;text-decoration:none;color:inherit}
+.sitebar a img{width:22px;height:22px;border-radius:50%}
+</style>
+</head>
+<body>
+<style>
+  :root{
+    --bg:#f5f6f8;--paper:#ffffff;--ink:#0f172a;--muted:#5d6b7f;--line:#dfe3ea;
+    --green:#16a34a;--green-soft:#dcfce7;--violet:#6d28d9;--violet-soft:#ede9fe;
+    --amber:#b45309;--amber-soft:#fef3c7;--red:#e11d48;--red-soft:#ffe4ea;--code:#eef2f7;
+    --shadow:0 1px 2px rgb(15 23 42/.05),0 2px 8px rgb(15 23 42/.06);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0b0f17;--paper:#111827;--ink:#f1f5f9;--muted:#9aa7ba;--line:#273246;
+    --green:#4ade80;--green-soft:#14532d;--violet:#c4b5fd;--violet-soft:#2e2254;
+    --amber:#fbbf24;--amber-soft:#3b2a08;--red:#fb7185;--red-soft:#4c1024;--code:#0f1622;
+    --shadow:0 1px 2px rgb(0 0 0/.5);color-scheme:dark}}
+  :root[data-theme="dark"]{
+    --bg:#0b0f17;--paper:#111827;--ink:#f1f5f9;--muted:#9aa7ba;--line:#273246;
+    --green:#4ade80;--green-soft:#14532d;--violet:#c4b5fd;--violet-soft:#2e2254;
+    --amber:#fbbf24;--amber-soft:#3b2a08;--red:#fb7185;--red-soft:#4c1024;--code:#0f1622;
+    --shadow:0 1px 2px rgb(0 0 0/.5);color-scheme:dark}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;font-weight:500;line-height:1.55;padding-block:32px;padding-inline:16px}
+  h1,h2,h3,h4{font-family:Tektur,Helvetica,sans-serif;font-weight:800;letter-spacing:-.01em;text-wrap:balance;margin:0;line-height:1.15}
+  a{color:var(--green);text-decoration-thickness:1.5px;text-underline-offset:3px}
+  a:focus-visible,button:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+  .wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:36px;align-items:start}
+  .toc{position:sticky;top:20px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+  .toc p{margin:0 0 8px;font:700 11px Tektur,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .toc ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}
+  .toc a{display:flex;gap:10px;align-items:baseline;padding:6px 8px;border-radius:8px;color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
+  .toc a:hover{background:var(--code)}
+  .toc .n{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted);width:20px;flex-shrink:0}
+  header.hero{margin-bottom:28px}
+  .eyebrow{display:inline-block;font:700 11px Tektur,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--violet);background:var(--violet-soft);padding:5px 10px;border-radius:999px;margin-bottom:12px}
+  .hero h1{font-size:clamp(28px,4vw,42px)}
+  .hero p{max-width:64ch;color:var(--muted);font-size:16px;margin:10px 0 0}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .chip{font:600 12px Helvetica,sans-serif;border:1px solid var(--line);background:var(--paper);padding:4px 10px;border-radius:999px;color:var(--muted)}
+  section.step{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:26px 28px;margin-bottom:22px;box-shadow:var(--shadow);scroll-margin-top:16px}
+  .step-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:14px}
+  .step-num{flex-shrink:0;width:44px;height:44px;border-radius:12px;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font:800 18px Tektur,sans-serif}
+  .step-num.who-belan{background:var(--violet)}.step-num.who-owner{background:var(--green)}
+  .step h2{font-size:clamp(20px,2.4vw,26px)}
+  .who{font:600 12px Helvetica,sans-serif;color:var(--muted);margin-top:4px}
+  .who b{color:var(--ink)}
+  .where{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:600;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:4px 0 14px}
+  .where .sep{color:var(--muted)}
+  p{margin:0 0 10px;max-width:72ch}
+  ul,ol.steps{margin:0 0 12px;padding-left:20px;max-width:72ch}
+  li{margin:4px 0}
+  ol.steps li{margin:8px 0}
+  figure{margin:16px 0 8px}
+  figure .shot{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper);box-shadow:var(--shadow)}
+  figure img{display:block;width:100%;height:auto;max-width:100%}
+  figcaption{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:var(--muted)}
+  figcaption span{display:inline-flex;align-items:center;gap:6px}
+  .mark{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;align-items:center;justify-content:center;font:800 12px Helvetica,sans-serif;flex-shrink:0}
+  .say{border-left:4px solid var(--violet);background:var(--violet-soft);padding:12px 14px;border-radius:0 12px 12px 0;margin:12px 0;max-width:72ch}
+  .say b{font:700 11px Tektur,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);display:block;margin-bottom:4px}
+  .note{border-left:4px solid var(--amber);background:var(--amber-soft);padding:12px 14px;border-radius:0 12px 12px 0;margin:12px 0;max-width:72ch}
+  .note b{font:700 11px Tektur,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);display:block;margin-bottom:4px}
+  .check{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px;max-width:72ch}
+  .check b{font:700 11px Tektur,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--green);display:block;margin-bottom:6px}
+  .check label{display:flex;gap:10px;align-items:flex-start;font-size:14px;margin:6px 0;cursor:pointer}
+  .check input{margin-top:3px;accent-color:var(--green)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:var(--code);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+  table{border-collapse:collapse;width:100%;max-width:72ch;font-size:14px;margin:8px 0 12px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font:700 11px Tektur,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}.toc{position:static}.two{grid-template-columns:1fr}section.step{padding:20px 18px}}
+  @media print{body{background:#fff;padding:0}.toc{display:none}.wrap{grid-template-columns:1fr}section.step{box-shadow:none;break-inside:avoid}}
+</style>
+
+<div class="sitebar"><a href="/"><img src="/BelanLogo.png" alt="">belan.tech</a><a href="/docs">All docs</a></div>
+<div class="wrap">
+  <nav class="toc" aria-label="Steps">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#s0"><span class="n">0</span>Before the call (Belan)</a></li>
+      <li><a href="#s1"><span class="n">1</span>Create the account</a></li>
+      <li><a href="#s2"><span class="n">2</span>Link the restaurant</a></li>
+      <li><a href="#s3"><span class="n">3</span>RCS number (optional)</a></li>
+      <li><a href="#s4"><span class="n">4</span>Payment</a></li>
+      <li><a href="#s5"><span class="n">5</span>First login &amp; tour</a></li>
+      <li><a href="#s6"><span class="n">6</span>Connect the POS (API key)</a></li>
+      <li><a href="#s7"><span class="n">7</span>Branding</a></li>
+      <li><a href="#s8"><span class="n">8</span>QR sign-up link</a></li>
+      <li><a href="#s9"><span class="n">9</span>Import contacts (Excel)</a></li>
+      <li><a href="#s10"><span class="n">10</span>First campaign</a></li>
+      <li><a href="#s11"><span class="n">11</span>After launch</a></li>
+      <li><a href="#s12"><span class="n">12</span>Problems &amp; who to call</a></li>
+      <li><a href="#s13"><span class="n">13</span>Checklist</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="eyebrow">Sales team · onboarding guide</span>
+      <h1>Belan Onboarding Playbook</h1>
+      <p>How to take a restaurant from “tell me more” to a launched campaign, in the order it happens. Every step says who does it, where to click, what to say, and what “done” looks like. Screenshots are from the live product; the red numbers on each picture match the notes under it.</p>
+      <div class="meta"><span class="chip">Product: belan.tech</span><span class="chip">Price: $200/mo flat</span><span class="chip">Optional: RCS branded sender $500/yr</span><span class="chip">POS today: Clover</span><span class="chip">Updated Sept 12, 2026</span></div>
+    </header>
+
+    <!-- 0 -->
+    <section class="step" id="s0">
+      <div class="step-head"><div class="step-num who-belan">0</div><div><h2>Before the call: Belan sets the table</h2><p class="who"><b>Who:</b> Belan (you + engineering). <b>Time:</b> 1 business day before the owner signs up.</p></div></div>
+      <p>The owner can’t finish sign-up until their restaurant exists in our system with a <b>setup code</b>. Ask engineering for these three things and write them down before you get on the call:</p>
+      <table>
+        <tr><th>Item</th><th>What it is</th><th>Example</th></tr>
+        <tr><td>Restaurant record</td><td>The restaurant created in Belan under its real name, marked active, with a one-time setup code.</td><td class="mono">Sauce Bros Pizza · SAUCE-4471</td></tr>
+        <tr><td>Marketing phone number</td><td>The number their texts will come from. Engineering provisions it on Telnyx and attaches it to the restaurant.</td><td class="mono">+1 (206) 555-0140</td></tr>
+        <tr><td>Setup code</td><td>What the owner types in step 2 to claim the restaurant. Give it to them on the call, not by text ahead of time.</td><td class="mono">SAUCE-4471</td></tr>
+      </table>
+      <div class="note"><b>Heads-up</b>The restaurant’s name is what appears in every text and on the coupon page (“Hey! It’s Sauce Bros Pizza!”). Get the exact spelling and capitalisation right before it’s created; renaming later needs engineering.</div>
+      <div class="check"><b>Done when</b><label><input type="checkbox"> Restaurant exists with the correct name</label><label><input type="checkbox"> Setup code in hand</label><label><input type="checkbox"> Marketing number provisioned</label></div>
+    </section>
+
+    <!-- 1 -->
+    <section class="step" id="s1">
+      <div class="step-head"><div class="step-num who-owner">1</div><div><h2>Create the owner’s account</h2><p class="who"><b>Who:</b> the owner, with you on screen-share. <b>Where:</b> belan.tech → <b>Get started</b>.</p></div></div>
+      <div class="where">belan.tech <span class="sep">→</span> GET STARTED <span class="sep">→</span> /marketing/onboarding</div>
+      <figure><div class="shot"><img src="/docs/img/01-landing.jpg" alt="Belan homepage with the Get started button marked"></div><figcaption><span><i class="mark">1</i>Get started (top right)</span><span><i class="mark">2</i>Same thing, in the hero</span></figcaption></figure>
+      <ol class="steps">
+        <li>Owner enters the email they want to log in with, and a password of 8+ characters (twice).</li>
+        <li>Click <b>Create Account &amp; Continue</b>. The account is ready immediately; there is no confirmation email to wait for.</li>
+      </ol>
+      <figure><div class="shot"><img src="/docs/img/02-onboarding-account.jpg" alt="Account creation step"></div><figcaption><span><i class="mark">1</i>Owner’s email (this is their login)</span><span><i class="mark">2</i>Password, 8+ characters</span><span><i class="mark">3</i>Create Account &amp; Continue</span></figcaption></figure>
+      <div class="say"><b>Say this</b>“Use the email you check every day — that’s the login for the whole dashboard, and it’s where we’ll send anything about your account.”</div>
+      <div class="note"><b>If it says the email already exists</b>They already have a Belan login. Click <b>Sign in</b> under the form and continue from there.</div>
+    </section>
+
+    <!-- 2 -->
+    <section class="step" id="s2">
+      <div class="step-head"><div class="step-num who-owner">2</div><div><h2>Link the restaurant with the setup code</h2><p class="who"><b>Who:</b> the owner. <b>Where:</b> same wizard, next screen.</p></div></div>
+      <figure><div class="shot"><img src="/docs/img/19-onboarding-link.jpg" alt="Link your restaurant step"></div><figcaption><span>Pick the restaurant, type the setup code from step 0, then</span><span><i class="mark">1</i>Link Restaurant</span></figcaption></figure>
+      <ol class="steps">
+        <li>The list shows restaurants that are ready to be claimed. Owner taps theirs.</li>
+        <li>Owner types the setup code you give them. It’s one-time: once used, nobody else can claim that restaurant.</li>
+        <li><b>Link Restaurant</b>. The next screen confirms “Restaurant linked”.</li>
+      </ol>
+      <div class="note"><b>If their restaurant isn’t in the list</b>Step 0 wasn’t finished (no setup code, or already claimed). Message engineering; the owner can keep the tab open and continue once it appears.</div>
+    </section>
+
+    <!-- 3 -->
+    <section class="step" id="s3">
+      <div class="step-head"><div class="step-num who-owner">3</div><div><h2>Branded RCS number (optional, $500/yr)</h2><p class="who"><b>Who:</b> the owner, only if they want their name and logo shown as the sender. <b>Where:</b> the “Restaurant linked” screen offers it.</p></div></div>
+      <p>After linking, the owner sees two choices: go straight to the dashboard, or set up a <b>business RCS number</b>. RCS shows the restaurant’s verified name and logo inside the customer’s messaging app instead of a bare phone number. Carriers require a registration, which is the $500/year fee.</p>
+      <p>If they choose it, the wizard collects five short screens. Have them ready:</p>
+      <table>
+        <tr><th>Screen</th><th>They’ll need</th></tr>
+        <tr><td>Business</td><td>Legal business name, legal form, entity type, tax ID / EIN</td></tr>
+        <tr><td>Contact</td><td>Owner’s name, title, business email and phone</td></tr>
+        <tr><td>Verify</td><td>One business document (a business licence or EIN letter, PDF or photo) and the registered address</td></tr>
+        <tr><td>Brand</td><td>Logo file, store phone, store email, website</td></tr>
+        <tr><td>Clover</td><td>Optional here; skip it. The POS is connected properly in step 6.</td></tr>
+      </table>
+      <div class="say"><b>Say this</b>“RCS is the difference between a text from a phone number and a text from Sauce Bros Pizza with your logo on it. It’s optional, and you can add it later.”</div>
+      <div class="note"><b>Skipping is fine</b>Choosing “go to dashboard” still leads to payment in the next step. Nothing about the product is lost by skipping RCS.</div>
+    </section>
+
+    <!-- 4 -->
+    <section class="step" id="s4">
+      <div class="step-head"><div class="step-num who-owner">4</div><div><h2>Payment: $200 / month</h2><p class="who"><b>Who:</b> the owner. <b>Where:</b> “Activate your subscription” screen (card form appears inline).</p></div></div>
+      <ol class="steps">
+        <li>The screen says <b>Gamified Marketing — $200/month. Cancel anytime.</b> and shows a secure card form.</li>
+        <li>Owner enters card details. If you gave them a promo code, there is a field for it inside the card form.</li>
+        <li>On success the “You’re all set!” screen appears with a <b>Go to Dashboard</b> button.</li>
+      </ol>
+      <div class="note"><b>If the card fails</b>The form shows the bank’s reason and a retry. Nothing is charged twice. If they close the tab, they can log in and reach payment again from the same link.</div>
+      <div class="check"><b>Done when</b><label><input type="checkbox"> “You’re all set!” screen seen</label><label><input type="checkbox"> Owner clicks Go to Dashboard</label></div>
+    </section>
+
+    <!-- 5 -->
+    <section class="step" id="s5">
+      <div class="step-head"><div class="step-num who-owner">5</div><div><h2>First login and a 60-second tour</h2><p class="who"><b>Where:</b> belan.tech/login → the Campaigns page.</p></div></div>
+      <figure><div class="shot"><img src="/docs/img/03-login.jpg" alt="Login page"></div><figcaption><span><i class="mark">1</i>Email</span><span><i class="mark">2</i>Password</span><span><i class="mark">3</i>Sign in</span></figcaption></figure>
+      <figure><div class="shot"><img src="/docs/img/04-campaigns.jpg" alt="Campaigns page with the main controls marked"></div><figcaption><span><i class="mark">1</i>New campaign</span><span><i class="mark">2</i>Contacts: the text list and imports</span><span><i class="mark">3</i>Settings: POS, branding, sign-up link, referrals</span><span><i class="mark">4</i>Customers: any person’s full history</span><span><i class="mark">5</i>Revenue: orders that used a coupon</span></figcaption></figure>
+      <div class="say"><b>Say this</b>“Three tabs, one gear. Campaigns is where you make things. Customers is where you look someone up. Revenue is what came back. The gear is the one-time setup we’re about to do.”</div>
+      <p>The moon icon switches to dark mode if they prefer it. It only affects their dashboard.</p>
+    </section>
+
+    <!-- 6 -->
+    <section class="step" id="s6">
+      <div class="step-head"><div class="step-num who-owner">6</div><div><h2>Connect the POS (the API key)</h2><p class="who"><b>Who:</b> the owner (they must be logged into Clover). <b>Where:</b> gear icon → <b>POS</b> tab.</p></div></div>
+      <div class="where">Dashboard <span class="sep">→</span> ⚙ Settings <span class="sep">→</span> POS</div>
+      <p>This is what makes coupons real: once Clover is connected, tapping “redeem” on a coupon creates a discount at the register, and every order that used a coupon shows up under Revenue and in the customer’s timeline. Without it, coupon pages still work but the discount has to be typed in by hand and nothing is tracked.</p>
+      <figure><div class="shot"><img src="/docs/img/05-settings-pos.jpg" alt="Settings, POS tab"></div><figcaption><span><i class="mark">1</i>Merchant ID</span><span><i class="mark">2</i>API token (paste once; it’s stored securely and never shown again)</span><span><i class="mark">3</i>Connect</span></figcaption></figure>
+      <p><b>Where the owner finds these in Clover</b> (have them share their screen):</p>
+      <ol class="steps">
+        <li>Log in at <code>clover.com</code> and open the web dashboard.</li>
+        <li><b>Merchant ID:</b> Account &amp; Setup → the 13-character ID at the top (it is also in the browser address bar after <code>/m/</code>).</li>
+        <li><b>API token:</b> Account &amp; Setup → <b>API Tokens</b> → <b>Create new token</b>. Name it “Belan”. Tick permissions: <b>Customers</b> (read), <b>Orders</b> (read), <b>Inventory</b> (read and write), <b>Merchant</b> (read). Inventory write is what lets Belan create the coupon discounts.</li>
+        <li>Copy the token, paste it in Belan, click <b>Connect</b>. Belan checks with Clover and shows “Connected to &lt;their business name&gt;” with three ticks: orders, customers, discounts.</li>
+      </ol>
+      <div class="note"><b>If a tick shows ✗</b>A permission was missed. Edit the token in Clover (or create a new one), tick the missing permission, paste again, Connect again. Belan never stores a token that failed the check.</div>
+      <div class="say"><b>Say this</b>“Belan only reads orders and creates the discount codes. It can’t change your menu, prices, or take money.”</div>
+      <div class="check"><b>Done when</b><label><input type="checkbox"> Green “Connected” bar with the business name</label><label><input type="checkbox"> All three ticks (orders, customers, discounts)</label></div>
+    </section>
+
+    <!-- 7 -->
+    <section class="step" id="s7">
+      <div class="step-head"><div class="step-num who-owner">7</div><div><h2>Branding: make the coupon look like them</h2><p class="who"><b>Where:</b> ⚙ Settings → <b>Branding</b> tab.</p></div></div>
+      <p>Branding here is only what <em>their customers</em> see: the thumbnail under a coupon link in Messages, the coupon page, the QR sign-up page, the referral page. The Belan dashboard itself doesn’t change.</p>
+      <figure><div class="shot"><img src="/docs/img/06-settings-branding.jpg" alt="Settings, Branding tab"></div><figcaption><span><i class="mark">1</i>Logo URL</span><span><i class="mark">2</i>Brand colour (pick or type a hex code)</span><span><i class="mark">3</i>Hero photo URL: a wide shot of their food</span><span><i class="mark">4</i>Save changes</span></figcaption></figure>
+      <ol class="steps">
+        <li>Ask for a logo (PNG with a transparent background is best) and one great food photo. If they only have files, send them to engineering to host and get back URLs; if their website already has them, right-click the image on their site → Copy image address.</li>
+        <li>Paste the URLs, pick the brand colour with the colour box (or type the hex from their website), watch the preview card update, <b>Save changes</b>.</li>
+        <li>Leave “Link preview image” empty. Belan generates the thumbnail from the logo, colour and photo automatically.</li>
+      </ol>
+      <div class="check"><b>Done when</b><label><input type="checkbox"> Preview shows their logo, colour and photo</label><label><input type="checkbox"> Saved ✓</label></div>
+    </section>
+
+    <!-- 8 -->
+    <section class="step" id="s8">
+      <div class="step-head"><div class="step-num who-owner">8</div><div><h2>Turn on the QR sign-up link</h2><p class="who"><b>Where:</b> ⚙ Settings → <b>Sign-up link</b> tab.</p></div></div>
+      <p>This is how the list grows the safe way: a customer scans a QR code, fills in name and number, ticks a consent box, and gets a welcome coupon by text. Belan records the consent.</p>
+      <figure><div class="shot"><img src="/docs/img/07-settings-signup.jpg" alt="Settings, Sign-up link tab"></div><figcaption><span><i class="mark">1</i>Turn the link on</span><span><i class="mark">2</i>Link name: short, lowercase, e.g. sauce-bros</span><span><i class="mark">3</i>Save</span></figcaption></figure>
+      <ol class="steps">
+        <li>Tick the toggle, type a link name (letters, numbers, hyphens), set the welcome discount and how long it lasts, <b>Save</b>.</li>
+        <li>Copy the link (it appears under the form as <code>belan.tech/join/&lt;name&gt;</code>). Make a QR code from it with any free QR generator and send the owner a printable card, or ask engineering for one.</li>
+        <li>Suggest three spots: the counter, every table, the receipt.</li>
+      </ol>
+      <div class="say"><b>Say this</b>“Every person who scans this has agreed in writing to hear from you. That’s the list we’ll play games with.”</div>
+    </section>
+
+    <!-- 9 -->
+    <section class="step" id="s9">
+      <div class="step-head"><div class="step-num who-owner">9</div><div><h2>Import the contacts they already have (Excel / CSV)</h2><p class="who"><b>Where:</b> Campaigns → <b>Contacts</b> → Import contacts.</p></div></div>
+      <div class="where">Campaigns <span class="sep">→</span> Contacts <span class="sep">→</span> Import contacts</div>
+      <div class="note"><b>Important, say it out loud</b>Only people who <b>already agreed</b> to receive the restaurant’s texts go in this file: a loyalty list, a sign-up sheet, an online-ordering opt-in. The owner ticks a box confirming this and it is recorded. Never import a purchased list or “everyone who ever ordered”.</div>
+      <figure><div class="shot"><img src="/docs/img/08-contacts-import.jpg" alt="Contacts panel with the import card"></div><figcaption><span><i class="mark">1</i>Download the example file to copy the layout</span><span><i class="mark">2</i>Drop the .xlsx or .csv here</span></figcaption></figure>
+      <p><b>The file:</b> one column of phone numbers is all that’s required. Names are optional. Any US number format works; a header row is optional; extra columns are ignored.</p>
+      <table>
+        <tr><th>First Name</th><th>Last Name</th><th>Phone</th></tr>
+        <tr><td>Maria</td><td>Lopez</td><td class="mono">(972) 555-0142</td></tr>
+        <tr><td>James</td><td>Carter</td><td class="mono">9725550187</td></tr>
+        <tr><td></td><td></td><td class="mono">+1 972 555 0123</td></tr>
+      </table>
+      <ol class="steps">
+        <li>Drop the file. Belan shows how many numbers it read, how many are <b>new</b>, how many were already on the list, and any rows it couldn’t read (with row numbers, so the owner can fix them in Excel).</li>
+        <li>Owner ticks “I confirm every contact in this file has already agreed…”.</li>
+        <li>Click <b>Add N contacts to my list</b>. No text is sent. They are immediately available to campaigns.</li>
+      </ol>
+    </section>
+
+    <!-- 10 -->
+    <section class="step" id="s10">
+      <div class="step-head"><div class="step-num who-owner">10</div><div><h2>The first campaign, tested on their own phone</h2><p class="who"><b>Where:</b> Campaigns → <b>New campaign</b> → Game campaign. Five steps.</p></div></div>
+      <figure><div class="shot"><img src="/docs/img/09-new-campaign-picker.jpg" alt="New campaign chooser"></div><figcaption><span><i class="mark">1</i>Start with Game campaign. (Everyone-wins is the same thing with no losers; Promotional message is a plain text with an optional coupon.)</span></figcaption></figure>
+
+      <h3 style="font-size:16px;margin:18px 0 6px">Step 1 · Roster</h3>
+      <figure><div class="shot"><img src="/docs/img/10-wizard-roster.jpg" alt="Wizard step 1, roster"></div><figcaption><span><i class="mark">1</i>Everyone on the list is selected by default; untick anyone, or use groups</span><span><i class="mark">2</i>Continue</span></figcaption></figure>
+
+      <h3 style="font-size:16px;margin:18px 0 6px">Step 2 · Schedule</h3>
+      <figure><div class="shot"><img src="/docs/img/11-wizard-schedule.jpg" alt="Wizard step 2, schedule"></div><figcaption><span><i class="mark">1</i>Pick up to two days a week</span><span><i class="mark">2</i>Send time (restaurant’s local time)</span><span><i class="mark">3</i>Continue</span></figcaption></figure>
+      <div class="say"><b>Say this</b>“Pick your slowest night. Send it about two hours before people decide what’s for dinner.”</div>
+
+      <h3 style="font-size:16px;margin:18px 0 6px">Step 3 · Prizes</h3>
+      <figure><div class="shot"><img src="/docs/img/12-wizard-prizes.jpg" alt="Wizard step 3, prizes"></div><figcaption><span><i class="mark">1</i>Classic (one winner + a consolation for everyone else) or Everyone wins</span><span><i class="mark">2</i>Winner’s prize: a % off or a free item from their menu</span><span><i class="mark">3</i>Continue</span></figcaption></figure>
+      <p>Further down the same screen: the consolation discount (default 10%) and how long coupons last (default: until 11 PM the next day). Shorter windows bring people in sooner.</p>
+
+      <h3 style="font-size:16px;margin:18px 0 6px">Step 4 · Games, and the test</h3>
+      <figure><div class="shot"><img src="/docs/img/13-wizard-games.jpg" alt="Wizard step 4, games with the test card"></div><figcaption><span><i class="mark">1</i>Change swaps the game (catalog or build your own)</span><span><i class="mark">2</i>Owner’s mobile number</span><span><i class="mark">3</i>Send test: the real text arrives in seconds</span></figcaption></figure>
+      <ol class="steps">
+        <li>Owner types their own mobile number and clicks <b>Send test</b>. Leave “Create a real coupon in your POS” unticked for the test unless they want to see the discount appear in Clover (it self-deletes after 3 minutes).</li>
+        <li>They reply to the text with the answer the screen tells them. They get the winner text with a coupon link.</li>
+        <li>They tap the link. This is the moment: the branded thumbnail, the coupon page, the redeem button. Let them play with it.</li>
+      </ol>
+      <div class="say"><b>Say this</b>“That’s exactly what your customers get. Nothing goes to anyone else until you press Launch.”</div>
+
+      <h3 style="font-size:16px;margin:18px 0 6px">Step 5 · Review and launch</h3>
+      <figure><div class="shot"><img src="/docs/img/14-wizard-review.jpg" alt="Wizard step 5, review"></div><figcaption><span><i class="mark">1</i>Launch Campaign. From here Belan sends every round on schedule, grades replies, and texts coupons.</span></figcaption></figure>
+      <div class="note"><b>Before Launch</b>Read the message preview together. Check the restaurant name, the prize, and the day/time. Launch sends the first round at the next scheduled time, not immediately.</div>
+    </section>
+
+    <!-- 11 -->
+    <section class="step" id="s11">
+      <div class="step-head"><div class="step-num who-owner">11</div><div><h2>After launch: what to look at, and when</h2><p class="who"><b>Where:</b> Campaigns (detail), Customers, Revenue.</p></div></div>
+      <ul>
+        <li><b>Campaigns:</b> the campaign appears under “Running now”. Click it for sent / played / won counts per game, and Pause or Resume.</li>
+        <li><b>Customers:</b> type any part of a phone number or name to see that person’s full story: every text and reply, games, coupons opened / redeemed / used, and their POS orders. Use it when an owner asks “did so-and-so ever come in?”</li>
+        <li><b>Revenue:</b> every order that used a coupon, pulled from Clover, with the discount given and the revenue it brought.</li>
+      </ul>
+      <figure><div class="shot"><img src="/docs/img/16-customers-search.jpg" alt="Customers search"></div><figcaption><span><i class="mark">1</i>Type any part of a number or name</span><span><i class="mark">2</i>Pick the customer</span></figcaption></figure>
+      <figure><div class="shot"><img src="/docs/img/17-customers-timeline.jpg" alt="Customer timeline"></div><figcaption><span>Summary tiles, filters, and the timeline. “Refresh from POS” pulls their latest orders on demand when Clover is connected.</span></figcaption></figure>
+      <figure><div class="shot"><img src="/docs/img/15-revenue.jpg" alt="Revenue tab"></div><figcaption><span>Revenue fills in as coupons get used at the register.</span></figcaption></figure>
+      <div class="say"><b>Follow-up call, one week later</b>“Open Revenue with me. Here’s every order the game brought in. Now let’s look at who played but didn’t come in, and send them an everyone-wins round.”</div>
+    </section>
+
+    <!-- 12 -->
+    <section class="step" id="s12">
+      <div class="step-head"><div class="step-num">12</div><div><h2>Problems you’ll see, and what to do</h2></div></div>
+      <table>
+        <tr><th>What they say</th><th>What it usually is</th><th>Do this</th></tr>
+        <tr><td>“My restaurant isn’t in the list” (step 2)</td><td>Step 0 not done, or already claimed</td><td>Ping engineering with the restaurant name</td></tr>
+        <tr><td>“Connect failed” (step 6)</td><td>Wrong merchant ID, or a token missing a permission</td><td>Re-check the ID; recreate the token with Customers, Orders, Inventory (read+write), Merchant</td></tr>
+        <tr><td>“The coupon says it couldn’t create the discount”</td><td>POS not connected</td><td>Do step 6, then have the customer tap redeem again</td></tr>
+        <tr><td>“Nobody got the text”</td><td>Campaign is paused, or the send time hasn’t arrived</td><td>Open the campaign; check status and next send time</td></tr>
+        <tr><td>“Can I text my whole customer list to get them to opt in?”</td><td>Unsolicited opt-in texts are turned off in Belan for now</td><td>Use the QR sign-up link (step 8) and the consented import (step 9)</td></tr>
+        <tr><td>“I want Toast / Square”</td><td>Clover only today</td><td>Take the details; Toast is in progress. Games and coupons still work; the register discount is typed by the cashier</td></tr>
+      </table>
+      <p>Anything else: engineering, with the restaurant name, the owner’s email, and a screenshot.</p>
+    </section>
+
+    <!-- 13 -->
+    <section class="step" id="s13">
+      <div class="step-head"><div class="step-num">13</div><div><h2>The whole thing on one checklist</h2></div></div>
+      <div class="two">
+        <div class="check"><b>Before the call</b><label><input type="checkbox"> Restaurant created with exact name</label><label><input type="checkbox"> Setup code</label><label><input type="checkbox"> Marketing number provisioned</label><label><input type="checkbox"> Owner has Clover login handy</label><label><input type="checkbox"> Owner has logo + food photo</label><label><input type="checkbox"> Owner has a consented contact list (optional)</label></div>
+        <div class="check"><b>On the call</b><label><input type="checkbox"> Account created</label><label><input type="checkbox"> Restaurant linked</label><label><input type="checkbox"> RCS chosen or skipped</label><label><input type="checkbox"> Payment done</label><label><input type="checkbox"> POS connected (3 ticks)</label><label><input type="checkbox"> Branding saved</label><label><input type="checkbox"> Sign-up link on, QR card sent</label><label><input type="checkbox"> Contacts imported</label><label><input type="checkbox"> Test sent to owner’s phone and opened</label><label><input type="checkbox"> Campaign launched</label><label><input type="checkbox"> Follow-up call booked for next week</label></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+</body>
+</html>

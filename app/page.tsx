@@ -409,6 +409,13 @@ export default function MarketingHomePage() {
             <span className="font-black text-black text-sm tracking-tight">BELAN AI</span>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold tracking-widest text-black/60">
+            <Link
+              href="/docs"
+              className="inline-flex items-center gap-2 border-2 border-black px-4 py-2 text-black font-black transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#000]"
+              style={{ background: ACCENT }}
+            >
+              📘 DOCS
+            </Link>
             <Link href="/oldprods" className="hover:text-black transition-colors">VOICE &amp; TEXT ORDERING</Link>
             <Link href="/about" className="hover:text-black transition-colors">ABOUT</Link>
             <Link href="/privacy-policy" className="hover:text-black transition-colors">PRIVACY</Link>
