@@ -193,10 +193,10 @@ export const GAME_DEFINITIONS: Record<
   LegacyGameType,
   { label: string; emoji: string }
 > = {
-  "pick-number": { label: "Pick a Number 1–100", emoji: "🎲" },
+  "pick-number": { label: "Pick a Number 1–100", emoji: "🔢" },
   trivia: { label: "Food Trivia", emoji: "🍕" },
   "guess-letter": { label: "Guess the Letter A–Z", emoji: "🔤" },
-  "roll-dice": { label: "Roll the Dice", emoji: "🎰" },
+  "roll-dice": { label: "Roll the Dice", emoji: "🎲" },
 };
 
 export const DEFAULT_GAME_ORDER: LegacyGameType[] = [
