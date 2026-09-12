@@ -289,6 +289,28 @@ function buildDefaultGames(
   });
 }
 
+/** A stored campaign config with every wizard field present, so the detail
+ *  view can render older or partial rows (e.g. the hidden container campaign
+ *  the backend uses for test sends) without crashing. */
+function normalizeCampaignConfig(raw: Partial<CampaignConfig> | null | undefined): CampaignConfig {
+  const c = raw ?? {};
+  return {
+    selectedDays: Array.isArray(c.selectedDays) ? c.selectedDays : [],
+    dayTimes: c.dayTimes && typeof c.dayTimes === "object" ? c.dayTimes : {},
+    endDate: c.endDate ?? null,
+    games: Array.isArray(c.games) ? c.games : [],
+    prizes: Array.isArray(c.prizes) ? c.prizes : [],
+    everyoneWins: !!c.everyoneWins,
+    loserDiscount: typeof c.loserDiscount === "number" ? c.loserDiscount : 0,
+    loserDiscountCap: typeof c.loserDiscountCap === "number" ? c.loserDiscountCap : 0,
+    couponExpiryDays: c.couponExpiryDays ?? null,
+    couponExpiryTime: c.couponExpiryTime ?? null,
+    couponExpiryHours: c.couponExpiryHours ?? null,
+    optedInCount: typeof c.optedInCount === "number" ? c.optedInCount : 0,
+    targetCustomerIds: Array.isArray(c.targetCustomerIds) ? c.targetCustomerIds : [],
+  };
+}
+
 function buildDefaultPrizes(count: number): PrizeConfig[] {
   return Array.from({ length: count }, () => ({
     type: "percent-off" as PrizeType,
@@ -552,8 +574,9 @@ export function GamifiedMarketingTab({
       }>(`/api/marketing/campaigns/${existingCampaignId}?restaurant_id=${id}`)
         .then((d) => {
           setCampaignId(d.campaign.id);
-          setLaunchedConfig(d.campaign.config);
-          setEveryoneWins(!!d.campaign.config.everyoneWins);
+          const cfg = normalizeCampaignConfig(d.campaign.config);
+          setLaunchedConfig(cfg);
+          setEveryoneWins(cfg.everyoneWins);
           setPagePhase(d.campaign.status === "paused" ? "paused" : "active");
         })
         .catch(() => {})
@@ -1293,7 +1316,9 @@ export function GamifiedMarketingTab({
               </span>
               {launchedConfig && (
                 <span className="text-xs text-capy-muted">
-                  {launchedConfig.selectedDays.join(", ")} ·{" "}
+                  {launchedConfig.selectedDays.length > 0
+                    ? `${launchedConfig.selectedDays.join(", ")} · `
+                    : ""}
                   {launchedConfig.optedInCount} opted in
                 </span>
               )}
