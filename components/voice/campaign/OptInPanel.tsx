@@ -87,6 +87,32 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
   const [optedInCustomers, setOptedInCustomers] = useState<RosterCustomer[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
 
+  // New-opt-in counter (today / this week / this month). All three counts come
+  // back in one request; the toggle just switches which one is displayed.
+  const [optinStats, setOptinStats] = useState<{ today: number; week: number; month: number } | null>(null);
+  const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
+
+  const fetchOptinStats = (id: string) => {
+    // Period boundaries in the viewer's local timezone: midnight today,
+    // Monday of this week, the 1st of this month.
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - ((todayStart.getDay() + 6) % 7));
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const q = new URLSearchParams({
+      restaurant_id: id,
+      today_start: todayStart.toISOString(),
+      week_start: weekStart.toISOString(),
+      month_start: monthStart.toISOString(),
+    });
+    marketingApiFetch<{ today: number; week: number; month: number }>(
+      `/api/marketing/optin-stats?${q.toString()}`,
+    )
+      .then((d) => setOptinStats(d))
+      .catch(() => {});
+  };
+
   // Where this blast's contacts come from. "clover" scans the POS; "upload"
   // takes a spreadsheet, which is the only route for a merchant who isn't on
   // Clover. Both feed the same Send button below.
@@ -103,6 +129,7 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
 
   useEffect(() => {
     refreshOptinStatus(restaurantId);
+    fetchOptinStats(restaurantId);
 
     getOptinConfig(restaurantId)
       .then((c) => {
@@ -215,6 +242,37 @@ export function OptInPanel({ restaurantId }: { restaurantId: string }) {
 
   return (
     <div className="p-4 space-y-4">
+      {/* New opt-ins counter with Today / This Week / This Month toggle */}
+      <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="card-heading text-sm">New Opt-Ins</p>
+            <p className="text-xs text-capy-muted mt-0.5">People who joined your list</p>
+          </div>
+          <div className="flex rounded-lg border border-capy-border overflow-hidden text-xs font-semibold">
+            {(["today", "week", "month"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setStatsPeriod(p)}
+                className={`px-2.5 py-1.5 transition-colors ${
+                  statsPeriod === p
+                    ? "bg-capy-green text-white"
+                    : "text-capy-muted hover:bg-slate-50"
+                }`}
+              >
+                {p === "today" ? "Today" : p === "week" ? "This Week" : "This Month"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p
+          className="text-4xl font-bold text-capy-green-dark"
+          style={{ fontFamily: "Tektur, sans-serif" }}
+        >
+          {optinStats ? optinStats[statsPeriod].toLocaleString() : "—"}
+        </p>
+      </div>
+
       <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
         {hasBlasted && optinStatus ? (
           <>
