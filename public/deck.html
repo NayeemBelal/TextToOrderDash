@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Belan Sales Deck</title>
+<meta name="description" content="Belan Marketing AI in fifteen slides: gamified texts your customers reply to, prizes they earn and redeem before they expire, and a customer list that grows through referrals and QR sign-up.">
+<meta property="og:title" content="Belan Sales Deck">
+<meta property="og:description" content="Turn your customer list into a community that plays. Gamified text marketing for restaurants, $200/month flat.">
+<meta property="og:image" content="https://belan.tech/og-screenshot.png">
+<meta property="og:url" content="https://belan.tech/deck">
+<link rel="icon" href="/BelanLogo.png">
+<style>
+@font-face{font-family:Tektur;font-style:normal;font-weight:400 900;font-display:swap;src:url(/docs/fonts/tektur-latin.woff2) format("woff2")}
+@font-face{font-family:Helvetica;font-weight:400 600;font-display:swap;src:url(/fonts/Helvetica.ttf) format("truetype")}
+@font-face{font-family:Helvetica;font-weight:700 900;font-display:swap;src:url(/fonts/Helvetica-Bold.ttf) format("truetype")}
+.topbar a{color:inherit;text-decoration:none;border-bottom:2px solid currentColor}
+</style>
+</head>
+<body>
+<style>
+  /* Belan's own brand world: paper, hard black rules, pastel fills. Deliberately
+     single-theme — the deck is a printed object, not a themed app. */
+  :root{--paper:#fbfbf9;--ink:#0b0b0b;--muted:#5b5b57;--rule:#0b0b0b;
+        --violet:#c4b5fd;--sky:#a4e5f8;--mint:#a1dfc5;--butter:#f5dda1;--pink:#fbc8d4;
+        --sauce:#b5245c;--sauce-dark:#3a1a0f;--shadow:5px 5px 0 #0b0b0b}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#e9e8e3;color:var(--ink);font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;font-weight:500}
+  body{padding:24px 16px}
+  h1,h2,h3,.tk{font-family:Tektur,Helvetica,sans-serif;font-weight:900;letter-spacing:-.01em;text-wrap:balance;margin:0}
+  .deck{max-width:1160px;margin:0 auto}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;font-size:13px;font-weight:700;color:var(--muted)}
+  .topbar b{color:var(--ink)}
+  .kbd{display:inline-block;border:2px solid var(--ink);padding:1px 7px;border-radius:6px;background:#fff;font-family:Tektur,sans-serif;font-weight:700;font-size:12px}
+  .stage{position:relative;background:var(--paper);border:2px solid var(--rule);box-shadow:var(--shadow);aspect-ratio:16/9;max-width:100%;overflow:hidden}
+  .slide{position:absolute;inset:0;padding:clamp(20px,4.5vw,56px);display:none;flex-direction:column;gap:clamp(12px,2vw,24px)}
+  .slide.on{display:flex}
+  .eyebrow{display:inline-block;align-self:flex-start;border:2px solid var(--ink);padding:5px 10px;font-family:Tektur,sans-serif;font-weight:700;font-size:clamp(10px,1.1vw,13px);letter-spacing:.14em;text-transform:uppercase}
+  .h1{font-size:clamp(28px,5.2vw,68px);line-height:.98}
+  .h2{font-size:clamp(22px,3.4vw,44px);line-height:1.02}
+  .lead{font-size:clamp(14px,1.7vw,22px);line-height:1.45;color:var(--muted);font-weight:600;max-width:34ch}
+  .grid{display:grid;gap:clamp(10px,1.6vw,20px)}
+  .cols-2{grid-template-columns:1.1fr .9fr;align-items:center}
+  .cols-3{grid-template-columns:repeat(3,1fr)}
+  .cols-4{grid-template-columns:repeat(4,1fr)}
+  .card{border:2px solid var(--ink);background:#fff;padding:clamp(12px,1.6vw,20px)}
+  .card h3{font-size:clamp(13px,1.5vw,19px);margin-bottom:6px}
+  .card p{margin:0;font-size:clamp(11px,1.25vw,15px);line-height:1.45;color:var(--muted);font-weight:600}
+  .card p b{color:var(--ink)}
+  .num{display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--ink);font-family:Tektur,sans-serif;font-weight:900;font-size:clamp(14px,1.8vw,22px);padding:2px 10px;margin-bottom:10px}
+  .node{background:#fff}
+  .fill-violet{background:var(--violet)}.fill-sky{background:var(--sky)}.fill-mint{background:var(--mint)}.fill-butter{background:var(--butter)}.fill-pink{background:var(--pink)}
+  .shot{border:2px solid var(--ink);box-shadow:var(--shadow);overflow:hidden;background:#fff;max-width:100%}
+  .shot img{display:block;width:100%;height:auto}
+  .foot{position:absolute;left:clamp(20px,4.5vw,56px);right:clamp(20px,4.5vw,56px);bottom:clamp(12px,2vw,22px);display:flex;justify-content:space-between;font-family:Tektur,sans-serif;font-weight:700;font-size:clamp(9px,1vw,12px);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .dots{display:flex;gap:6px;flex-wrap:wrap}
+  .dots button{width:12px;height:12px;border:2px solid var(--ink);background:#fff;padding:0;cursor:pointer}
+  .dots button.on{background:var(--ink)}
+  .btn{border:2px solid var(--ink);background:#fff;font:700 13px Tektur,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:10px 16px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+  .btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .btn:focus-visible,.dots button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+  /* phone thread */
+  .phone{border:2px solid var(--ink);border-radius:26px;background:#fff;width:min(300px,100%);justify-self:center;box-shadow:var(--shadow)}
+  .phone .bar{border-bottom:2px solid var(--ink);border-radius:24px 24px 0 0;padding:10px;text-align:center;font-family:Tektur,sans-serif;font-weight:700;font-size:13px}
+  .phone .body{padding:12px;display:flex;flex-direction:column;gap:8px}
+  .bub{border:2px solid var(--ink);padding:8px 10px;font-size:12px;line-height:1.4;border-radius:14px;max-width:88%}
+  .bub.in{align-self:flex-start;border-bottom-left-radius:4px}
+  .bub.out{align-self:flex-end;border-bottom-right-radius:4px;max-width:50%}
+  .prev{margin-top:6px;border:2px solid var(--ink);border-radius:8px;overflow:hidden}
+  .prev .top{display:flex;gap:8px;align-items:center;padding:6px 8px;color:#fff}
+  .prev .logo{width:26px;height:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .prev .t{font-family:Tektur,sans-serif;font-weight:700;font-size:11px;line-height:1.1}
+  .prev .s{font-size:10px;font-weight:700;opacity:.9}
+  .prev .u{padding:4px 8px;font-size:10px;font-weight:700;color:var(--muted);background:#fff}
+  .price{font-family:Tektur,sans-serif;font-weight:900;font-size:clamp(40px,6vw,84px);line-height:1}
+  .check{display:flex;gap:8px;align-items:flex-start;font-size:clamp(12px,1.35vw,16px);font-weight:700}
+  .check::before{content:"✓";display:inline-flex;width:20px;height:20px;align-items:center;justify-content:center;border:2px solid var(--ink);background:var(--mint);font-size:12px;flex-shrink:0;margin-top:2px}
+  .list{display:flex;flex-direction:column;gap:8px}
+  .notes{border:2px solid var(--ink);background:var(--butter);padding:12px 14px;font-size:13px;line-height:1.5;margin-top:14px;display:none}
+  .notes.on{display:block}
+  .notes b{font-family:Tektur,sans-serif}
+  .tag{display:inline-block;border:2px solid var(--ink);padding:3px 8px;font-family:Tektur,sans-serif;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin:0 6px 6px 0;background:#fff}
+  /* the loop */
+  .loop{display:grid;grid-template-columns:repeat(5,1fr);gap:0;align-items:stretch}
+  .loop .node{border:2px solid var(--ink);padding:clamp(10px,1.4vw,18px);position:relative}
+  .loop .node + .node{margin-left:-2px}
+  .loop .node .k{font-family:Tektur,sans-serif;font-weight:900;font-size:clamp(13px,1.6vw,22px);display:block;margin-bottom:4px}
+  .loop .node p{margin:0;font-size:clamp(10px,1.15vw,14px);line-height:1.4;color:var(--muted);font-weight:600}
+  .loop .node .ar{position:absolute;right:-13px;top:50%;transform:translateY(-50%);width:22px;height:22px;border:2px solid var(--ink);background:var(--paper);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;z-index:2}
+  .back{display:flex;justify-content:space-between;align-items:center;border:2px dashed var(--ink);padding:8px 14px;font-family:Tektur,sans-serif;font-weight:700;font-size:clamp(10px,1.15vw,14px);letter-spacing:.06em;text-transform:uppercase}
+  /* timer strip */
+  .timer{border:2px solid var(--ink);background:#fff;padding:clamp(10px,1.4vw,18px);display:flex;flex-direction:column;gap:8px}
+  .timer .big{font-family:Tektur,sans-serif;font-weight:900;font-size:clamp(26px,4vw,54px);line-height:1;letter-spacing:.02em}
+  .bar-track{height:14px;border:2px solid var(--ink);background:#fff;position:relative}
+  .bar-track i{position:absolute;left:0;top:0;bottom:0;background:var(--pink)}
+  .quiet{font-size:clamp(11px,1.2vw,14px);color:var(--muted);font-weight:600;line-height:1.45}
+  .bubble-list{display:flex;flex-direction:column;gap:8px}
+  .msg{border:2px solid var(--ink);border-radius:14px;padding:8px 12px;font-size:clamp(11px,1.2vw,14px);line-height:1.4;background:#fff;max-width:62ch}
+  .msg b{font-family:Tektur,sans-serif;font-weight:700;display:block;font-size:.85em;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  @media (max-width:760px){.cols-2,.cols-3,.cols-4{grid-template-columns:1fr}.stage{aspect-ratio:auto;min-height:70vh}.slide{position:relative}.foot{position:static;margin-top:auto}.lead{max-width:none}.loop{grid-template-columns:1fr}.loop .node + .node{margin-left:0;margin-top:-2px}.loop .node .ar{display:none}}
+  @media print{body{background:#fff;padding:0}.topbar,.nav,.notes{display:none!important}.stage{box-shadow:none;aspect-ratio:auto;border:none}.slide{display:flex!important;position:relative;min-height:100vh;page-break-after:always;border-bottom:2px solid #000}.foot{position:static;margin-top:auto}}
+  @media (prefers-reduced-motion:no-preference){.slide.on{animation:in .25s ease-out}}
+  @keyframes in{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+</style>
+
+<div class="deck">
+  <div class="topbar"><span><a href="/"><b>belan.tech</b></a> · Belan Marketing AI · sales deck</span><span><span class="kbd">←</span> <span class="kbd">→</span> to move · <span class="kbd">N</span> presenter notes · <span class="kbd">P</span> print all slides</span></div>
+
+  <div class="stage" id="stage">
+
+    <!-- 1 Cover -->
+    <section class="slide on">
+      <span class="eyebrow fill-violet">✦ Gamified text marketing for restaurants</span>
+      <h1 class="h1">Turn your customer list into a community that plays.</h1>
+      <p class="lead">Belan texts each of your customers a quick game. They reply, they win, and they come in before the prize runs out. Every winner brings a friend. Every round makes the list bigger.</p>
+      <div class="foot"><span>belan.tech</span><span>Example restaurant: Sauce Bros Pizza</span></div>
+    </section>
+
+    <!-- 2 Problem -->
+    <section class="slide">
+      <span class="eyebrow fill-pink">The problem</span>
+      <h2 class="h2">Discounts are given away. Nobody earns them, so nobody moves.</h2>
+      <div class="grid cols-3">
+        <div class="card"><h3>“10% off” is wallpaper</h3><p>Every restaurant sends the same blast. It asks for nothing, so it gets nothing. After a few, your number is noise.</p></div>
+        <div class="card"><h3>A coupon with no clock sits in a drawer</h3><p>If it’s good any time, it’s used no time. The visit you wanted this week quietly becomes never.</p></div>
+        <div class="card"><h3>The list never grows</h3><p>You text the same 300 people forever. Nobody on it has a reason to bring anyone else in.</p></div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>02</span></div>
+    </section>
+
+    <!-- 3 The idea -->
+    <section class="slide">
+      <div class="grid cols-2">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span class="eyebrow fill-sky">The idea</span>
+          <h2 class="h2">Don’t give them a discount. Let them <em>win</em> one.</h2>
+          <p class="lead">A game is a text people answer. Trivia, pick a number, roll the dice: ten seconds, a reply, and a prize they earned. An earned prize gets used. A handed-out one gets ignored.</p>
+          <div><span class="tag">They reply</span><span class="tag">They win</span><span class="tag">They come in</span></div>
+        </div>
+        <div class="phone">
+          <div class="bar" style="background:var(--violet)">Sauce Bros Pizza</div>
+          <div class="body">
+            <div class="bub in">🍕 Hey Maria, Trivia Tuesday! What’s the most ordered pizza in America? A) Pepperoni B) Cheese C) Supreme. Reply with your answer to win 20% off tonight!</div>
+            <div class="bub out" style="background:var(--sky)">A</div>
+            <div class="bub in">🏆 You won, Maria! 20% off until 11 PM tomorrow. Tap to claim: belan.tech/prize/WIN-7K2P
+              <div class="prev"><div class="top" style="background:var(--sauce-dark)"><div class="logo">🍕</div><div><div class="t">Sauce Bros Pizza</div><div class="s" style="color:#f4c6d6">You won 20% off 🎉</div></div></div><div class="u">belan.tech</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>03</span></div>
+    </section>
+
+    <!-- 4 The loop -->
+    <section class="slide">
+      <span class="eyebrow fill-mint">How it compounds</span>
+      <h2 class="h2">One text starts a loop. Every turn of it adds customers.</h2>
+      <div class="loop">
+        <div class="node fill-sky"><span class="k">1 · Play</span><p>A personal text with a game they like. They reply in ten seconds.</p><span class="ar">→</span></div>
+        <div class="node fill-violet"><span class="k">2 · Win</span><p>A prize they earned, in your branding, with a clock on it.</p><span class="ar">→</span></div>
+        <div class="node fill-butter"><span class="k">3 · Redeem</span><p>They come in before it expires. Your register records the order.</p><span class="ar">→</span></div>
+        <div class="node fill-pink"><span class="k">4 · Refer</span><p>From their coupon they invite a friend. Both get a bonus.</p><span class="ar">→</span></div>
+        <div class="node fill-mint"><span class="k">5 · Join</span><p>The friend opts in. A QR card at the counter adds walk-ins too.</p></div>
+      </div>
+      <div class="back"><span>↺ New members get next week’s game</span><span>A bigger list every round</span></div>
+      <p class="quiet" style="max-width:70ch">This is the difference between a mailing list and a community. A list only shrinks. A community brings its own friends, and it shows up on game night because it knows the game is coming.</p>
+      <div class="foot"><span>Belan Marketing AI</span><span>04</span></div>
+    </section>
+
+    <!-- 5 Gamification -->
+    <section class="slide">
+      <span class="eyebrow fill-violet">Why a game beats a coupon</span>
+      <h2 class="h2">People ignore offers. They don’t ignore a question.</h2>
+      <div class="grid cols-3">
+        <div class="card"><span class="num fill-sky">Reply</span><h3>A text that asks gets answered</h3><p>A blast is a one-way notice. A game asks one small thing, and answering it takes less effort than deleting it. That reply is the moment a blast never gets.</p></div>
+        <div class="card"><span class="num fill-violet">Earn</span><h3>Won beats given</h3><p>A prize you played for feels like yours. People value what they earned far above what was handed to them, and they don’t let it go to waste.</p></div>
+        <div class="card"><span class="num fill-butter">Repeat</span><h3>A ritual, not a promo</h3><p>Trivia Tuesday, Dice Friday. Regulars start expecting it, talking about it, and playing it together. That’s a community forming around your restaurant.</p></div>
+      </div>
+      <p class="quiet" style="max-width:70ch">Every reply is graded automatically. Winners get the prize, everyone else can get a consolation offer, and nobody is left with nothing to do next.</p>
+      <div class="foot"><span>Belan Marketing AI</span><span>05</span></div>
+    </section>
+
+    <!-- 6 Personal -->
+    <section class="slide">
+      <div class="grid cols-2">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span class="eyebrow fill-sky">Personal, not broadcast</span>
+          <h2 class="h2">Every customer gets their own text and their own game.</h2>
+          <p class="lead">Belan knows each person by name, remembers what they replied to before, and sees their orders from your register. So the trivia fan gets trivia, the dice roller gets dice, and the prize is something they actually order.</p>
+          <div><span class="tag">By name</span><span class="tag">Game they like</span><span class="tag">Prize they order</span></div>
+        </div>
+        <div class="bubble-list">
+          <div class="msg"><b>Maria · plays trivia, orders pepperoni</b>🍕 Hey Maria, Trivia Tuesday! Which topping did we sell most last month? Reply A, B or C to win a free large pepperoni.</div>
+          <div class="msg"><b>James · rolls dice, orders wings</b>🎲 James, roll for it: reply with a number 1–6. Match ours and wings are on us tonight.</div>
+          <div class="msg"><b>New member · first game</b>🎉 Welcome to Sauce Bros, Priya! Everyone wins tonight: reply YES and 15% off is yours until 11 PM.</div>
+        </div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>06</span></div>
+    </section>
+
+    <!-- 7 Urgency -->
+    <section class="slide">
+      <div class="grid cols-2">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span class="eyebrow fill-pink">Time-bound by design</span>
+          <h2 class="h2">They won it. Now they’d lose it.</h2>
+          <p class="lead">Every prize has a window you choose, and the coupon page counts it down. Losing something you already won hurts more than missing a deal you never had. That’s what turns “I should go sometime” into “let’s go tonight”.</p>
+          <div class="list">
+            <div class="check">Coupon expires on your schedule: tonight, tomorrow, this weekend</div>
+            <div class="check">Live countdown on the coupon page, expiry in the text itself</div>
+            <div class="check">Aim it at your slow nights: send Tuesday at 4, expire Wednesday at 11</div>
+          </div>
+        </div>
+        <div class="timer">
+          <span class="tag" style="align-self:flex-start;background:var(--pink)">Your prize</span>
+          <div style="font-family:Tektur,sans-serif;font-weight:900;font-size:clamp(16px,2vw,26px)">20% off · Sauce Bros Pizza</div>
+          <div class="big">04:27:13</div>
+          <div class="bar-track"><i style="width:31%"></i></div>
+          <div class="quiet">Expires tonight at 11:00 PM. Show this at the register or tap redeem.</div>
+        </div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>07</span></div>
+    </section>
+
+    <!-- 8 Growth -->
+    <section class="slide">
+      <span class="eyebrow fill-mint">An ever-growing list</span>
+      <h2 class="h2">Three doors in, all of them consented. None of them out.</h2>
+      <div class="grid cols-3">
+        <div class="card"><span class="num fill-pink">Refer</span><h3>Winners bring friends</h3><p>On every coupon page: <b>“Invite a friend, get +5%.”</b> The friend gets a welcome offer by text, the referrer’s coupon grows once it’s delivered. Your customers recruit for you.</p></div>
+        <div class="card"><span class="num fill-sky">Scan</span><h3>QR at the counter</h3><p>A card on the counter, the tables and the receipt. Scan, enter a number, tick consent, get a welcome coupon. <b>Every walk-in becomes a member you can reach.</b></p></div>
+        <div class="card"><span class="num fill-butter">Import</span><h3>The list you already have</h3><p>Loyalty sign-ups, online ordering opt-ins, a spreadsheet from the counter. <b>Drop in an Excel file</b> and they’re in the next game.</p></div>
+      </div>
+      <p class="quiet" style="max-width:74ch">Each round of a game ends with more people on the list than it started with. The people who join through a friend are the best members you’ll ever have: they came because someone they trust won something here.</p>
+      <div class="foot"><span>Belan Marketing AI</span><span>08</span></div>
+    </section>
+
+    <!-- 9 Community / brand -->
+    <section class="slide">
+      <div class="grid cols-2">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <span class="eyebrow fill-butter">Your community, your brand</span>
+          <h2 class="h2">It all looks like <em>you</em>, not like us.</h2>
+          <p class="lead">The link preview in their messages, the coupon page, the sign-up card, the invite a friend sends: your logo, your colour, your food. One tap at the register turns the prize into a real discount on your POS.</p>
+          <div class="shot"><img src="/docs/img/og-saucebros.jpg" alt="Branded link preview: Sauce Bros Pizza, 23% off your order"></div>
+        </div>
+        <div class="shot" style="max-width:340px;justify-self:center"><img src="/docs/img/18-coupon-page.jpg" alt="Sauce Bros coupon page"></div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>09</span></div>
+    </section>
+
+    <!-- 10 What you see -->
+    <section class="slide">
+      <span class="eyebrow fill-sky">What you see</span>
+      <h2 class="h2">Every reply, every coupon, every order it brought in.</h2>
+      <div class="grid cols-3">
+        <div><div class="shot"><img src="/docs/img/04-campaigns.jpg" alt="Campaigns page"></div><p class="lead" style="font-size:13px;margin:8px 0 0">Campaigns, running and past, on one page. Pause or resume any time.</p></div>
+        <div><div class="shot"><img src="/docs/img/17-customers-timeline.jpg" alt="Customer timeline"></div><p class="lead" style="font-size:13px;margin:8px 0 0">Search any phone number: texts, replies, games, coupons and their orders, in order.</p></div>
+        <div><div class="shot"><img src="/docs/img/15-revenue.jpg" alt="Revenue tab"></div><p class="lead" style="font-size:13px;margin:8px 0 0">Orders that used a coupon, pulled from your register and attributed to the game that caused them.</p></div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>10</span></div>
+    </section>
+
+    <!-- 11 Games -->
+    <section class="slide">
+      <span class="eyebrow fill-violet">Games you can run</span>
+      <h2 class="h2">Pick one, or build your own in a minute.</h2>
+      <div class="grid cols-4">
+        <div class="card"><h3>🍕 Trivia</h3><p>Multiple choice. Everyone who answers right wins, or just the first.</p></div>
+        <div class="card"><h3>🔢 Pick a number</h3><p>1–100. Match our secret pick to win.</p></div>
+        <div class="card"><h3>🎲 Roll the dice</h3><p>1–6. Quick, fun, high reply rate.</p></div>
+        <div class="card"><h3>🎯 Closest guess</h3><p>“How many slices did we sell last month?” Nearest guess wins when entries close.</p></div>
+        <div class="card"><h3>🎟️ Random draw</h3><p>Every reply goes in a hat. Winner drawn at close.</p></div>
+        <div class="card"><h3>🎉 Everyone wins</h3><p>No losers. Every reply gets the prize. Best for slow nights.</p></div>
+        <div class="card"><h3>📣 Promo message</h3><p>Plain text to any group, with an optional instant coupon.</p></div>
+        <div class="card fill-butter"><h3>🛠️ Build your own</h3><p>Choose what they reply with, how they win, and how many can win. Live preview.</p></div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>11</span></div>
+    </section>
+
+    <!-- 12 Compliance -->
+    <section class="slide">
+      <span class="eyebrow fill-mint">Built to be safe</span>
+      <h2 class="h2">A community is built on consent. So is Belan.</h2>
+      <div class="grid cols-2">
+        <div class="list">
+          <div class="check">QR and web sign-up with a real consent checkbox, IP and timestamp recorded</div>
+          <div class="check">Referred friends opt in themselves before their first text</div>
+          <div class="check">Imports only for people who already agreed, with the owner’s attestation stored on every contact</div>
+          <div class="check">STOP and HELP handled automatically, on every number, every time</div>
+          <div class="check">Belan never sends unsolicited “reply YES to join” texts</div>
+        </div>
+        <div class="card fill-sky"><h3>Why it matters</h3><p>Text marketing rules carry real penalties per message. Belan’s flow is designed so every person on your list can be shown to have asked to be there. That’s also why they reply: they wanted to hear from you.</p></div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>12</span></div>
+    </section>
+
+    <!-- 13 Pricing -->
+    <section class="slide">
+      <span class="eyebrow fill-butter">Pricing</span>
+      <div class="grid cols-2">
+        <div class="card">
+          <div class="price">$200<span style="font-size:.35em;color:var(--muted)"> / month</span></div>
+          <p style="margin:6px 0 14px;font-weight:700">Flat. No per-text fees. Cancel any time.</p>
+          <div class="list">
+            <div class="check">A dedicated marketing phone number</div>
+            <div class="check">Unlimited game and promotional campaigns</div>
+            <div class="check">Referral and QR sign-up pages in your branding</div>
+            <div class="check">POS revenue tracking and the customer timeline</div>
+            <div class="check">Setup with a real person on a call</div>
+          </div>
+        </div>
+        <div class="card fill-violet">
+          <span class="tag">Optional add-on</span>
+          <h3 style="font-size:clamp(18px,2.4vw,30px)">Branded RCS sender</h3>
+          <p style="font-weight:800;color:var(--ink);font-size:clamp(14px,1.6vw,20px)">$500 / year carrier registration</p>
+          <p>Your name, logo and a verified badge in the message thread itself, instead of a bare phone number. We handle the paperwork.</p>
+        </div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>13</span></div>
+    </section>
+
+    <!-- 14 Getting started -->
+    <section class="slide">
+      <span class="eyebrow fill-sky">Getting started</span>
+      <h2 class="h2">Ten minutes today. First game this week. A bigger list by next week.</h2>
+      <div class="grid cols-3">
+        <div class="card"><span class="num fill-mint">We need</span><p style="color:var(--ink)"><b>From you:</b> your Clover merchant id and an API token (we’ll show you where), your logo and a good food photo, and the contact list you already have permission to text.</p></div>
+        <div class="card"><span class="num fill-butter">We do</span><p style="color:var(--ink)">Provision your number, connect the register, brand your coupon and invite pages, print your QR sign-up card, and build your first game with you on the call.</p></div>
+        <div class="card"><span class="num fill-pink">You get</span><p style="color:var(--ink)">A game you tested on your own phone, running on the nights you chose, with every order it brings back counted, and every winner inviting the next member.</p></div>
+      </div>
+      <div class="foot"><span>Belan Marketing AI</span><span>14</span></div>
+    </section>
+
+    <!-- 15 Close -->
+    <section class="slide" style="justify-content:center">
+      <span class="eyebrow fill-violet">Let’s go</span>
+      <h1 class="h1">Let’s run your first game this week.</h1>
+      <p class="lead">belan.tech · Book a call: calendar.app.google/uCwfd2qfNtjJMSca9</p>
+      <div class="foot"><span>Belan Marketing AI</span><span>15</span></div>
+    </section>
+  </div>
+
+  <div class="nav">
+    <button class="btn" id="prev">← Back</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn" id="next">Next →</button>
+  </div>
+
+  <div class="notes" id="notes"></div>
+</div>
+
+<script>
+(function(){
+  var NOTES = [
+    "Open with the headline, then one question: when did you last reply to a restaurant’s text? Their answer is the whole pitch. We don’t send offers; we run a game their customers play.",
+    "Three pains. Land the middle one hardest: a coupon with no deadline is a coupon that never gets used. Ask how many of their current coupons actually come back.",
+    "Show the thread. Point at the reply bubble: that’s the moment a blast never gets. Then the expiry in the winner text, then the branded preview: their logo, not ours.",
+    "This is the core slide. Walk the loop once slowly: play, win, redeem, refer, join, and back to play. Say: a list shrinks, a community recruits. Every round ends with more members than it started with.",
+    "Why a game beats a coupon. Keep it human: a question gets answered, a thing you won feels like yours, and a weekly game becomes a ritual regulars talk about.",
+    "Personalisation: by name and by what they order is live today. Picking the game each person is most likely to play is rolling out now; pitch it, but don’t demo it live yet.",
+    "Loss aversion in plain words: losing something you already won hurts more than missing a deal. The countdown does the selling. Tie it to their slowest night.",
+    "Three ways in. Lead with referral: every coupon page has an invite button, and the friend gets a welcome offer while the referrer’s coupon grows. Then the QR card. Then the spreadsheet import.",
+    "This is their brand, end to end. If they have Clover, the redeem button makes a real discount at the register.",
+    "Campaigns page, then Customers: search a number, show the timeline. Then Revenue: coupon orders pulled from the POS. Attribution is what makes the loop measurable.",
+    "Don’t read every card. Ask which game fits their crowd. Everyone-wins for a slow Tuesday; trivia for regulars; closest-guess for a launch.",
+    "Consent is the reason the loop works, not just the legal cover. People reply because they asked to be there. Say plainly: we never text people who didn’t opt in.",
+    "$200 flat, number included. RCS is optional; mention it only if they ask about the sender showing their name.",
+    "List what we need from them today: Clover merchant id + API token, logo + photo, contact list. Then book the setup call.",
+    "Close with a date for the first game, and ask which night they want to own.",
+  ];
+  var slides=[].slice.call(document.querySelectorAll('.slide')), i=0, dots=document.getElementById('dots'), notes=document.getElementById('notes');
+  slides.forEach(function(_,k){var b=document.createElement('button');b.setAttribute('aria-label','Slide '+(k+1));b.onclick=function(){go(k)};dots.appendChild(b)});
+  function go(k){i=(k+slides.length)%slides.length;slides.forEach(function(s,j){s.classList.toggle('on',j===i)});[].forEach.call(dots.children,function(d,j){d.classList.toggle('on',j===i)});notes.innerHTML='<b>Presenter notes · slide '+(i+1)+'</b><br>'+NOTES[i];location.hash='s'+(i+1)}
+  document.getElementById('prev').onclick=function(){go(i-1)};document.getElementById('next').onclick=function(){go(i+1)};
+  document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();go(i+1)}else if(e.key==='ArrowLeft'){e.preventDefault();go(i-1)}else if(e.key.toLowerCase()==='n'){notes.classList.toggle('on')}else if(e.key.toLowerCase()==='p'){window.print()}});
+  var m=/^#s(\d+)$/.exec(location.hash);go(m?parseInt(m[1],10)-1:0);
+})();
+</script>
+
+</body>
+</html>
