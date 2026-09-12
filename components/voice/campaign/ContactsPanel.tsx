@@ -36,6 +36,32 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
   const [importResult, setImportResult] = useState<ImportConsentedResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
+  // New-opt-in counter: all three period counts arrive in one request; the
+  // Today / This Week / This Month toggle just switches which is shown.
+  const [optinStats, setOptinStats] = useState<{ today: number; week: number; month: number } | null>(null);
+  const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
+
+  const loadOptinStats = () => {
+    // Period boundaries in the viewer's local timezone: midnight today,
+    // Monday of this week, the 1st of this month.
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(todayStart.getDate() - ((todayStart.getDay() + 6) % 7));
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const q = new URLSearchParams({
+      restaurant_id: restaurantId,
+      today_start: todayStart.toISOString(),
+      week_start: weekStart.toISOString(),
+      month_start: monthStart.toISOString(),
+    });
+    marketingApiFetch<{ today: number; week: number; month: number }>(
+      `/api/marketing/optin-stats?${q.toString()}`,
+    )
+      .then(setOptinStats)
+      .catch(() => {});
+  };
+
   const loadCustomers = () => {
     marketingApiFetch<{ customers: RosterCustomer[] }>(
       `/api/marketing/opted-in-customers?restaurant_id=${restaurantId}`,
@@ -46,6 +72,7 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
 
   useEffect(() => {
     loadCustomers();
+    loadOptinStats();
     getJoinSettings(restaurantId).then(setJoin).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId]);
@@ -84,6 +111,32 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
 
   return (
     <div className="p-4 space-y-4">
+      {/* New opt-ins counter */}
+      <div className="app-card p-4 space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <p className="card-heading">New opt-ins</p>
+            <p className="text-xs text-capy-muted mt-0.5">People who joined your list</p>
+          </div>
+          <div className="flex rounded-xl border border-capy-border overflow-hidden text-xs font-semibold">
+            {(["today", "week", "month"] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => setStatsPeriod(p)}
+                className={`px-2.5 py-1.5 transition-colors ${
+                  statsPeriod === p ? "bg-capy-green text-white" : "text-capy-muted hover:bg-capy-surface-2"
+                }`}
+              >
+                {p === "today" ? "Today" : p === "week" ? "This Week" : "This Month"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="text-4xl font-bold text-capy-green-dark" style={{ fontFamily: "Tektur, sans-serif" }}>
+          {optinStats ? optinStats[statsPeriod].toLocaleString() : "—"}
+        </p>
+      </div>
+
       {/* Sign-up link */}
       <div className="app-card p-4 space-y-2">
         <div className="flex items-center justify-between gap-2">
