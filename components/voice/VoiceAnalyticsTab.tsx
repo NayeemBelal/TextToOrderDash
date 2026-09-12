@@ -76,7 +76,7 @@ function StatTile({
   sub?: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-capy-border p-4 flex flex-col gap-1 shadow-sm">
+    <div className="bg-capy-card rounded-2xl border border-capy-border p-4 flex flex-col gap-1 shadow-sm">
       <p className="text-xs text-capy-muted font-medium uppercase tracking-wide leading-none">
         {label}
       </p>
@@ -118,7 +118,7 @@ function DateRangeDropdown({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-white border border-capy-border rounded-xl text-sm font-semibold text-capy-text hover:border-capy-text transition-colors shadow-sm"
+        className="flex items-center gap-2 px-3 py-1.5 bg-capy-card border border-capy-border rounded-xl text-sm font-semibold text-capy-text hover:border-capy-text transition-colors shadow-sm"
       >
         <svg
           className="w-3.5 h-3.5 text-capy-muted"
@@ -149,7 +149,7 @@ function DateRangeDropdown({
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white border border-capy-border rounded-xl shadow-lg z-20 overflow-hidden min-w-[140px]">
+        <div className="absolute right-0 top-full mt-1 bg-capy-card border border-capy-border rounded-xl shadow-lg z-20 overflow-hidden min-w-[140px]">
           {DATE_RANGE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -199,7 +199,7 @@ function TopSellingItems({ dateRange, restaurantId }: { dateRange: DateRange; re
     : [];
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border flex flex-col h-full overflow-hidden shadow-sm">
+    <div className="bg-capy-card rounded-2xl border border-capy-border flex flex-col h-full overflow-hidden shadow-sm">
       <div className="px-5 pt-4 pb-3 border-b border-capy-border flex-shrink-0">
         <h2 className="card-heading text-base">Top Selling Items</h2>
       </div>
@@ -228,9 +228,9 @@ function TopSellingItems({ dateRange, restaurantId }: { dateRange: DateRange; re
                     <span
                       className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                         i === 0
-                          ? "bg-amber-100 text-amber-700"
+                          ? "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300"
                           : i === 1
-                            ? "bg-gray-100 text-gray-600"
+                            ? "bg-capy-surface-2 text-capy-muted"
                             : i === 2
                               ? "bg-orange-100 text-orange-700"
                               : "bg-capy-bg text-capy-muted"
@@ -353,7 +353,7 @@ export function VoiceAnalyticsTab() {
 
       {/* Stat tiles: 3×3 grid */}
       {statsError ? (
-        <div className="flex items-center justify-center gap-3 py-6 bg-white rounded-2xl border border-capy-border min-h-[80px]">
+        <div className="flex items-center justify-center gap-3 py-6 bg-capy-card rounded-2xl border border-capy-border min-h-[80px]">
           <p className="text-sm text-capy-muted">Couldn&apos;t load analytics.</p>
           <button
             onClick={() => { setStatsError(false); setStatsLoading(true); apiFetch<{ stats: VoiceStats }>(`/api/analytics/voice-stats?restaurant_id=${restaurantId}&time_range=${dateRange}`).then((d) => { setStats(d.stats); setStatsLoading(false); }).catch(() => { setStatsError(true); setStatsLoading(false); }); }}

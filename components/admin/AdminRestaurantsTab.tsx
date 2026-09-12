@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 function BlockSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4">
+    <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4">
       <Skeleton className="h-4 w-2/3 mb-2" />
       <Skeleton className="h-6 w-24 mb-2" />
       <Skeleton className="h-3 w-20 mb-3" />
@@ -48,7 +48,7 @@ export function AdminRestaurantsTab() {
           <p className="text-xs text-capy-muted">Revenue over the last 30 days</p>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
 
         {!error && !restaurants && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -68,7 +68,7 @@ export function AdminRestaurantsTab() {
               <button
                 key={r.id}
                 onClick={() => router.push(`/admin/${r.id}`)}
-                className="text-left bg-white rounded-2xl border border-capy-border shadow-sm p-4 hover:border-capy-green transition-colors"
+                className="text-left bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 hover:border-capy-green transition-colors"
               >
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="font-semibold text-capy-text truncate">{r.name}</h3>

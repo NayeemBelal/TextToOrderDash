@@ -131,7 +131,7 @@ export function CustomerGroupsPanel({ restaurantId, optedInCustomers, onClose, o
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} aria-hidden />
-      <div className="relative w-full max-w-md bg-white h-full shadow-xl flex flex-col animate-[slidein_0.18s_ease-out]">
+      <div className="relative w-full max-w-md bg-capy-card h-full shadow-xl flex flex-col animate-[slidein_0.18s_ease-out]">
         <style>{`@keyframes slidein{from{transform:translateX(16px);opacity:.6}to{transform:none;opacity:1}}`}</style>
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-capy-border">
@@ -153,7 +153,7 @@ export function CustomerGroupsPanel({ restaurantId, optedInCustomers, onClose, o
                 onChange={(e) => setNewName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 placeholder="e.g. VIP customers"
-                className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                className="flex-1 px-3 py-2 bg-capy-surface border border-capy-border rounded-xl text-sm text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
               />
               <button
                 onClick={handleCreate}
@@ -163,7 +163,7 @@ export function CustomerGroupsPanel({ restaurantId, optedInCustomers, onClose, o
                 {creating ? "Creating…" : "Create"}
               </button>
             </div>
-            {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+            {error && <p className="text-xs text-red-600 dark:text-red-300 mt-1">{error}</p>}
           </div>
 
           <div className="space-y-2">
@@ -181,7 +181,7 @@ export function CustomerGroupsPanel({ restaurantId, optedInCustomers, onClose, o
                 <div key={g.id} className="border border-capy-border rounded-xl overflow-hidden">
                   <button
                     onClick={() => toggleExpand(g.id)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 transition-colors text-left"
+                    className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-capy-surface transition-colors text-left"
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-capy-text truncate">{g.name}</p>
@@ -223,7 +223,7 @@ export function CustomerGroupsPanel({ restaurantId, optedInCustomers, onClose, o
                           value={memberSearch}
                           onChange={(e) => setMemberSearch(e.target.value)}
                           placeholder="Search opted-in customers…"
-                          className="w-full px-2.5 py-1.5 bg-slate-50 border border-capy-border rounded-lg text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                          className="w-full px-2.5 py-1.5 bg-capy-surface border border-capy-border rounded-lg text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
                         />
                       </div>
                       <div className="max-h-56 overflow-y-auto">
@@ -241,11 +241,11 @@ export function CustomerGroupsPanel({ restaurantId, optedInCustomers, onClose, o
                               <div
                                 key={c.id}
                                 onClick={() => toggleMember(g.id, c.id, isMember)}
-                                className="flex items-center gap-3 px-3 py-2 border-b border-capy-border/60 last:border-0 cursor-pointer hover:bg-slate-50"
+                                className="flex items-center gap-3 px-3 py-2 border-b border-capy-border/60 last:border-0 cursor-pointer hover:bg-capy-surface"
                               >
                                 <div
                                   className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                    isMember ? "bg-capy-green border-capy-green" : "border-capy-border bg-white"
+                                    isMember ? "bg-capy-green border-capy-green" : "border-capy-border bg-capy-card"
                                   }`}
                                 >
                                   {isMember && (

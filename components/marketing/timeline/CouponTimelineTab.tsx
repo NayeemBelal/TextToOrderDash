@@ -66,7 +66,7 @@ function LaneRow({
             </span>
           )}
           {badge && (
-            <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-slate-100 text-slate-600">
+            <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-capy-surface-2 text-capy-muted">
               {badge}
             </span>
           )}
@@ -91,7 +91,7 @@ interface LaneProps {
 
 function Lane({ title, count, loading, children, emptyLabel, isEmpty, action }: LaneProps) {
   return (
-    <div className="bg-white rounded-2xl border border-capy-border shadow-sm overflow-hidden flex flex-col">
+    <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-capy-border">
         <div className="flex items-center gap-2">
           <p className="card-heading">{title}</p>
@@ -188,7 +188,7 @@ export function CouponTimelineTab() {
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={() => setAnchor((a) => shiftAnchor(period, a, -1))}
-            className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-slate-50 transition-colors"
+            className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-capy-surface transition-colors"
             aria-label="Previous"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -208,7 +208,7 @@ export function CouponTimelineTab() {
           </div>
           <button
             onClick={() => setAnchor((a) => shiftAnchor(period, a, 1))}
-            className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-slate-50 transition-colors"
+            className="p-1.5 rounded-lg text-capy-muted hover:text-capy-text hover:bg-capy-surface transition-colors"
             aria-label="Next"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -217,7 +217,7 @@ export function CouponTimelineTab() {
           </button>
         </div>
 
-        {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-300 text-center">{error}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Lane

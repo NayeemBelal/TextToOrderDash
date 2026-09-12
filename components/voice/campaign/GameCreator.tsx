@@ -47,7 +47,7 @@ const WINDOW_PRESETS = [
 ];
 
 const inputClass =
-  "w-full px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green";
+  "w-full px-3 py-2 bg-capy-surface border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green";
 
 function Field({
   label,
@@ -379,7 +379,7 @@ export function GameCreator({
       )}
 
       {everyoneWins && (
-        <p className="text-[11px] text-capy-muted leading-relaxed bg-slate-50 border border-capy-border rounded-xl px-3 py-2">
+        <p className="text-[11px] text-capy-muted leading-relaxed bg-capy-surface border border-capy-border rounded-xl px-3 py-2">
           This is an <span className="font-semibold">everyone wins</span>{" "}
           campaign, so every reply wins the prize — the grading rule and winner
           limit above don&apos;t apply. Switch the campaign type in step 3 to use
@@ -452,7 +452,7 @@ export function GameCreator({
         )}
         {preview && !previewError && (
           <>
-            <div className="bg-slate-50 border border-capy-border rounded-xl px-3 py-2">
+            <div className="bg-capy-surface border border-capy-border rounded-xl px-3 py-2">
               <p className="text-xs text-capy-text italic whitespace-pre-line leading-relaxed">
                 &ldquo;{preview.message}&rdquo;
               </p>
@@ -470,9 +470,9 @@ export function GameCreator({
               </p>
             )}
             {preview.problems.length > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 space-y-1">
+              <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl px-3 py-2 space-y-1">
                 {preview.problems.map((p) => (
-                  <p key={p} className="text-[11px] text-amber-700">
+                  <p key={p} className="text-[11px] text-amber-700 dark:text-amber-300">
                     • {p}
                   </p>
                 ))}

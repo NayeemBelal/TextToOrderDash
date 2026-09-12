@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { MarketingViewProvider } from '@/lib/marketing-view-context';
 import { AdminViewProvider } from '@/lib/admin-view-context';
 
-const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/about', '/privacy-policy', '/terms-of-service', '/how-it-works', '/integrations', '/forgot-password', '/reset-password', '/prize', '/r', '/join', '/marketing'];
+const FULL_PAGE_ROUTES = ['/', '/login', '/register', '/about', '/privacy-policy', '/terms-of-service', '/how-it-works', '/integrations', '/forgot-password', '/reset-password', '/prize', '/r', '/join', '/marketing', '/oldprods', '/docs'];
 // Auth required but rendered without the app nav shell
 const NO_NAV_ROUTES = ['/onboarding'];
 
@@ -67,7 +67,7 @@ export function ConditionalWrapper({ children }: { children: React.ReactNode }) 
   return (
     <AdminViewProvider>
       <MarketingViewProvider>
-        <div className="flex flex-col h-screen bg-capy-bg overflow-hidden font-tektur">
+        <div className="app-shell flex flex-col h-screen bg-capy-bg text-capy-text overflow-hidden font-tektur">
           <ConditionalNav />
           <main className="flex-1 overflow-hidden">{children}</main>
         </div>

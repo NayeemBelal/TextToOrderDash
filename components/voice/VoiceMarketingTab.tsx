@@ -21,9 +21,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<string, string> = {
   "order-intent": "bg-capy-green-light text-capy-green-dark",
-  forwarded: "bg-slate-100 text-slate-600",
-  "robo-caller": "bg-red-50 text-red-500",
-  "no-outcome": "bg-slate-100 text-capy-muted",
+  forwarded: "bg-capy-surface-2 text-capy-muted",
+  "robo-caller": "bg-red-50 dark:bg-red-500/10 text-red-500",
+  "no-outcome": "bg-capy-surface-2 text-capy-muted",
 };
 
 function StepIndicator({ current }: { current: Step }) {
@@ -41,8 +41,8 @@ function StepIndicator({ current }: { current: Step }) {
                   done
                     ? "bg-capy-green text-white"
                     : active
-                      ? "bg-capy-text text-white"
-                      : "bg-slate-100 text-capy-muted"
+                      ? "bg-capy-text text-capy-card"
+                      : "bg-capy-surface-2 text-capy-muted"
                 }`}
                 style={{ fontFamily: "Tektur, sans-serif" }}
               >
@@ -62,7 +62,7 @@ function StepIndicator({ current }: { current: Step }) {
               </span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className={`w-16 h-px mx-2 mb-4 transition-all ${i < currentIdx ? "bg-capy-green" : "bg-slate-200"}`} />
+              <div className={`w-16 h-px mx-2 mb-4 transition-all ${i < currentIdx ? "bg-capy-green" : "bg-capy-border"}`} />
             )}
           </div>
         );
@@ -131,7 +131,7 @@ export function VoiceMarketingTab() {
     <div className="flex-1 min-h-0 flex flex-col p-4 gap-4">
       {/* Step: Recipients */}
       {step === "recipients" && (
-        <div className="flex-1 min-h-0 bg-white rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 bg-capy-card rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-capy-border flex-shrink-0">
             <div>
               <p className="card-heading">Select Recipients</p>
@@ -143,7 +143,7 @@ export function VoiceMarketingTab() {
           </div>
 
           <div className="px-5 py-3 border-b border-capy-border flex-shrink-0">
-            <div className="flex items-center gap-2 bg-slate-50 border border-capy-border rounded-xl px-3 py-2">
+            <div className="flex items-center gap-2 bg-capy-surface border border-capy-border rounded-xl px-3 py-2">
               <svg className="w-3.5 h-3.5 text-capy-muted flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -168,7 +168,7 @@ export function VoiceMarketingTab() {
             <button
               onClick={toggleAll}
               className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                allFilteredSelected ? "bg-capy-text border-capy-text" : "border-capy-border bg-white hover:border-slate-400"
+                allFilteredSelected ? "bg-capy-text border-capy-text" : "border-capy-border bg-capy-card hover:border-slate-400"
               }`}
             >
               {allFilteredSelected && (
@@ -189,12 +189,12 @@ export function VoiceMarketingTab() {
             {filteredCallers.map((caller, i) => {
               const isSelected = selected.has(caller.phoneNumber);
               const statusLabel = STATUS_LABEL[caller.lastStatus] ?? caller.lastStatus;
-              const statusColor = STATUS_COLOR[caller.lastStatus] ?? "bg-slate-100 text-capy-muted";
+              const statusColor = STATUS_COLOR[caller.lastStatus] ?? "bg-capy-surface-2 text-capy-muted";
               return (
                 <button
                   key={caller.phoneNumber}
                   onClick={() => toggleOne(caller.phoneNumber)}
-                  className={`w-full flex items-center gap-3 px-5 py-3 border-b border-capy-border/60 text-left transition-colors ${isSelected ? "bg-slate-50" : "hover:bg-slate-50/50"}`}
+                  className={`w-full flex items-center gap-3 px-5 py-3 border-b border-capy-border/60 text-left transition-colors ${isSelected ? "bg-capy-surface" : "hover:bg-slate-50/50"}`}
                   style={{ animationDelay: `${i * 20}ms` }}
                 >
                   <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? "bg-capy-text border-capy-text" : "border-capy-border"}`}>
@@ -204,7 +204,7 @@ export function VoiceMarketingTab() {
                       </svg>
                     )}
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-capy-surface-2 flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-capy-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
@@ -222,14 +222,14 @@ export function VoiceMarketingTab() {
             })}
           </div>
 
-          <div className="px-5 py-4 border-t border-capy-border flex items-center justify-between flex-shrink-0 bg-white">
+          <div className="px-5 py-4 border-t border-capy-border flex items-center justify-between flex-shrink-0 bg-capy-card">
             <p className="text-xs text-capy-muted">
               {selected.size === 0 ? "Select at least one recipient" : `${selected.size} of ${callers.length} customers selected`}
             </p>
             <button
               onClick={() => setStep("message")}
               disabled={!canAdvanceRecipients}
-              className="px-5 py-2.5 bg-capy-text text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-5 py-2.5 bg-capy-text text-capy-card text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
               style={{ fontFamily: "Tektur, sans-serif" }}
             >
               Continue
@@ -244,7 +244,7 @@ export function VoiceMarketingTab() {
       {/* Step: Message */}
       {step === "message" && (
         <div className="flex-1 min-h-0">
-          <div className="flex-1 min-h-0 h-full bg-white rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 h-full bg-capy-card rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
             <div className="px-5 pt-4 pb-3 border-b border-capy-border flex-shrink-0">
               <p className="card-heading">Write Your Message</p>
               <p className="text-xs text-capy-muted mt-0.5">This will be sent as an SMS to {selected.size} customers</p>
@@ -255,14 +255,14 @@ export function VoiceMarketingTab() {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Hi! We're running a special this week — come visit us and mention this text for 15% off your next order!"
                 maxLength={480}
-                className="flex-1 resize-none bg-slate-50 border border-capy-border rounded-xl px-4 py-3 text-sm text-capy-text placeholder:text-capy-muted outline-none focus:border-slate-400 transition-colors leading-relaxed"
+                className="flex-1 resize-none bg-capy-surface border border-capy-border rounded-xl px-4 py-3 text-sm text-capy-text placeholder:text-capy-muted outline-none focus:border-slate-400 transition-colors leading-relaxed"
               />
               <div className="flex items-center justify-between text-xs text-capy-muted">
                 <span>{segments} SMS segment{segments > 1 ? "s" : ""}</span>
                 <span className={charCount > 320 ? "text-amber-500 font-medium" : ""}>{charCount} / 480 chars</span>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-capy-border flex items-center justify-between flex-shrink-0 bg-white">
+            <div className="px-5 py-4 border-t border-capy-border flex items-center justify-between flex-shrink-0 bg-capy-card">
               <button onClick={() => setStep("recipients")} className="px-4 py-2.5 text-sm text-capy-muted hover:text-capy-text transition-colors font-medium flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -272,7 +272,7 @@ export function VoiceMarketingTab() {
               <button
                 onClick={() => setStep("send")}
                 disabled={!canAdvanceMessage}
-                className="px-5 py-2.5 bg-capy-text text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-5 py-2.5 bg-capy-text text-capy-card text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
                 style={{ fontFamily: "Tektur, sans-serif" }}
               >
                 Review
@@ -287,35 +287,35 @@ export function VoiceMarketingTab() {
 
       {/* Step: Send */}
       {step === "send" && (
-        <div className="flex-1 min-h-0 h-full bg-white rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
+        <div className="flex-1 min-h-0 h-full bg-capy-card rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
           <div className="px-5 pt-4 pb-3 border-b border-capy-border flex-shrink-0">
             <p className="card-heading">Review & Send</p>
             <p className="text-xs text-capy-muted mt-0.5">Everything looks good? Send your broadcast.</p>
           </div>
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-slate-50 rounded-xl px-3 py-3 border border-capy-border">
+              <div className="bg-capy-surface rounded-xl px-3 py-3 border border-capy-border">
                 <p className="section-label">Recipients</p>
                 <p className="text-2xl font-bold text-capy-text mt-0.5" style={{ fontFamily: "Tektur, sans-serif" }}>{selected.size}</p>
                 <p className="text-xs text-capy-muted">customers</p>
               </div>
-              <div className="bg-slate-50 rounded-xl px-3 py-3 border border-capy-border">
+              <div className="bg-capy-surface rounded-xl px-3 py-3 border border-capy-border">
                 <p className="section-label">Segments</p>
                 <p className="text-2xl font-bold text-capy-text mt-0.5" style={{ fontFamily: "Tektur, sans-serif" }}>{Math.ceil(message.length / 160) || 1}</p>
                 <p className="text-xs text-capy-muted">per message</p>
               </div>
-              <div className="bg-slate-50 rounded-xl px-3 py-3 border border-capy-border">
+              <div className="bg-capy-surface rounded-xl px-3 py-3 border border-capy-border">
                 <p className="section-label">Delivery</p>
                 <p className="text-sm font-bold text-capy-text mt-0.5" style={{ fontFamily: "Tektur, sans-serif" }}>Immediate</p>
                 <p className="text-xs text-capy-muted">~1 min</p>
               </div>
             </div>
-            <div className="bg-slate-50 rounded-xl border border-capy-border p-4">
+            <div className="bg-capy-surface rounded-xl border border-capy-border p-4">
               <p className="section-label mb-2">Message</p>
               <p className="text-sm text-capy-text leading-relaxed">{message}</p>
               <p className="text-xs text-capy-muted mt-2">{message.length} characters</p>
             </div>
-            <div className="bg-slate-50 rounded-xl border border-capy-border overflow-hidden">
+            <div className="bg-capy-surface rounded-xl border border-capy-border overflow-hidden">
               <div className="px-4 py-2.5 border-b border-capy-border flex items-center justify-between">
                 <p className="section-label">Recipients</p>
                 <button onClick={() => setStep("recipients")} className="text-xs text-capy-muted hover:text-capy-text transition-colors">Edit</button>
@@ -323,7 +323,7 @@ export function VoiceMarketingTab() {
               <div className="max-h-40 overflow-y-auto">
                 {Array.from(selected).map((phone) => (
                   <div key={phone} className="flex items-center gap-2.5 px-4 py-2 border-b border-capy-border/60 last:border-0">
-                    <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full bg-capy-border flex items-center justify-center flex-shrink-0">
                       <svg className="w-3 h-3 text-capy-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
@@ -334,7 +334,7 @@ export function VoiceMarketingTab() {
               </div>
             </div>
           </div>
-          <div className="px-5 py-4 border-t border-capy-border flex-shrink-0 bg-white space-y-3">
+          <div className="px-5 py-4 border-t border-capy-border flex-shrink-0 bg-capy-card space-y-3">
             <div className="flex items-center justify-between">
               <button onClick={() => setStep("message")} className="px-4 py-2.5 text-sm text-capy-muted hover:text-capy-text transition-colors font-medium flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">

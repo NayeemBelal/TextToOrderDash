@@ -14,10 +14,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 const POLL_MS = 45_000; // "real-time within ~1 min" — refresh the top of the list
 
 const CHIP: Record<CouponType, string> = {
-  optin: "bg-slate-100 text-slate-600",
+  optin: "bg-capy-surface-2 text-capy-muted",
   winner: "bg-capy-green-light text-capy-green-dark",
-  loser: "bg-amber-100 text-amber-700",
-  promo: "bg-sky-100 text-sky-700",
+  loser: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  promo: "bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300",
 };
 
 function relativeTime(iso: string | null): string {
@@ -92,7 +92,7 @@ export function OrdersList({ restaurantId, types, onSelect }: Props) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
+    <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm flex flex-col overflow-hidden">
       <div className="px-5 pt-4 pb-3 border-b border-capy-border flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-capy-green animate-pulse" />
         <h3 className="text-sm font-semibold text-capy-text">Real-time orders</h3>

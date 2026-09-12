@@ -1,16 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_BACKEND_URL ||
-  'https://text-to-order-coffee-34770846162.us-central1.run.app';
-
-// Decoupled marketing backend (belan-marketing-backend on Cloud Run).
-// Serves /api/marketing/* and /api/prize/* — used by the public marketing
-// demo and prize pages that remain in this app.
-export const MARKETING_API_BASE_URL =
-  process.env.NEXT_PUBLIC_MARKETING_BACKEND_URL ||
-  'https://belan-marketing-backend-34770846162.us-central1.run.app';
+export { API_BASE_URL, MARKETING_API_BASE_URL } from '@/lib/config';
+import { API_BASE_URL, MARKETING_API_BASE_URL } from '@/lib/config';
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {

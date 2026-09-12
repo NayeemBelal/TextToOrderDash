@@ -60,6 +60,40 @@ export function RosterUploadCard({ restaurantId, result, onResult }: Props) {
 
   return (
     <div className="space-y-2">
+      {/* What the file should look like — most exports already match. */}
+      <div className="rounded-xl border border-capy-border bg-capy-surface px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <p className="section-label">Expected format</p>
+          <a
+            href="/belan-contacts-example.xlsx"
+            download
+            className="text-[11px] font-semibold text-capy-green-dark hover:underline"
+          >
+            Download example .xlsx
+          </a>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="text-left text-capy-muted">
+                <th className="pr-3 pb-1 font-semibold">First Name</th>
+                <th className="pr-3 pb-1 font-semibold">Last Name</th>
+                <th className="pb-1 font-semibold">Phone</th>
+              </tr>
+            </thead>
+            <tbody className="text-capy-text font-mono">
+              <tr><td className="pr-3">Maria</td><td className="pr-3">Lopez</td><td>(972) 555-0142</td></tr>
+              <tr><td className="pr-3">James</td><td className="pr-3">Carter</td><td>9725550187</td></tr>
+              <tr><td className="pr-3 text-capy-muted">—</td><td className="pr-3 text-capy-muted">—</td><td>+1 972 555 0123</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[11px] text-capy-muted mt-2 leading-relaxed">
+          Only the phone column is required; names are optional. Any US number format works, a header row is
+          optional, and extra columns are ignored. .xlsx or .csv, up to 10 MB.
+        </p>
+      </div>
+
       <input
         ref={inputRef}
         type="file"
@@ -96,13 +130,13 @@ export function RosterUploadCard({ restaurantId, result, onResult }: Props) {
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-xl">
+        <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-300 text-xs px-3 py-2 rounded-xl">
           {error}
         </div>
       )}
 
       {result && (
-        <div className="bg-white rounded-2xl border border-capy-border p-4 space-y-3">
+        <div className="bg-capy-card rounded-2xl border border-capy-border p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-capy-text truncate">
@@ -130,7 +164,7 @@ export function RosterUploadCard({ restaurantId, result, onResult }: Props) {
                 new — will be texted
               </p>
             </div>
-            <div className="bg-slate-50 rounded-xl px-3 py-2">
+            <div className="bg-capy-surface rounded-xl px-3 py-2">
               <p className="text-lg font-bold text-capy-muted leading-none">
                 {result.already_contacted}
               </p>

@@ -75,3 +75,25 @@ export function listRosterImports(
     `/api/marketing/roster/imports?restaurant_id=${restaurantId}`,
   );
 }
+
+export interface ImportConsentedResult {
+  added: number;
+  already_on_list: number;
+  skipped_opted_out: number;
+  skipped_pending: number;
+}
+
+/**
+ * Add a staged upload straight to the opted-in list — no text is sent. The
+ * owner attests these contacts already agreed to receive their messages;
+ * that attestation is recorded on every consent row the backend creates.
+ */
+export function importConsentedRoster(
+  restaurantId: string,
+  importId: string,
+): Promise<ImportConsentedResult> {
+  return marketingApiFetch<ImportConsentedResult>("/api/marketing/roster/import-consented", {
+    method: "POST",
+    body: JSON.stringify({ restaurant_id: restaurantId, import_id: importId, confirm_consent: true }),
+  });
+}

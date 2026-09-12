@@ -153,7 +153,7 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} aria-hidden />
-      <div className="relative w-full max-w-md bg-white h-full shadow-xl flex flex-col animate-[slidein_0.18s_ease-out]">
+      <div className="relative w-full max-w-md bg-capy-card h-full shadow-xl flex flex-col animate-[slidein_0.18s_ease-out]">
         <style>{`@keyframes slidein{from{transform:translateX(16px);opacity:.6}to{transform:none;opacity:1}}`}</style>
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-capy-border">
@@ -174,7 +174,7 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              className="w-full bg-slate-50 border border-capy-border rounded-xl px-3 py-2 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
+              className="w-full bg-capy-surface border border-capy-border rounded-xl px-3 py-2 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green resize-none"
             />
             <p className="font-mono text-[11px] text-capy-muted mt-1 truncate">{PLACEHOLDERS}</p>
           </div>
@@ -187,12 +187,12 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
                 placeholder="(555) 123-4567"
-                className="flex-1 px-3 py-2 bg-slate-50 border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                className="flex-1 px-3 py-2 bg-capy-surface border border-capy-border rounded-xl text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
               />
               <button
                 onClick={handleSendTest}
                 disabled={testSending || !testPhone.trim()}
-                className="px-4 py-2 rounded-xl bg-capy-text text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
+                className="px-4 py-2 rounded-xl bg-capy-text text-capy-card text-xs font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity shrink-0"
               >
                 {testSending ? "Sending…" : "Send test"}
               </button>
@@ -206,7 +206,7 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
                 className={`text-xs px-3 py-2 rounded-xl ${
                   testStatus.startsWith("Sent")
                     ? "bg-capy-green-light text-capy-green-dark"
-                    : "bg-red-50 text-red-600"
+                    : "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-300"
                 }`}
               >
                 {testStatus}
@@ -214,25 +214,25 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
             )}
           </div>
 
-          <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+          <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="section-label">Send at</p>
-              <span className="text-xs text-capy-muted bg-slate-100 px-2.5 py-1 rounded-full">
+              <span className="text-xs text-capy-muted bg-capy-surface-2 px-2.5 py-1 rounded-full">
                 {tzAbbr} · {timezone}
               </span>
             </div>
-            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
+            <div className="flex items-center gap-2 p-3 bg-capy-surface rounded-xl">
               <input
                 type="date"
                 value={sendDate}
                 min={today}
                 onChange={(e) => setSendDate(e.target.value)}
-                className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
               />
               <select
                 value={sendHour}
                 onChange={(e) => setSendHour(e.target.value)}
-                className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
               >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
                   <option key={h} value={String(h)}>{h}</option>
@@ -242,7 +242,7 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
               <select
                 value={sendMinute}
                 onChange={(e) => setSendMinute(e.target.value)}
-                className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
               >
                 {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0")).map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -251,7 +251,7 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
               <select
                 value={sendAmPm}
                 onChange={(e) => setSendAmPm(e.target.value)}
-                className="bg-white border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
+                className="bg-capy-card border border-capy-border rounded-lg px-2 py-1 text-xs text-capy-text focus:outline-none focus:ring-2 focus:ring-capy-green"
               >
                 <option>AM</option>
                 <option>PM</option>
@@ -259,9 +259,9 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
+          <div className="bg-capy-card rounded-2xl border border-capy-border shadow-sm p-4 space-y-3">
             <p className="section-label">Cost estimate</p>
-            {previewError && <p className="text-xs text-red-600">{previewError}</p>}
+            {previewError && <p className="text-xs text-red-600 dark:text-red-300">{previewError}</p>}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-[11px] text-capy-muted">Recipients</p>
@@ -304,13 +304,13 @@ export function ScheduleReminderPanel({ restaurantId, source, expiryStart, expir
             </div>
             {!previewLoading && preview && preview.account_balance &&
               parseFloat(preview.account_balance.balance) < preview.worst_case_cost && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-lg px-3 py-2">
                   Your Telnyx balance may not cover this if everyone replies — consider topping up first.
                 </p>
               )}
           </div>
 
-          {scheduleError && <p className="text-xs text-red-600">{scheduleError}</p>}
+          {scheduleError && <p className="text-xs text-red-600 dark:text-red-300">{scheduleError}</p>}
 
           <button
             onClick={handleSchedule}
