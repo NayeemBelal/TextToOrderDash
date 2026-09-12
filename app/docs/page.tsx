@@ -40,6 +40,15 @@ const DOCS = [
     external: true,
   },
   {
+    href: "/deck",
+    emoji: "🎯",
+    title: "Sales deck",
+    desc: "Fifteen slides on how Belan works: games your customers reply to, prizes they earn and redeem before they expire, and a list that grows through referrals and QR sign-up. Arrow keys to move, N for presenter notes, P to print.",
+    cta: "Open the deck →",
+    color: "#fbc8d4",
+    external: true,
+  },
+  {
     href: BOOK_CALL,
     emoji: "🗓️",
     title: "Set up with a real person",
@@ -82,7 +91,7 @@ export default function DocsPage() {
       </section>
 
       <section className="max-w-[1200px] mx-auto px-6 md:px-10 pb-12">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {DOCS.map((d) => (
             <a
               key={d.href}
