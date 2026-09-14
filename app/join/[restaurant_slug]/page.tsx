@@ -347,12 +347,8 @@ export default function JoinPage() {
             {promo?.fine_print && (
               <p className="text-[11px] text-gray-400 text-center -mt-1">{promo.fine_print}</p>
             )}
-            {(data?.promo_state === "ended" || data?.promo_state === "outside_hours") && (
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center">
-                {data?.promo_note ||
-                  "That offer has ended — but sign up below and we'll still treat you."}
-              </p>
-            )}
+            {/* Ended / outside-hours promos fall back to the default offer
+                silently — the headline above already shows the regular deal. */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
