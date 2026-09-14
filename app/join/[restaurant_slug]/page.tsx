@@ -552,9 +552,11 @@ export default function JoinPage() {
               Looks like you&apos;re already on our list!
             </p>
             <p className="text-sm text-gray-400 leading-relaxed">
-              {incentive
-                ? `You've already got an active offer from ${restaurantName} — check your texts for your code.`
-                : `You're already on the ${restaurantName} VIP list — keep an eye on your texts for specials.`}
+              {result?.promo || promo
+                ? `This deal is for new sign-ups — and you're already on the ${restaurantName} VIP list! Keep an eye on your texts for offers made just for members.`
+                : incentive
+                  ? `You've already got an active offer from ${restaurantName} — check your texts for your code.`
+                  : `You're already on the ${restaurantName} VIP list — keep an eye on your texts for specials.`}
             </p>
           </div>
         )}
