@@ -56,6 +56,28 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
   }
   const [promos, setPromos] = useState<PromoStats[] | null>(null);
 
+  // Start of the selected period in the viewer's local timezone — shared by
+  // the opt-in counter and the promo table so both follow the same toggle.
+  const periodStartIso = (p: "today" | "week" | "month") => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (p === "today") return todayStart.toISOString();
+    if (p === "week") {
+      const w = new Date(todayStart);
+      w.setDate(todayStart.getDate() - ((todayStart.getDay() + 6) % 7));
+      return w.toISOString();
+    }
+    return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  };
+
+  const loadPromos = (period: "today" | "week" | "month") => {
+    marketingApiFetch<{ promos: PromoStats[] }>(
+      `/api/marketing/join-promos?restaurant_id=${restaurantId}&since=${encodeURIComponent(periodStartIso(period))}`,
+    )
+      .then((d) => setPromos(d.promos ?? []))
+      .catch(() => setPromos([]));
+  };
+
   // New-opt-in counter: all three period counts arrive in one request; the
   // Today / This Week / This Month toggle just switches which is shown.
   const [optinStats, setOptinStats] = useState<{ today: number; week: number; month: number } | null>(null);
@@ -94,13 +116,15 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
     loadCustomers();
     loadOptinStats();
     getJoinSettings(restaurantId).then(setJoin).catch(() => {});
-    marketingApiFetch<{ promos: PromoStats[] }>(
-      `/api/marketing/join-promos?restaurant_id=${restaurantId}`,
-    )
-      .then((d) => setPromos(d.promos ?? []))
-      .catch(() => setPromos([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId]);
+
+  // The promo table follows the same Today / This Week / This Month toggle
+  // as the opt-in counter.
+  useEffect(() => {
+    loadPromos(statsPeriod);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, statsPeriod]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -166,9 +190,11 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
       {promos && promos.length > 0 && (
         <div className="app-card p-4 space-y-3">
           <div>
-            <p className="card-heading">Promo QR codes</p>
+            <p className="card-heading">Sign-up channels</p>
             <p className="text-xs text-capy-muted mt-0.5">
-              Each promo link (?promo=…) tracked from scan to register
+              Every way people join — promo QRs, the default QR, text JOIN —
+              tracked from scan to register ·{" "}
+              {statsPeriod === "today" ? "today" : statsPeriod === "week" ? "this week" : "this month"}
             </p>
           </div>
           <div className="overflow-x-auto">

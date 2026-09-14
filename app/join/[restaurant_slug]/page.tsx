@@ -129,6 +129,8 @@ export default function JoinPage() {
   // below (this component is SSR'd; window isn't available at render time).
   const [promoParam, setPromoParam] = useState<string | null>(null);
   const [srcParam, setSrcParam] = useState<string | null>(null);
+  // Outside-hours popup: "sorry, the deal runs 11–4 — but you still get 10%".
+  const [hoursModalOpen, setHoursModalOpen] = useState(false);
 
   // Live ticking countdown on the success coupon — the movement doubles as a
   // liveness cue so staff can tell the real page from a screenshot.
@@ -162,6 +164,7 @@ export default function JoinPage() {
       .then((d: JoinData | null) => {
         if (!d) return;
         setData(d);
+        if (d.promo_state === "outside_hours") setHoursModalOpen(true);
         setPageState(d.state === "active" ? "form" : "invalid");
       })
       .catch(() => setPageState("invalid"));
@@ -262,6 +265,42 @@ export default function JoinPage() {
     <div
       className={`min-h-screen bg-slate-100 flex items-start justify-center p-5 ${poppins.className}`}
     >
+      {/* Outside-hours popup: the promo QR was scanned outside its daily
+          window — be upfront about the miss AND the consolation, so nobody
+          feels bait-and-switched. */}
+      {hoursModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-6">
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6 text-center space-y-3">
+            <button
+              onClick={() => setHoursModalOpen(false)}
+              aria-label="Close"
+              className="absolute top-3 right-3 w-8 h-8 rounded-full text-gray-400 hover:text-gray-600 hover:bg-slate-100 flex items-center justify-center text-xl leading-none"
+            >
+              ×
+            </button>
+            <div className="text-4xl">⏰</div>
+            <p className="text-lg font-bold text-gray-800 leading-snug">
+              Sorry — you caught us outside deal hours!
+            </p>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              {data?.promo_note ||
+                "This deal has limited daily hours — come back during the window to grab it."}
+            </p>
+            <p className="text-base font-semibold text-gray-800">
+              But don&apos;t leave empty-handed — you still get{" "}
+              <span style={{ color: darken(brand, 0.15) }}>{pct}% off</span> just
+              for signing up today. 🎉
+            </p>
+            <button
+              onClick={() => setHoursModalOpen(false)}
+              className="w-full font-bold text-base rounded-xl py-3.5"
+              style={{ backgroundColor: brand, color: onBrand }}
+            >
+              Get my {pct}% off
+            </button>
+          </div>
+        </div>
+      )}
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden">
         {/* Header — a full, unobstructed shot of the food when the restaurant
             has one, falling back to the plain brand-color header otherwise. */}
