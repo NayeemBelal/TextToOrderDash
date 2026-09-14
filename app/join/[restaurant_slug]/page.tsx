@@ -37,8 +37,11 @@ interface JoinData {
   incentive_enabled?: boolean;
   discount_percent?: number;
   promo?: JoinPromo | null;
-  // "ended" = the QR's promo is over; the form falls back to the default offer.
-  promo_state?: "active" | "ended" | null;
+  // "ended" = the QR's promo is over; "outside_hours" = live promo but not
+  // right now (daily window). Both fall back to the default offer.
+  promo_state?: "active" | "ended" | "outside_hours" | null;
+  // Human explanation for outside_hours ("The Copycat BOGO runs 11 AM–4 PM…").
+  promo_note?: string | null;
   logo_url?: string | null;
   brand_color?: string | null;
   background_image_url?: string | null;
@@ -344,9 +347,10 @@ export default function JoinPage() {
             {promo?.fine_print && (
               <p className="text-[11px] text-gray-400 text-center -mt-1">{promo.fine_print}</p>
             )}
-            {data?.promo_state === "ended" && (
+            {(data?.promo_state === "ended" || data?.promo_state === "outside_hours") && (
               <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center">
-                That offer has ended — but sign up below and we&apos;ll still treat you.
+                {data?.promo_note ||
+                  "That offer has ended — but sign up below and we'll still treat you."}
               </p>
             )}
             <div className="grid grid-cols-2 gap-3">
