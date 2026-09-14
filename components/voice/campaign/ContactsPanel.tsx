@@ -36,6 +36,22 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
   const [importResult, setImportResult] = useState<ImportConsentedResult | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
+  // Named join promos (QR-trackable offers) with funnel stats.
+  interface PromoStats {
+    slug: string;
+    label: string;
+    kind: string;
+    active: boolean;
+    stats: {
+      opt_ins: number;
+      by_src: Record<string, number>;
+      coupons_claimed: number;
+      coupons_redeemed: number;
+      revenue_cents: number;
+    };
+  }
+  const [promos, setPromos] = useState<PromoStats[] | null>(null);
+
   // New-opt-in counter: all three period counts arrive in one request; the
   // Today / This Week / This Month toggle just switches which is shown.
   const [optinStats, setOptinStats] = useState<{ today: number; week: number; month: number } | null>(null);
@@ -74,6 +90,11 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
     loadCustomers();
     loadOptinStats();
     getJoinSettings(restaurantId).then(setJoin).catch(() => {});
+    marketingApiFetch<{ promos: PromoStats[] }>(
+      `/api/marketing/join-promos?restaurant_id=${restaurantId}`,
+    )
+      .then((d) => setPromos(d.promos ?? []))
+      .catch(() => setPromos([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId]);
 
@@ -136,6 +157,56 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
           {optinStats ? optinStats[statsPeriod].toLocaleString() : "—"}
         </p>
       </div>
+
+      {/* Promo QR performance (only when promos exist) */}
+      {promos && promos.length > 0 && (
+        <div className="app-card p-4 space-y-3">
+          <div>
+            <p className="card-heading">Promo QR codes</p>
+            <p className="text-xs text-capy-muted mt-0.5">
+              Each promo link (?promo=…) tracked from scan to register
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-capy-muted">
+                  <th className="py-1.5 pr-3 font-semibold">Promo</th>
+                  <th className="py-1.5 pr-3 font-semibold text-right">Opt-ins</th>
+                  <th className="py-1.5 pr-3 font-semibold text-right">Claimed</th>
+                  <th className="py-1.5 pr-3 font-semibold text-right">Redeemed</th>
+                  <th className="py-1.5 font-semibold text-right">Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {promos.map((p) => (
+                  <tr key={p.slug} className="border-t border-capy-border/60">
+                    <td className="py-2 pr-3">
+                      <span className="font-semibold text-capy-text">{p.label}</span>
+                      {!p.active && (
+                        <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-capy-surface-2 text-capy-muted">ended</span>
+                      )}
+                      {Object.keys(p.stats.by_src).length > 1 && (
+                        <span className="block text-[10px] text-capy-muted mt-0.5">
+                          {Object.entries(p.stats.by_src)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(" · ")}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{p.stats.opt_ins}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{p.stats.coupons_claimed}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">{p.stats.coupons_redeemed}</td>
+                    <td className="py-2 text-right tabular-nums font-semibold text-capy-green-dark">
+                      ${(p.stats.revenue_cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Sign-up link */}
       <div className="app-card p-4 space-y-2">

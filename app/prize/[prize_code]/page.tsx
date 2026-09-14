@@ -14,7 +14,16 @@ interface PrizeData {
   prize_code: string;
   state: "pending" | "active" | "expired" | "used";
   is_winner: boolean;
-  prize_config: { type?: string; itemName?: string; percent?: number };
+  prize_config: {
+    type?: string;
+    itemName?: string;
+    percent?: number;
+    // Fixed-amount join-promo coupons (e.g. BOGO):
+    label?: string;
+    headline?: string | null;
+    fine_print?: string | null;
+    amount_cents?: number;
+  };
   loser_discount: number;
   redemption_expires_at: string | null;
   restaurant_name: string;
@@ -181,6 +190,11 @@ export default function PrizePage() {
 
   const prizeLabel = () => {
     if (!data) return "";
+    // Fixed-amount join-promo coupon (e.g. BOGO): the offer's own headline is
+    // the prize, in big letters.
+    if (data.prize_config?.type === "amount") {
+      return data.prize_config.headline || data.prize_config.label || "Special offer";
+    }
     if (data.is_winner) {
       if (data.prize_config?.type === "free-item") return `Free ${data.prize_config.itemName || "Item"}`;
       return `${data.prize_config?.percent || 10}% off`;
@@ -189,6 +203,12 @@ export default function PrizePage() {
   };
   const prizeSub = () => {
     if (!data) return "";
+    if (data.prize_config?.type === "amount") {
+      const dollars = data.prize_config.amount_cents
+        ? ` (worth $${(data.prize_config.amount_cents / 100).toFixed(2)})`
+        : "";
+      return `${data.prize_config.fine_print || ""}${dollars}`.trim() || "show this at the register";
+    }
     if (data.is_winner) return data.prize_config?.type === "free-item" ? "on us — 100% off that item" : "your whole order";
     return "your next order";
   };
@@ -275,7 +295,12 @@ export default function PrizePage() {
             <div className="px-6 pt-6 pb-5 space-y-5">
               {/* The prize, big */}
               <div className="text-center">
-                <p className="text-5xl font-black tracking-tight leading-none" style={{ color: brand }}>{prizeLabel()}</p>
+                <p
+                  className={`${data.prize_config?.type === "amount" ? "text-3xl" : "text-5xl"} font-black tracking-tight leading-tight`}
+                  style={{ color: brand }}
+                >
+                  {prizeLabel()}
+                </p>
                 <p className="text-sm font-medium text-slate-500 mt-1.5">{prizeSub()}</p>
               </div>
 

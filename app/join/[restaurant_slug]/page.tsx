@@ -18,12 +18,27 @@ type PageState =
   | "already_member"
   | "invalid";
 
+// Named promo offer selected by ?promo=slug on the QR link (e.g. a BOGO).
+interface JoinPromo {
+  slug: string;
+  label: string;
+  headline: string;
+  fine_print?: string | null;
+  kind: "percent" | "amount";
+  discount_percent?: number | null;
+  discount_amount_cents?: number | null;
+  expiry_days?: number;
+}
+
 interface JoinData {
   state: "active" | "invalid";
   restaurant_name?: string;
   // false = opt-in-only restaurant (no coupon): drop the "Get N% off" framing.
   incentive_enabled?: boolean;
   discount_percent?: number;
+  promo?: JoinPromo | null;
+  // "ended" = the QR's promo is over; the form falls back to the default offer.
+  promo_state?: "active" | "ended" | null;
   logo_url?: string | null;
   brand_color?: string | null;
   background_image_url?: string | null;
@@ -35,9 +50,12 @@ interface JoinData {
 interface JoinResult {
   already_member: boolean;
   incentive_enabled?: boolean;
+  promo?: JoinPromo | null;
+  promo_state?: "active" | "ended" | null;
   prize_code?: string;
   prize_url?: string;
   discount_percent?: number;
+  discount_amount_cents?: number | null;
   discount_name?: string;
   expires_at?: string;
   // "pos_coupon": cashier searches the discount name in the POS list (Clover).
@@ -104,6 +122,10 @@ export default function JoinPage() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<JoinResult | null>(null);
   const [countdown, setCountdown] = useState("");
+  // ?promo=slug&src=sub-tag from the QR link — read client-side in the effect
+  // below (this component is SSR'd; window isn't available at render time).
+  const [promoParam, setPromoParam] = useState<string | null>(null);
+  const [srcParam, setSrcParam] = useState<string | null>(null);
 
   // Live ticking countdown on the success coupon — the movement doubles as a
   // liveness cue so staff can tell the real page from a screenshot.
@@ -118,7 +140,15 @@ export default function JoinPage() {
   }, [pageState, result]);
 
   useEffect(() => {
-    fetch(`${MARKETING_API_BASE_URL}/api/join/${restaurant_slug}`)
+    const qs = new URLSearchParams(window.location.search);
+    const promo = qs.get("promo");
+    const src = qs.get("src");
+    setPromoParam(promo);
+    setSrcParam(src);
+
+    const url = new URL(`${MARKETING_API_BASE_URL}/api/join/${restaurant_slug}`);
+    if (promo) url.searchParams.set("promo", promo);
+    fetch(url.toString())
       .then((r) => {
         if (r.status === 404) {
           setPageState("invalid");
@@ -166,6 +196,8 @@ export default function JoinPage() {
             last_name: lastName.trim(),
             phone_number: phone.trim(),
             consent_checked: consentChecked,
+            promo: promoParam,
+            src: srcParam,
           }),
         },
       );
@@ -198,13 +230,16 @@ export default function JoinPage() {
   const restaurantName = data?.restaurant_name || "this restaurant";
   const pct = data?.discount_percent ?? 10;
   const incentive = data?.incentive_enabled !== false;
+  const promo = data?.promo ?? null;
 
   const headline =
     pageState === "loading"
       ? ""
-      : incentive
-        ? `Get ${pct}% off your next order`
-        : "Be the first to hear about specials & offers";
+      : promo
+        ? promo.headline
+        : incentive
+          ? `Get ${pct}% off your next order`
+          : "Be the first to hear about specials & offers";
   const hasHeroImage = Boolean(data?.background_image_url);
 
   if (pageState === "loading") {
@@ -306,6 +341,14 @@ export default function JoinPage() {
         {/* Form */}
         {(pageState === "form" || pageState === "submitting") && (
           <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
+            {promo?.fine_print && (
+              <p className="text-[11px] text-gray-400 text-center -mt-1">{promo.fine_print}</p>
+            )}
+            {data?.promo_state === "ended" && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-center">
+                That offer has ended — but sign up below and we&apos;ll still treat you.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
@@ -403,9 +446,11 @@ export default function JoinPage() {
             >
               {pageState === "submitting"
                 ? "Joining…"
-                : incentive
-                  ? `Get my ${pct}% off`
-                  : "Sign me up"}
+                : promo
+                  ? "Claim this deal"
+                  : incentive
+                    ? `Get my ${pct}% off`
+                    : "Sign me up"}
             </button>
           </form>
         )}
@@ -419,14 +464,28 @@ export default function JoinPage() {
               <p className="font-semibold text-gray-700">
                 🎉 You&apos;re in!
               </p>
-              <p
-                className="text-4xl font-extrabold uppercase leading-tight tracking-tight"
-                style={{ color: darken(brand, 0.15) }}
-              >
-                {result.discount_percent ?? pct}% off
-                <br />
-                your next visit
-              </p>
+              {result.promo ? (
+                <>
+                  <p
+                    className="text-3xl font-extrabold uppercase leading-tight tracking-tight"
+                    style={{ color: darken(brand, 0.15) }}
+                  >
+                    {result.promo.headline}
+                  </p>
+                  {result.promo.fine_print && (
+                    <p className="text-xs text-gray-400 -mt-1">{result.promo.fine_print}</p>
+                  )}
+                </>
+              ) : (
+                <p
+                  className="text-4xl font-extrabold uppercase leading-tight tracking-tight"
+                  style={{ color: darken(brand, 0.15) }}
+                >
+                  {result.discount_percent ?? pct}% off
+                  <br />
+                  your next visit
+                </p>
+              )}
               <p className="text-xl font-extrabold uppercase tracking-tight text-gray-700">
                 Show to your cashier
               </p>
