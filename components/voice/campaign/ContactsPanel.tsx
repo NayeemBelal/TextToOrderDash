@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { marketingApiFetch } from "@/lib/api";
 import { getJoinSettings, type JoinOptinSettings } from "@/lib/settingsApi";
 import { importConsentedRoster, type ImportConsentedResult, type RosterUploadResult } from "@/lib/rosterImportApi";
@@ -44,7 +44,11 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
     active: boolean;
     stats: {
       opt_ins: number;
-      by_src: Record<string, number>;
+      // Full-funnel breakdown per ?src= sub-tag (flyer, window, instagram…).
+      by_src: Record<
+        string,
+        { opt_ins: number; coupons_claimed: number; coupons_redeemed: number; revenue_cents: number }
+      >;
       coupons_claimed: number;
       coupons_redeemed: number;
       revenue_cents: number;
@@ -179,29 +183,44 @@ export function ContactsPanel({ restaurantId }: { restaurantId: string }) {
                 </tr>
               </thead>
               <tbody>
-                {promos.map((p) => (
-                  <tr key={p.slug} className="border-t border-capy-border/60">
-                    <td className="py-2 pr-3">
-                      <span className="font-semibold text-capy-text">{p.label}</span>
-                      {!p.active && (
-                        <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-capy-surface-2 text-capy-muted">ended</span>
-                      )}
-                      {Object.keys(p.stats.by_src).length > 1 && (
-                        <span className="block text-[10px] text-capy-muted mt-0.5">
-                          {Object.entries(p.stats.by_src)
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(" · ")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{p.stats.opt_ins}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{p.stats.coupons_claimed}</td>
-                    <td className="py-2 pr-3 text-right tabular-nums">{p.stats.coupons_redeemed}</td>
-                    <td className="py-2 text-right tabular-nums font-semibold text-capy-green-dark">
-                      ${(p.stats.revenue_cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                  </tr>
-                ))}
+                {promos.map((p) => {
+                  // Show per-src sub-rows whenever any tagged src exists —
+                  // that's the "which placement performs best" view.
+                  const srcEntries = Object.entries(p.stats.by_src);
+                  const showSrcRows =
+                    srcEntries.length > 1 ||
+                    (srcEntries.length === 1 && srcEntries[0][0] !== "(untagged)");
+                  return (
+                    <React.Fragment key={p.slug}>
+                      <tr className="border-t border-capy-border/60">
+                        <td className="py-2 pr-3">
+                          <span className="font-semibold text-capy-text">{p.label}</span>
+                          {!p.active && (
+                            <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-capy-surface-2 text-capy-muted">ended</span>
+                          )}
+                        </td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{p.stats.opt_ins}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{p.stats.coupons_claimed}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{p.stats.coupons_redeemed}</td>
+                        <td className="py-2 text-right tabular-nums font-semibold text-capy-green-dark">
+                          ${(p.stats.revenue_cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                      {showSrcRows &&
+                        srcEntries.map(([src, v]) => (
+                          <tr key={`${p.slug}:${src}`} className="text-capy-muted">
+                            <td className="py-1 pr-3 pl-4 text-[11px]">↳ {src}</td>
+                            <td className="py-1 pr-3 text-right tabular-nums text-[11px]">{v.opt_ins}</td>
+                            <td className="py-1 pr-3 text-right tabular-nums text-[11px]">{v.coupons_claimed}</td>
+                            <td className="py-1 pr-3 text-right tabular-nums text-[11px]">{v.coupons_redeemed}</td>
+                            <td className="py-1 text-right tabular-nums text-[11px]">
+                              ${(v.revenue_cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
