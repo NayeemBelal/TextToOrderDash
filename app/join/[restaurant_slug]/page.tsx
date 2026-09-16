@@ -54,7 +54,9 @@ interface JoinResult {
   already_member: boolean;
   incentive_enabled?: boolean;
   promo?: JoinPromo | null;
-  promo_state?: "active" | "ended" | null;
+  // "already_used": this customer already redeemed this promo (one per
+  // customer) — no new coupon.
+  promo_state?: "active" | "ended" | "outside_hours" | "already_used" | null;
   prize_code?: string;
   prize_url?: string;
   discount_percent?: number;
@@ -213,7 +215,11 @@ export default function JoinPage() {
           json.detail || "Something went wrong. Please try again.",
         );
       setResult(json);
-      setPageState(json.already_member ? "already_member" : "success");
+      setPageState(
+        json.already_member || json.promo_state === "already_used"
+          ? "already_member"
+          : "success",
+      );
     } catch (e: unknown) {
       setError(
         e instanceof Error
@@ -591,8 +597,8 @@ export default function JoinPage() {
               Looks like you&apos;re already on our list!
             </p>
             <p className="text-sm text-gray-400 leading-relaxed">
-              {result?.promo || promo
-                ? `This deal is for new sign-ups — and you're already on the ${restaurantName} VIP list! Keep an eye on your texts for offers made just for members.`
+              {result?.promo_state === "already_used"
+                ? `You've already used the ${result?.promo?.label || "promo"} deal — it's one per customer. Keep an eye on your texts for more offers from ${restaurantName}!`
                 : incentive
                   ? `You've already got an active offer from ${restaurantName} — check your texts for your code.`
                   : `You're already on the ${restaurantName} VIP list — keep an eye on your texts for specials.`}
