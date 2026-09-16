@@ -23,7 +23,7 @@
      single-theme — the deck is a printed object, not a themed app. */
   :root{--paper:#fbfbf9;--ink:#0b0b0b;--muted:#5b5b57;--rule:#0b0b0b;
         --violet:#c4b5fd;--sky:#a4e5f8;--mint:#a1dfc5;--butter:#f5dda1;--pink:#fbc8d4;
-        --sauce:#b5245c;--sauce-dark:#3a1a0f;--shadow:5px 5px 0 #0b0b0b}
+        --brand:#e11d48;--brand-dark:#9f1239;--shadow:5px 5px 0 #0b0b0b}
   *{box-sizing:border-box}
   html,body{margin:0;background:#e9e8e3;color:var(--ink);font-family:Helvetica,"Helvetica Neue",Arial,sans-serif;font-weight:500}
   body{padding:24px 16px}
@@ -114,7 +114,7 @@
       <span class="eyebrow fill-violet">✦ Gamified text marketing for restaurants</span>
       <h1 class="h1">Turn your customer list into a community that plays.</h1>
       <p class="lead">Belan texts each of your customers a quick game. They reply, they win, and they come in before the prize runs out. Every winner brings a friend. Every round makes the list bigger.</p>
-      <div class="foot"><span>belan.tech</span><span>Example restaurant: Sauce Bros Pizza</span></div>
+      <div class="foot"><span>belan.tech</span><span>Gamified text marketing</span></div>
     </section>
 
     <!-- 2 Problem -->
@@ -139,12 +139,12 @@
           <div><span class="tag">They reply</span><span class="tag">They win</span><span class="tag">They come in</span></div>
         </div>
         <div class="phone">
-          <div class="bar" style="background:var(--violet)">Sauce Bros Pizza</div>
+          <div class="bar" style="background:var(--violet)">Stack &amp; Smash Burgers</div>
           <div class="body">
-            <div class="bub in">🍕 Hey Maria, Trivia Tuesday! What’s the most ordered pizza in America? A) Pepperoni B) Cheese C) Supreme. Reply with your answer to win 20% off tonight!</div>
+            <div class="bub in">🍔 Hey Maria, Trivia Tuesday! What’s America’s most ordered burger topping? A) Cheese B) Bacon C) Onions. Reply with your answer to win 20% off tonight!</div>
             <div class="bub out" style="background:var(--sky)">A</div>
             <div class="bub in">🏆 You won, Maria! 20% off until 11 PM tomorrow. Tap to claim: belan.tech/prize/WIN-7K2P
-              <div class="prev"><div class="top" style="background:var(--sauce-dark)"><div class="logo">🍕</div><div><div class="t">Sauce Bros Pizza</div><div class="s" style="color:#f4c6d6">You won 20% off 🎉</div></div></div><div class="u">belan.tech</div></div>
+              <div class="prev"><div class="top" style="background:var(--brand-dark)"><div class="logo">🍔</div><div><div class="t">Stack &amp; Smash Burgers</div><div class="s" style="color:#fecdd3">You won 20% off 🎉</div></div></div><div class="u">belan.tech</div></div>
             </div>
           </div>
         </div>
@@ -191,9 +191,9 @@
           <div><span class="tag">By name</span><span class="tag">Game they like</span><span class="tag">Prize they order</span></div>
         </div>
         <div class="bubble-list">
-          <div class="msg"><b>Maria · plays trivia, orders pepperoni</b>🍕 Hey Maria, Trivia Tuesday! Which topping did we sell most last month? Reply A, B or C to win a free large pepperoni.</div>
-          <div class="msg"><b>James · rolls dice, orders wings</b>🎲 James, roll for it: reply with a number 1–6. Match ours and wings are on us tonight.</div>
-          <div class="msg"><b>New member · first game</b>🎉 Welcome to Sauce Bros, Priya! Everyone wins tonight: reply YES and 15% off is yours until 11 PM.</div>
+          <div class="msg"><b>Maria · plays trivia, orders the double stack</b>🍔 Hey Maria, Trivia Tuesday! Which burger did we sell most last month? Reply A, B or C to win a free double stack.</div>
+          <div class="msg"><b>James · rolls dice, orders loaded fries</b>🎲 James, roll for it: reply with a number 1–6. Match ours and loaded fries are on us tonight.</div>
+          <div class="msg"><b>New member · first game</b>🎉 Welcome to Stack &amp; Smash, Priya! Everyone wins tonight: reply YES and 15% off is yours until 11 PM.</div>
         </div>
       </div>
       <div class="foot"><span>Belan Marketing AI</span><span>06</span></div>
@@ -214,7 +214,7 @@
         </div>
         <div class="timer">
           <span class="tag" style="align-self:flex-start;background:var(--pink)">Your prize</span>
-          <div style="font-family:Tektur,sans-serif;font-weight:900;font-size:clamp(16px,2vw,26px)">20% off · Sauce Bros Pizza</div>
+          <div style="font-family:Tektur,sans-serif;font-weight:900;font-size:clamp(16px,2vw,26px)">20% off · Stack &amp; Smash Burgers</div>
           <div class="big">04:27:13</div>
           <div class="bar-track"><i style="width:31%"></i></div>
           <div class="quiet">Expires tonight at 11:00 PM. Show this at the register or tap redeem.</div>
@@ -242,10 +242,11 @@
         <div style="display:flex;flex-direction:column;gap:14px">
           <span class="eyebrow fill-butter">Your community, your brand</span>
           <h2 class="h2">It all looks like <em>you</em>, not like us.</h2>
-          <p class="lead">The link preview in their messages, the coupon page, the sign-up card, the invite a friend sends: your logo, your colour, your food. One tap at the register turns the prize into a real discount on your POS.</p>
-          <div class="shot"><img src="/docs/img/og-saucebros.jpg" alt="Branded link preview: Sauce Bros Pizza, 23% off your order"></div>
+          <p class="lead" style="max-width:40ch">Link preview, coupon page, sign-up card, the invite a friend sends: your logo, your colour, your food. One tap at the register makes it a real POS discount.</p>
+          <div class="shot" style="max-width:400px"><img src="/docs/img/og-stacksmash.jpg" alt="Branded link preview: Stack &amp; Smash Burgers, you won 20% off"></div>
+          <p class="quiet" style="margin:0">Stack &amp; Smash Burgers is our demo restaurant. Try it yourself on belan.tech.</p>
         </div>
-        <div class="shot" style="max-width:340px;justify-self:center"><img src="/docs/img/18-coupon-page.jpg" alt="Sauce Bros coupon page"></div>
+        <div class="shot" style="max-width:min(270px,28vw);justify-self:center"><img src="/docs/img/demo-coupon-page.jpg" alt="Stack &amp; Smash Burgers coupon page"></div>
       </div>
       <div class="foot"><span>Belan Marketing AI</span><span>09</span></div>
     </section>
@@ -267,7 +268,7 @@
       <span class="eyebrow fill-violet">Games you can run</span>
       <h2 class="h2">Pick one, or build your own in a minute.</h2>
       <div class="grid cols-4">
-        <div class="card"><h3>🍕 Trivia</h3><p>Multiple choice. Everyone who answers right wins, or just the first.</p></div>
+        <div class="card"><h3>🧠 Trivia</h3><p>Multiple choice. Everyone who answers right wins, or just the first.</p></div>
         <div class="card"><h3>🔢 Pick a number</h3><p>1–100. Match our secret pick to win.</p></div>
         <div class="card"><h3>🎲 Roll the dice</h3><p>1–6. Quick, fun, high reply rate.</p></div>
         <div class="card"><h3>🎯 Closest guess</h3><p>“How many slices did we sell last month?” Nearest guess wins when entries close.</p></div>
