@@ -16,5 +16,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: 'https://belan.tech/about', lastModified: new Date('2026-05-14'), changeFrequency: 'monthly', priority: 0.5 },
     { url: 'https://belan.tech/privacy-policy', lastModified: new Date('2025-01-01'), changeFrequency: 'yearly', priority: 0.2 },
     { url: 'https://belan.tech/terms-of-service', lastModified: new Date('2025-01-01'), changeFrequency: 'yearly', priority: 0.2 },
+    { url: 'https://belan.tech/marketing-terms', lastModified: new Date('2026-09-16'), changeFrequency: 'yearly', priority: 0.2 },
   ]
 }
