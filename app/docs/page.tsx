@@ -49,6 +49,15 @@ const DOCS = [
     external: true,
   },
   {
+    href: "/marketing-terms#order-form",
+    emoji: "🖊️",
+    title: "Order form and service terms",
+    desc: "The two-page order form a restaurant signs, in 3-, 6- and 12-month versions, plus the service terms it incorporates: plan tiers, multi-location and term discounts, messages and overage, and the early termination policy.",
+    cta: "Get the order form →",
+    color: "#f5dda1",
+    external: false,
+  },
+  {
     href: BOOK_CALL,
     emoji: "🗓️",
     title: "Set up with a real person",
@@ -91,7 +100,7 @@ export default function DocsPage() {
       </section>
 
       <section className="max-w-[1200px] mx-auto px-6 md:px-10 pb-12">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {DOCS.map((d) => (
             <a
               key={d.href}

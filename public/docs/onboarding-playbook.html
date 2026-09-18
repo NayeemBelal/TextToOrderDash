@@ -121,7 +121,7 @@
       <span class="eyebrow">Sales team · onboarding guide</span>
       <h1>Belan Onboarding Playbook</h1>
       <p>How to take a restaurant from “tell me more” to a launched campaign, in the order it happens. Every step says who does it, where to click, what to say, and what “done” looks like. Screenshots are from the live product; the red numbers on each picture match the notes under it.</p>
-      <div class="meta"><span class="chip">Product: belan.tech</span><span class="chip">Price: $200/mo flat</span><span class="chip">Optional: RCS branded sender $500/yr</span><span class="chip">POS today: Clover</span><span class="chip">Updated Sept 12, 2026</span></div>
+      <div class="meta"><span class="chip">Product: belan.tech</span><span class="chip">From $200 per location per month (3 plans)</span><span class="chip">Optional: RCS branded sender, $500 setup + $200/yr</span><span class="chip">POS today: Clover</span><span class="chip">Updated Sept 17, 2026</span></div>
     </header>
 
     <!-- 0 -->
@@ -133,6 +133,7 @@
         <tr><td>Restaurant record</td><td>The restaurant created in Belan under its real name, marked active, with a one-time setup code.</td><td class="mono">Sauce Bros Pizza · SAUCE-4471</td></tr>
         <tr><td>Marketing phone number</td><td>The number their texts will come from. Engineering provisions it on Telnyx and attaches it to the restaurant.</td><td class="mono">+1 (206) 555-0140</td></tr>
         <tr><td>Setup code</td><td>What the owner types in step 2 to claim the restaurant. Give it to them on the call, not by text ahead of time.</td><td class="mono">SAUCE-4471</td></tr>
+        <tr><td>Signed Order Form</td><td>The 3-, 6- or 12-month Order Form (PDF at <a href="/marketing-terms#order-form">belan.tech/marketing-terms</a>), signed by the owner before the call. Pick the plan (Tier 1, 2 or 3) and count the locations; the multi-location and term discounts are on the form.</td><td class="mono">6-Month · Tier 1 · 2 locations</td></tr>
       </table>
       <div class="note"><b>Heads-up</b>The restaurant’s name is what appears in every text and on the coupon page (“Hey! It’s Sauce Bros Pizza!”). Get the exact spelling and capitalisation right before it’s created; renaming later needs engineering.</div>
       <div class="check"><b>Done when</b><label><input type="checkbox"> Restaurant exists with the correct name</label><label><input type="checkbox"> Setup code in hand</label><label><input type="checkbox"> Marketing number provisioned</label></div>
@@ -185,7 +186,7 @@
     <section class="step" id="s4">
       <div class="step-head"><div class="step-num who-owner">4</div><div><h2>Payment: $200 / month</h2><p class="who"><b>Who:</b> the owner. <b>Where:</b> “Activate your subscription” screen (card form appears inline).</p></div></div>
       <ol class="steps">
-        <li>The screen says <b>Gamified Marketing — $200/month. Cancel anytime.</b> and shows a secure card form.</li>
+        <li>The screen shows the Tier 1 subscription ($200/month) and a secure card form. Higher plans, multi-location discounts and term credits from the signed Order Form are applied to the subscription by Belan after signature; tell the owner the first charge will match the form.</li>
         <li>Owner enters card details. If you gave them a promo code, there is a field for it inside the card form.</li>
         <li>On success the “You’re all set!” screen appears with a <b>Go to Dashboard</b> button.</li>
       </ol>
@@ -329,7 +330,7 @@
     <section class="step" id="s13">
       <div class="step-head"><div class="step-num">13</div><div><h2>The whole thing on one checklist</h2></div></div>
       <div class="two">
-        <div class="check"><b>Before the call</b><label><input type="checkbox"> Restaurant created with exact name</label><label><input type="checkbox"> Setup code</label><label><input type="checkbox"> Marketing number provisioned</label><label><input type="checkbox"> Owner has Clover login handy</label><label><input type="checkbox"> Owner has logo + food photo</label><label><input type="checkbox"> Owner has a consented contact list (optional)</label></div>
+        <div class="check"><b>Before the call</b><label><input type="checkbox"> Order Form signed (3, 6 or 12 months; plan and locations chosen)</label><label><input type="checkbox"> Restaurant created with exact name</label><label><input type="checkbox"> Setup code</label><label><input type="checkbox"> Marketing number provisioned</label><label><input type="checkbox"> Owner has Clover login handy</label><label><input type="checkbox"> Owner has logo + food photo</label><label><input type="checkbox"> Owner has a consented contact list (optional)</label></div>
         <div class="check"><b>On the call</b><label><input type="checkbox"> Account created</label><label><input type="checkbox"> Restaurant linked</label><label><input type="checkbox"> RCS chosen or skipped</label><label><input type="checkbox"> Payment done</label><label><input type="checkbox"> POS connected (3 ticks)</label><label><input type="checkbox"> Branding saved</label><label><input type="checkbox"> Sign-up link on, QR card sent</label><label><input type="checkbox"> Contacts imported</label><label><input type="checkbox"> Test sent to owner’s phone and opened</label><label><input type="checkbox"> Campaign launched</label><label><input type="checkbox"> Follow-up call booked for next week</label></div>
       </div>
     </section>

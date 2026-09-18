@@ -63,6 +63,12 @@ const FEATURES = [
 
 const EXTRAS = ["Customer groups", "Scheduled sends", "Coupon expiry windows", "Delivery receipts", "Test sends", "Spreadsheet import", "Pause / resume", "Dark mode"];
 
+const PLANS = [
+  { name: "Tier 1", price: "$200", messages: "2,500", overage: "8.0¢", fit: "Around 290 subscribers at two sends a week.", color: "#a4e5f8" },
+  { name: "Tier 2", price: "$300", messages: "4,500", overage: "6.7¢", fit: "Around 520 subscribers at two sends a week.", color: ACCENT },
+  { name: "Tier 3", price: "$400", messages: "7,000", overage: "5.7¢", fit: "Around 810 subscribers at two sends a week.", color: "#f5dda1" },
+];
+
 const PLAN_INCLUDES = [
   "A dedicated marketing phone number",
   "Unlimited game and promotional campaigns",
@@ -171,7 +177,7 @@ export default function MarketingHomePage() {
               </motion.a>
             </motion.div>
             <motion.p variants={fadeUp} className="mt-4 text-xs font-bold text-black/40">
-              $200/month flat · phone number included · no per-text fees
+              From $200 per location per month · phone number included · 2,500 messages included
             </motion.p>
           </motion.div>
 
@@ -308,20 +314,33 @@ export default function MarketingHomePage() {
       <section id="pricing" className="border-b-2 border-black scroll-mt-20">
         <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16">
           <h2 className="font-black text-3xl md:text-4xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
-            One flat price
+            Simple per-location pricing
           </h2>
           <p className="font-bold text-black/50 mb-10 max-w-2xl">
-            No per-text fees, no contracts. Cancel any time.
+            Three plans, priced per location per month. Phone number included. Sends are never blocked. Add locations or
+            commit longer and the price drops.
           </p>
+          <div className="grid md:grid-cols-3 gap-5 mb-5">
+            {PLANS.map((plan) => (
+              <div key={plan.name} className="border-2 border-black bg-white p-7 flex flex-col">
+                <div className="inline-block self-start border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest mb-4" style={{ background: plan.color }}>
+                  {plan.name}
+                </div>
+                <div className="flex items-end gap-2 mb-1">
+                  <span className="font-black text-5xl text-black leading-none" style={{ fontFamily: "Tektur, sans-serif" }}>
+                    {plan.price}
+                  </span>
+                  <span className="font-black text-black/50 mb-1">/ location / month</span>
+                </div>
+                <p className="text-sm font-bold text-black mb-1">{plan.messages} messages a month included</p>
+                <p className="text-sm font-bold text-black/60 mb-4">{plan.fit}</p>
+                <p className="text-xs font-bold text-black/50 mt-auto">Overage {plan.overage} per message, never blocked</p>
+              </div>
+            ))}
+          </div>
           <div className="grid lg:grid-cols-[3fr_2fr] gap-5">
             <div className="border-2 border-black bg-white p-7 md:p-9">
-              <div className="flex items-end gap-2 mb-1">
-                <span className="font-black text-5xl md:text-6xl text-black leading-none" style={{ fontFamily: "Tektur, sans-serif" }}>
-                  $200
-                </span>
-                <span className="font-black text-black/50 mb-1">/ month</span>
-              </div>
-              <p className="text-sm font-bold text-black/60 mb-6">Gamified marketing, everything included.</p>
+              <p className="font-black text-black text-sm uppercase tracking-widest mb-4">Every plan includes</p>
               <ul className="space-y-2.5">
                 {PLAN_INCLUDES.map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm font-bold text-black">
@@ -332,20 +351,35 @@ export default function MarketingHomePage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href={SIGNUP}
-                className="mt-8 inline-block font-black uppercase tracking-widest text-sm px-8 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
-                style={{ background: ACCENT, color: "#000" }}
-              >
-                Set up my restaurant →
-              </Link>
+              <div className="mt-6 grid sm:grid-cols-2 gap-3 text-sm font-bold text-black">
+                <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
+                  <p className="font-black mb-1">More locations, lower price</p>
+                  <p className="text-black/60">2 locations: 10% off every location. 3 or more: 20% off every location.</p>
+                </div>
+                <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
+                  <p className="font-black mb-1">Commit longer, pay less</p>
+                  <p className="text-black/60">3 months at list. 6 months: $100 off per location. 12 months: $200 off per location.</p>
+                </div>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <Link
+                  href={SIGNUP}
+                  className="inline-block font-black uppercase tracking-widest text-sm px-8 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
+                  style={{ background: ACCENT, color: "#000" }}
+                >
+                  Set up my restaurant →
+                </Link>
+                <Link href="/marketing-terms" className="text-xs font-bold tracking-widest text-black/60 hover:text-black underline underline-offset-4">
+                  ORDER FORM &amp; SERVICE TERMS
+                </Link>
+              </div>
             </div>
             <div className="border-2 border-black p-7 md:p-9" style={{ background: "#f4f1fb" }}>
               <div className="inline-block border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-white mb-4">
                 Optional add-on
               </div>
               <h3 className="font-black text-xl text-black mb-1">Branded RCS sender</h3>
-              <p className="font-black text-black/70 mb-3">$500 / year carrier registration</p>
+              <p className="font-black text-black/70 mb-3">$500 one-time setup + $200 / year</p>
               <p className="text-sm font-bold text-black/60 leading-relaxed">
                 Your restaurant&apos;s name, logo and a verified badge in the message thread itself — instead of a
                 bare phone number. Higher open rates, richer replies. We handle the carrier paperwork.
