@@ -10,7 +10,7 @@ import { MessagesTab } from "@/components/marketing/messages/MessagesTab";
 
 const BASE_VIEWS: { key: MarketingView; label: string }[] = [
   { key: "campaign", label: "Campaigns" },
-  { key: "revenue", label: "Revenue" },
+  { key: "revenue", label: "Analytics" },
 ];
 
 // Super-admin-only: internal ops tooling, not part of the owner-facing product.
@@ -20,12 +20,12 @@ const ADMIN_VIEWS: { key: MarketingView; label: string }[] = [
 ];
 
 /**
- * The Marketing tab shell over the Campaign and Revenue surfaces.
+ * The Marketing tab shell over the Campaign and Analytics surfaces.
  *
  * The view selection is shared (marketing-view-context): marketing-only accounts
  * drive it from the header toggle (aligned with the logo), so this component
  * renders only the content. Multi-product accounts, whose header shows the
- * ordering tabs, get the Campaign/Revenue sub-nav here instead.
+ * ordering tabs, get the Campaign/Analytics sub-nav here instead.
  *
  * Coupon Timeline and Messages are gated to isSuperAdmin — restaurant owners
  * never see these tabs, only the super-admin viewing a restaurant via /admin.

@@ -111,6 +111,29 @@ export function fetchSummary(
   );
 }
 
+export interface OptinPoint {
+  day: string; // YYYY-MM-DD (restaurant-local)
+  count: number;
+}
+
+export interface OptinSummary {
+  range: RangeKey;
+  totals: {
+    optin_count: number; // new opt-ins inside the range
+    month_to_date: number; // new opt-ins since the 1st of this local month
+    total_opted_in: number; // whole opted-in list today
+  };
+  series: OptinPoint[];
+}
+
+/** Daily new-opt-in counts for the Analytics tab (same range/tz semantics as fetchSummary). */
+export function fetchOptinSummary(restaurantId: string, range: RangeKey): Promise<OptinSummary> {
+  const tz = encodeURIComponent(localTz());
+  return marketingApiFetch<OptinSummary>(
+    `/api/marketing/analytics/optins?restaurant_id=${restaurantId}&range=${range}&tz=${tz}`,
+  );
+}
+
 export interface AdminRestaurant {
   id: string;
   name: string;

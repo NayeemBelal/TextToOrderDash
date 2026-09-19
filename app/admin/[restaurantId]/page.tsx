@@ -7,7 +7,7 @@ import { MarketingSection } from "@/components/marketing/MarketingSection";
 
 /**
  * Super-admin view of a single restaurant's dashboard — the same Campaign
- * and Revenue tabs the restaurant's own owner sees, scoped to this
+ * and Analytics tabs the restaurant's own owner sees, scoped to this
  * restaurantId via SelectedRestaurantProvider instead of the admin's own JWT.
  * The back-to-grid affordance lives in AdminTopNav (a plain back arrow).
  */

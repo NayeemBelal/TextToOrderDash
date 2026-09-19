@@ -12,7 +12,7 @@ interface MarketingViewValue {
 const MarketingViewContext = createContext<MarketingViewValue | null>(null);
 
 /**
- * Shares the Marketing Campaign/Revenue selection between the top header and the
+ * Shares the Marketing Campaign/Analytics selection between the top header and the
  * page body. For marketing-only accounts the toggle lives in the header (aligned
  * with the logo); for multi-product accounts it stays in the page's own sub-nav.
  * Both read/write the same state here.

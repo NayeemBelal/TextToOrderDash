@@ -14,12 +14,12 @@ const TABS = [
   { label: "Customers", href: "/customers" },
 ];
 
-// Marketing product navigation. Campaigns and Revenue are views on /home;
+// Marketing product navigation. Campaigns and Analytics are views on /home;
 // Customers is its own route — but all three are rendered together on every
 // page so switching between them never makes the others disappear.
 const MARKETING_TABS: { key: MarketingView | "customers"; label: string }[] = [
   { key: "campaign", label: "Campaigns" },
-  { key: "revenue", label: "Revenue" },
+  { key: "revenue", label: "Analytics" },
   { key: "customers", label: "Customers" },
 ];
 
@@ -31,7 +31,7 @@ function tabClass(active: boolean) {
 
 /**
  * Header tabs for marketing-only accounts: one consistent row of
- * Campaigns / Revenue / Customers, wherever you are. Campaigns and Revenue
+ * Campaigns / Analytics / Customers, wherever you are. Campaigns and Analytics
  * switch the /home view (navigating there first if needed); Customers is a
  * route.
  */
