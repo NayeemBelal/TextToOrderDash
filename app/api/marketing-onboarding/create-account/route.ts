@@ -3,9 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, brandName } = await req.json();
+    const { email, password, restaurant_name: restaurantName } = await req.json();
 
-    if (!email || !password) {
+    if (!email || !password || typeof restaurantName !== 'string' || !restaurantName.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -20,8 +20,10 @@ export async function POST(req: NextRequest) {
       email,
       password,
       email_confirm: true,
+      // restaurant_id stays null until Belan's account rep provisions the
+      // restaurant and links it to this account (no self-serve setup code).
       user_metadata: {
-        restaurant_name: brandName ?? null,
+        restaurant_name: restaurantName.trim(),
         restaurant_id: null,
         marketing_onboarding_complete: false,
         subscriptions: ['marketing'],
