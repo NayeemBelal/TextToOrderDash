@@ -12,13 +12,19 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const VERSION = "1.0";
-const EFFECTIVE_DATE = "September 16, 2026";
+const VERSION = "1.1";
+const EFFECTIVE_DATE = "September 17, 2026";
 const COMPANY_NAME = "Yusra Institute LLC";
 const DBA = "Belan AI";
 const CONTACT_EMAIL = "nayeem@belan.tech";
 const CONTACT_PHONE = "(203) 300-7233";
 const CONTACT_ADDRESS = "Plano, TX";
+
+const ORDER_FORMS = [
+  { months: 3, discount: "LIST PRICE", href: "/contracts/Belan-Marketing-AI-Order-Form-3-Month.pdf" },
+  { months: 6, discount: "$100 OFF PER LOCATION", href: "/contracts/Belan-Marketing-AI-Order-Form-6-Month.pdf" },
+  { months: 12, discount: "$200 OFF PER LOCATION", href: "/contracts/Belan-Marketing-AI-Order-Form-12-Month.pdf" },
+];
 
 const TOC: { id: string; label: string }[] = [
   { id: "agreement", label: "The Agreement and the Order Form" },
@@ -119,6 +125,30 @@ export default function MarketingTermsPage() {
           Services, the fees, the messaging rules and the point-of-sale authorization.
         </p>
 
+        {/* Order Form downloads */}
+        <section id="order-form" className="border-2 border-black p-6 mb-12 scroll-mt-24" style={{ background: "#f4f1fb" }}>
+          <p className="font-black text-xs uppercase tracking-widest mb-2">Order Form (PDF)</p>
+          <p className="text-black/80 font-bold mb-4">
+            The two-page Order Form a Customer signs. Pick the Initial Term; every version incorporates these
+            terms. Longer terms carry a discount (see Section 3.9).
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {ORDER_FORMS.map((f) => (
+              <a
+                key={f.months}
+                href={f.href}
+                download
+                className="inline-flex items-center gap-2 bg-black text-white font-bold text-xs px-4 py-2.5 border-2 border-black tracking-widest hover:bg-white hover:text-black transition-colors"
+              >
+                {f.months}-MONTH · {f.discount}
+              </a>
+            ))}
+          </div>
+          <p className="text-xs font-bold text-black/50 mt-3">
+            Form v{VERSION}. Sign electronically or print, sign and scan. Questions: <Mail />.
+          </p>
+        </section>
+
         {/* TOC */}
         <nav className="border-2 border-black p-6 mb-12 bg-gray-50">
           <p className="font-black text-xs uppercase tracking-widest mb-4">Contents</p>
@@ -199,16 +229,24 @@ export default function MarketingTermsPage() {
           {/* 3 */}
           <section>
             <H2 id="fees">3. Fees and Payment</H2>
-            <Clause n="3.1" title="Monthly Fee">
-              The Customer will pay the Monthly Fee shown on the Order Form for each restaurant
-              location covered. The first Monthly Fee is charged on the Service Start Date and each
-              following fee on the same day of each month.
+            <Clause n="3.1" title="Monthly Fee and plans">
+              The Customer will pay the Monthly Fee for the plan selected on the Order Form (Tier 1,
+              Tier 2 or Tier 3, as priced in Exhibit B) for each restaurant location covered. Every
+              location on an Order Form is on the same plan. The first Monthly Fee is charged on the
+              Service Start Date and each following fee on the same day of each month.
             </Clause>
-            <Clause n="3.2" title="Message allowance">
-              Each location includes the number of message segments per month shown in Exhibit B.
-              Segments above the allowance are billed in arrears at the overage rate. Belan shows an
-              estimated message count before every campaign send, and the Customer controls how many
-              Contacts receive each send. Inbound messages from Contacts are never charged.
+            <Clause n="3.2" title="Messages and overage">
+              Each plan includes the number of messages per location per month shown in Exhibit B. A
+              &ldquo;message&rdquo; is one text of up to 306 plain characters (134 when emoji or other
+              non-GSM characters are used), about 25 of which carry the required opt-out line.
+              Included messages reset each month and do not roll over; inbound messages from Contacts
+              are never charged; each location may run up to two campaign sends per week. Sends are
+              never blocked for exceeding the plan: messages above the plan are billed monthly in
+              arrears at the plan&rsquo;s per-message overage rate in Exhibit B, and a location that
+              exceeds its plan in a month moves up to the next plan from its next billing date.
+              Overage above Tier 3 stays at the Tier 3 rate, and volumes above 12,000 messages a month
+              are quoted separately. Belan shows an estimated message count before every campaign
+              send, and the Customer controls how many Contacts receive each send.
             </Clause>
             <Clause n="3.3" title="Optional services">
               Add-ons such as the branded RCS sender are billed as shown in Exhibit B or the relevant
@@ -227,10 +265,23 @@ export default function MarketingTermsPage() {
             <Clause n="3.6" title="Price changes">
               Belan will not raise the Monthly Fee during the Initial Term. Afterwards Belan may
               change fees with at least 30 days&rsquo; written notice; the Customer may cancel under
-              Section 2.2 before the change takes effect.
+              Section 2.2 before the change takes effect. A plan change driven by the Customer&rsquo;s
+              usage under Section 3.2 is not a price change.
             </Clause>
             <Clause n="3.7" title="Refunds">
               Fees are non-refundable except where the Agreement says otherwise.
+            </Clause>
+            <Clause n="3.8" title="Multi-location discount">
+              When an Order Form covers two locations, the Monthly Fee for every location is reduced
+              by 10%. When it covers three or more, every location is reduced by 20%. Locations added
+              later join the same plan and Initial Term end date, and the discount is recalculated
+              from the next billing date.
+            </Clause>
+            <Clause n="3.9" title="Term discount">
+              A six-month Initial Term earns a $100 credit per location and a twelve-month Initial
+              Term earns a $200 credit per location, applied to the final invoice of the Initial
+              Term. A three-month Initial Term is at list price. The credit is earned by completing
+              the Initial Term and is forfeited if the Agreement ends early under Section 12.3.
             </Clause>
           </section>
 
@@ -476,7 +527,7 @@ export default function MarketingTermsPage() {
               than Belan&rsquo;s uncured material breach under Section 12.1 or Section 10.3, the
               Customer will pay, as a reasonable estimate of Belan&rsquo;s loss and not a penalty, a
               flat early termination fee of $150 for each covered location, due on the termination
-              date.
+              date, and forfeits any term discount under Section 3.9 not yet credited.
             </Clause>
             <Clause n="12.4" title="Suspension">
               Belan may suspend the Services, after notice where practical, if a charge for fees has
@@ -613,9 +664,11 @@ export default function MarketingTermsPage() {
                 </thead>
                 <tbody className="font-bold text-black/80">
                   {[
-                    ["Monthly Fee", "$200 per covered location", "Monthly in advance from the Service Start Date"],
-                    ["Included messages", "5,000 outbound segments per location per month", "Included"],
-                    ["Message overage", "$0.02 per outbound segment above the allowance", "Monthly in arrears"],
+                    ["Tier 1", "$200 per covered location per month · 2,500 messages included · overage 8.0¢ per message", "Monthly in advance from the Service Start Date"],
+                    ["Tier 2", "$300 per covered location per month · 4,500 messages included · overage 6.7¢ per message", "Monthly in advance"],
+                    ["Tier 3", "$400 per covered location per month · 7,000 messages included · overage 5.7¢ per message (5.7¢ above Tier 3; 12,000+ quoted separately)", "Monthly in advance"],
+                    ["Multi-location discount (Section 3.8)", "10% off every location with 2 locations; 20% off every location with 3 or more", "Applied to each Monthly Fee"],
+                    ["Term discount (Section 3.9)", "3-month: none · 6-month: $100 per location · 12-month: $200 per location", "Credit on the final invoice of the Initial Term"],
                     [
                       "Branded RCS sender (optional)",
                       "$500 one-time setup fee, plus $200 per year per brand",
@@ -623,10 +676,10 @@ export default function MarketingTermsPage() {
                     ],
                     [
                       "Additional location",
-                      "$200 per location per month, same Initial Term end date as the first location unless the Order Form says otherwise",
-                      "Monthly in advance",
+                      "Same plan and Initial Term end date as the first location unless the Order Form says otherwise; multi-location discount recalculated",
+                      "Monthly in advance from the next billing date",
                     ],
-                    ["Early termination fee (Section 12.3)", "$150 per covered location, flat", "On the termination date"],
+                    ["Early termination fee (Section 12.3)", "$150 per covered location, flat, plus forfeiture of any uncredited term discount", "On the termination date"],
                   ].map(([item, amount, when]) => (
                     <tr key={item} className="border-t-2 border-black align-top">
                       <td className="px-3 py-2 text-black">{item}</td>
@@ -638,9 +691,12 @@ export default function MarketingTermsPage() {
               </table>
             </div>
             <P>
-              A &ldquo;segment&rdquo; is one SMS message part of up to 160 GSM characters (or 70
-              characters when non-GSM characters such as some emoji are used); longer messages use
-              multiple segments. Belan displays the estimated segment count before every send.
+              A &ldquo;message&rdquo; is one text of up to 306 plain characters (134 when emoji or
+              other non-GSM characters are used), about 25 of which carry the required opt-out line.
+              Included messages reset monthly and do not roll over. Belan displays the estimated
+              message count before every send. Multi-location pricing per location: Tier 1 $200 /
+              $180 / $160, Tier 2 $300 / $270 / $240, Tier 3 $400 / $360 / $320 for one, two, and
+              three or more locations.
             </P>
           </section>
 
