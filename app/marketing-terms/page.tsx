@@ -21,7 +21,6 @@ const CONTACT_PHONE = "(203) 300-7233";
 const CONTACT_ADDRESS = "Plano, TX";
 
 const ORDER_FORMS = [
-  { months: 3, discount: "LIST PRICE", href: "/contracts/Belan-Marketing-AI-Order-Form-3-Month.pdf" },
   { months: 6, discount: "$100 OFF PER LOCATION", href: "/contracts/Belan-Marketing-AI-Order-Form-6-Month.pdf" },
   { months: 12, discount: "$200 OFF PER LOCATION", href: "/contracts/Belan-Marketing-AI-Order-Form-12-Month.pdf" },
 ];
@@ -280,8 +279,8 @@ export default function MarketingTermsPage() {
             <Clause n="3.9" title="Term discount">
               A six-month Initial Term earns a $100 credit per location and a twelve-month Initial
               Term earns a $200 credit per location, applied to the final invoice of the Initial
-              Term. A three-month Initial Term is at list price. The credit is earned by completing
-              the Initial Term and is forfeited if the Agreement ends early under Section 12.3.
+              Term. The credit is earned by completing the Initial Term and is forfeited if the Agreement
+              ends early under Section 12.3.
             </Clause>
           </section>
 
@@ -668,7 +667,7 @@ export default function MarketingTermsPage() {
                     ["Tier 2", "$300 per covered location per month · 4,500 messages included · overage 6.7¢ per message", "Monthly in advance"],
                     ["Tier 3", "$400 per covered location per month · 7,000 messages included · overage 5.7¢ per message (5.7¢ above Tier 3; 12,000+ quoted separately)", "Monthly in advance"],
                     ["Multi-location discount (Section 3.8)", "10% off every location with 2 locations; 20% off every location with 3 or more", "Applied to each Monthly Fee"],
-                    ["Term discount (Section 3.9)", "3-month: none · 6-month: $100 per location · 12-month: $200 per location", "Credit on the final invoice of the Initial Term"],
+                    ["Term discount (Section 3.9)", "6-month: $100 per location · 12-month: $200 per location", "Credit on the final invoice of the Initial Term"],
                     [
                       "Branded RCS sender (optional)",
                       "$500 one-time setup fee, plus $200 per year per brand",
