@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
+import { track } from "@/lib/metrics";
 import ReferralModal from "./ReferralModal";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
@@ -167,6 +168,9 @@ export default function PrizePage() {
   }, [pageState, expiresAt]);
 
   async function handleRedeem() {
+    // Tap intent, distinct from the redeem POST succeeding — the gap between
+    // the two is POS-mint failures and expired-at-the-register attempts.
+    track("prize_redeem_tapped", { prizeCode: prize_code });
     setRedeeming(true);
     setError("");
     try {
@@ -234,6 +238,7 @@ export default function PrizePage() {
   const copyCode = async () => {
     try {
       await navigator.clipboard.writeText(discountName);
+      track("prize_code_copied", { prizeCode: prize_code });
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch { /* ignore */ }
