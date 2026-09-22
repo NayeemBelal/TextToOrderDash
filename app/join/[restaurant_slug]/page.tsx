@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
+import { track } from "@/lib/metrics";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -168,9 +169,35 @@ export default function JoinPage() {
         setData(d);
         if (d.promo_state === "outside_hours") setHoursModalOpen(true);
         setPageState(d.state === "active" ? "form" : "invalid");
+        // A human's QR scan/page open — client-fired so crawlers and the SSR
+        // metadata fetch never count; deduped server-side per visitor.
+        track("join_page_viewed", { restaurantSlug: restaurant_slug }, {
+          promo_slug: promo,
+          src,
+          promo_state: d.promo_state ?? null,
+        });
+        if (d.promo_state === "outside_hours" || d.promo_state === "ended") {
+          track("join_promo_closed_viewed", { restaurantSlug: restaurant_slug }, {
+            promo_slug: promo,
+            src,
+            promo_state: d.promo_state,
+          });
+        }
       })
       .catch(() => setPageState("invalid"));
   }, [restaurant_slug]);
+
+  // First keystroke in the form = a form start; with join_page_viewed this
+  // brackets the abandon rate. Fired once per page load.
+  const formStartTracked = useRef(false);
+  function trackFormStart() {
+    if (formStartTracked.current) return;
+    formStartTracked.current = true;
+    track("join_form_started", { restaurantSlug: restaurant_slug }, {
+      promo_slug: promoParam,
+      src: srcParam,
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -406,7 +433,10 @@ export default function JoinPage() {
                   // field saves a tap for someone standing in line.
                   autoFocus
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => {
+                    trackFormStart();
+                    setFirstName(e.target.value);
+                  }}
                   placeholder="Jane"
                   className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2"
                   style={
@@ -444,7 +474,10 @@ export default function JoinPage() {
                 type="tel"
                 inputMode="numeric"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  trackFormStart();
+                  setPhone(e.target.value);
+                }}
                 placeholder="(555) 123-4567"
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:ring-2"
                 style={

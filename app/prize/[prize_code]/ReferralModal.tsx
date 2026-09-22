@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { track } from "@/lib/metrics";
 
 interface ReferralModalProps {
   open: boolean;
@@ -160,6 +161,12 @@ export default function ReferralModal({
   if (!mounted) return null;
 
   async function handleInvite() {
+    // Share intent is otherwise invisible — only downstream claims are. The
+    // referral code is the last path segment of the referral URL.
+    const referralCode = referralUrl.split("/").filter(Boolean).pop();
+    track("referral_share_tapped", { referralCode }, {
+      method: typeof navigator !== "undefined" && "share" in navigator ? "share_sheet" : "clipboard",
+    });
     const tagline = shareTaglines.length > 0
       ? shareTaglines[Math.floor(Math.random() * shareTaglines.length)]
       : "You're going to love it.";

@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/lib/theme-context";
 const ADMIN_TABS: { key: AdminView; label: string }[] = [
   { key: "restaurants", label: "Restaurants" },
   { key: "billing", label: "Billing" },
+  { key: "insights", label: "Insights" },
 ];
 
 /**

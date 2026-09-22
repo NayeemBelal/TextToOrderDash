@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
+import { track } from "@/lib/metrics";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
@@ -60,6 +61,10 @@ export default function ReferralPage() {
         if (!d) return;
         setData(d);
         setPageState(d.state === "active" ? "form" : "invalid");
+        // Invite opened — the top of the referral funnel; claims are the bottom.
+        track("referral_page_viewed", { referralCode: referral_code }, {
+          state: d.state,
+        });
       })
       .catch(() => setPageState("invalid"));
   }, [referral_code]);
