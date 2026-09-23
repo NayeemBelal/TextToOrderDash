@@ -4,6 +4,7 @@ import { useAdminView } from "@/lib/admin-view-context";
 import { AdminRestaurantsTab } from "@/components/admin/AdminRestaurantsTab";
 import { AdminBillingTab } from "@/components/admin/AdminBillingTab";
 import { AdminInsightsTab } from "@/components/admin/AdminInsightsTab";
+import { AdminQROffersTab } from "@/components/admin/AdminQROffersTab";
 
 /** Super-admin grid page body — the tab toggle lives in AdminTopNav. */
 export function AdminSection() {
@@ -17,6 +18,7 @@ export function AdminSection() {
       {view === "restaurants" && <AdminRestaurantsTab />}
       {view === "billing" && <AdminBillingTab />}
       {view === "insights" && <AdminInsightsTab />}
+      {view === "qr-offers" && <AdminQROffersTab />}
     </div>
   );
 }

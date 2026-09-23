@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 
-export type AdminView = "restaurants" | "billing" | "insights";
+export type AdminView = "restaurants" | "billing" | "insights" | "qr-offers";
 
 interface AdminViewValue {
   view: AdminView;
