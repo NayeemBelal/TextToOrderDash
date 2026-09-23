@@ -2,10 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  fetchInsightsRestaurants,
   fetchInsightsSends,
   fetchJoinFunnel,
+  fetchOptinCouponStats,
   type InsightsRange,
+  type InsightsRestaurant,
   type JoinFunnelRow,
+  type OptinCouponStats,
   type SendStatsRow,
 } from "@/lib/insightsApi";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -70,28 +74,43 @@ function Tile({ label, value, sub, loading }: {
  */
 export function AdminInsightsTab() {
   const [range, setRange] = useState<InsightsRange>("30d");
+  const [restaurantId, setRestaurantId] = useState<string>(""); // "" = all
+  const [restaurants, setRestaurants] = useState<InsightsRestaurant[]>([]);
   const [sends, setSends] = useState<SendStatsRow[] | null>(null);
   const [funnels, setFunnels] = useState<JoinFunnelRow[] | null>(null);
+  const [optin, setOptin] = useState<OptinCouponStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
+    fetchInsightsRestaurants()
+      .then((r) => setRestaurants(r.restaurants))
+      .catch(() => undefined); // filter just stays "all restaurants"
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    Promise.all([fetchInsightsSends(range), fetchJoinFunnel(range)])
-      .then(([s, f]) => {
+    const rid = restaurantId || undefined;
+    Promise.all([
+      fetchInsightsSends(range, rid),
+      fetchJoinFunnel(range, rid),
+      fetchOptinCouponStats(range, rid),
+    ])
+      .then(([s, f, o]) => {
         if (cancelled) return;
         setSends(s.sends);
         setFunnels(f.funnels);
+        setOptin(o);
       })
       .catch(() => !cancelled && setError("Couldn't load insights."))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [range]);
+  }, [range, restaurantId]);
 
   const totals = useMemo(() => {
     if (!sends) return null;
@@ -122,21 +141,34 @@ export function AdminInsightsTab() {
               Every send as a report card, plus the QR sign-up funnel
             </p>
           </div>
-          <div className="inline-flex items-center gap-1 rounded-lg border border-capy-border p-0.5">
-            {RANGES.map((r) => (
-              <button
-                key={r.key}
-                type="button"
-                onClick={() => setRange(r.key)}
-                className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
-                  range === r.key
-                    ? "bg-capy-bg text-capy-text font-semibold"
-                    : "text-capy-muted hover:text-capy-text"
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <select
+              value={restaurantId}
+              onChange={(e) => setRestaurantId(e.target.value)}
+              className="text-xs rounded-lg border border-capy-border bg-capy-card text-capy-text px-2 py-1.5 focus:outline-none"
+              aria-label="Filter by restaurant"
+            >
+              <option value="">All restaurants</option>
+              {restaurants.map((r) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <div className="inline-flex items-center gap-1 rounded-lg border border-capy-border p-0.5">
+              {RANGES.map((r) => (
+                <button
+                  key={r.key}
+                  type="button"
+                  onClick={() => setRange(r.key)}
+                  className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
+                    range === r.key
+                      ? "bg-capy-bg text-capy-text font-semibold"
+                      : "text-capy-muted hover:text-capy-text"
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -146,16 +178,49 @@ export function AdminInsightsTab() {
           </div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Tile label="Sends" value={`${totals?.sends ?? 0}`} sub={`${totals?.sent ?? 0} messages`} loading={loading} />
-          <Tile label="Delivery" value={pct(totals?.deliveryRate ?? null)} sub={`${totals?.optouts ?? 0} opt-outs within 24h`} loading={loading} />
-          <Tile label="Replies" value={`${totals?.replies ?? 0}`} sub={`${pct(totals?.replyRate ?? null)} of delivered`} loading={loading} />
-          <Tile
-            label="Net revenue"
-            value={usd((totals?.revenueExTax ?? 0) - (totals?.discountCost ?? 0))}
-            sub={`${usd(totals?.revenueExTax ?? 0)} ex-tax − ${usd(totals?.discountCost ?? 0)} discounts`}
-            loading={loading}
-          />
+        <div>
+          <p className="text-xs font-semibold text-capy-muted uppercase tracking-wide mb-2">
+            Campaign sends (games · promos · reminders)
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Tile label="Sends" value={`${totals?.sends ?? 0}`} sub={`${totals?.sent ?? 0} messages`} loading={loading} />
+            <Tile label="Delivery" value={pct(totals?.deliveryRate ?? null)} sub={`${totals?.optouts ?? 0} opt-outs within 24h`} loading={loading} />
+            <Tile label="Replies" value={`${totals?.replies ?? 0}`} sub={`${pct(totals?.replyRate ?? null)} of delivered`} loading={loading} />
+            <Tile
+              label="Net revenue"
+              value={usd((totals?.revenueExTax ?? 0) - (totals?.discountCost ?? 0))}
+              sub={`${usd(totals?.revenueExTax ?? 0)} ex-tax − ${usd(totals?.discountCost ?? 0)} discounts`}
+              loading={loading}
+            />
+          </div>
+        </div>
+
+        {/* Welcome coupons are minted by signups, not campaign sends — without
+            this row the page hides the biggest revenue driver. */}
+        <div>
+          <p className="text-xs font-semibold text-capy-muted uppercase tracking-wide mb-2">
+            Opt-in welcome coupons
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Tile label="Minted" value={`${optin?.coupons_minted ?? 0}`} sub="new-member coupons issued" loading={loading} />
+            <Tile
+              label="Redeemed"
+              value={`${optin?.coupons_redeemed ?? 0}`}
+              sub={
+                optin && optin.coupons_minted > 0
+                  ? `${Math.round((optin.coupons_redeemed / optin.coupons_minted) * 100)}% of minted`
+                  : undefined
+              }
+              loading={loading}
+            />
+            <Tile label="Used on orders" value={`${optin?.attributed_orders ?? 0}`} sub={`${optin?.coupons_consumed ?? 0} coupons consumed`} loading={loading} />
+            <Tile
+              label="Net revenue"
+              value={usd(optin?.net_revenue_cents ?? 0)}
+              sub={`${usd(optin?.attributed_revenue_ex_tax_cents ?? 0)} ex-tax − ${usd(optin?.discount_cost_cents ?? 0)} discounts`}
+              loading={loading}
+            />
+          </div>
         </div>
 
         {/* ── Send report cards ─────────────────────────────────────────── */}
