@@ -99,6 +99,36 @@ export function fetchJoinFunnel(
   return marketingApiFetch(`/api/admin/insights/join-funnel?${params}`);
 }
 
+export interface OptinCouponStats {
+  range: InsightsRange;
+  coupons_minted: number;
+  coupons_redeemed: number;
+  coupons_consumed: number;
+  attributed_orders: number;
+  attributed_revenue_cents: number;
+  attributed_revenue_ex_tax_cents: number;
+  discount_cost_cents: number;
+  net_revenue_cents: number;
+}
+
+export interface InsightsRestaurant {
+  id: string;
+  name: string;
+}
+
+export function fetchOptinCouponStats(
+  range: InsightsRange = '30d',
+  restaurantId?: string,
+): Promise<OptinCouponStats> {
+  const params = new URLSearchParams({ range });
+  if (restaurantId) params.set('restaurant_id', restaurantId);
+  return marketingApiFetch(`/api/admin/insights/optin-coupons?${params}`);
+}
+
+export function fetchInsightsRestaurants(): Promise<{ restaurants: InsightsRestaurant[] }> {
+  return marketingApiFetch('/api/admin/insights/restaurants');
+}
+
 export function fetchInsightsDaily(
   range: InsightsRange = '30d',
   restaurantId?: string,
