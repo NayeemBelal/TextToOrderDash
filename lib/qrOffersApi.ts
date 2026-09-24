@@ -16,12 +16,20 @@ export interface QROffer {
   id: string;
   slug: string;
   label: string;
+  headline: string | null;
+  fine_print: string | null;
   kind: QROfferKind;
   discount_percent: number | null;
   expiry_days: number;
   active: boolean;
   created_at: string;
   link: string;
+}
+
+export interface QROfferDeleteResult {
+  deleted: boolean;
+  deactivated: boolean;
+  claimed_coupons: number;
 }
 
 export interface QROfferCreateInput {
@@ -59,6 +67,13 @@ export function createQROffer(input: QROfferCreateInput): Promise<QROfferCreated
     method: 'POST',
     body: JSON.stringify(input),
   });
+}
+
+export function deleteQROffer(offerId: string, restaurantId: string): Promise<QROfferDeleteResult> {
+  return marketingApiFetch(
+    `/api/admin/qr-offers/${offerId}?restaurant_id=${restaurantId}`,
+    { method: 'DELETE' },
+  );
 }
 
 /** The final URL to encode in the QR image: offer link + placement tag. */
