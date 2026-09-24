@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   createQROffer,
+  deleteQROffer,
   fetchQROffers,
   qrLink,
   type QROffer,
@@ -122,6 +123,26 @@ export function AdminQROffersTab() {
       setError("Couldn't create the offer — check the fields and try again.");
     } finally {
       setCreating(false);
+    }
+  }
+
+  async function handleDelete(offer: QROffer) {
+    const ok = window.confirm(
+      `Delete "${offer.label}"?\n\nAny QR codes already printed with this link will show "offer ended" when scanned.`,
+    );
+    if (!ok) return;
+    setError(null);
+    try {
+      const result = await deleteQROffer(offer.id, restaurantId);
+      if (result.deactivated) {
+        setError(
+          `"${offer.label}" had ${result.claimed_coupons} claimed coupon${result.claimed_coupons === 1 ? "" : "s"}, so it was deactivated instead of deleted — scans now show "offer ended", claimed coupons keep working until they expire.`,
+        );
+      }
+      const refreshed = await fetchQROffers(restaurantId);
+      setExisting(refreshed.offers);
+    } catch {
+      setError("Couldn't delete the offer — try again.");
     }
   }
 
@@ -304,12 +325,25 @@ export function AdminQROffersTab() {
                           {o.expiry_days}d coupon
                         </span>
                       </p>
-                      {!o.active && (
-                        <span className="text-[10px] uppercase tracking-wide text-capy-muted border border-capy-border rounded-full px-2 py-0.5">
-                          inactive
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {!o.active && (
+                          <span className="text-[10px] uppercase tracking-wide text-capy-muted border border-capy-border rounded-full px-2 py-0.5">
+                            inactive
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(o)}
+                          className="text-xs px-2 py-1 rounded-lg border border-capy-border text-red-500 hover:bg-red-500/10"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
+                    <p className="text-xs text-capy-muted">
+                      Customer sees: <span className="text-capy-text font-medium">“{o.headline || "—"}”</span>
+                      {o.fine_print ? <span> · {o.fine_print}</span> : null}
+                    </p>
                     <CopyLink link={qrLink(o.link, src)} />
                   </div>
                 ))}
