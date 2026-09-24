@@ -102,7 +102,7 @@ export function AdminQROffersTab() {
         kind,
         expiry_days: Number(expiryDays),
         ...(kind === "percent"
-          ? { discount_percent: Number(percent) }
+          ? { discount_percent: Number(percent), headline: headline.trim() || undefined }
           : {
               headline: headline.trim(),
               fine_print: finePrint.trim() || undefined,
@@ -184,16 +184,23 @@ export function AdminQROffersTab() {
             </div>
 
             {kind === "percent" ? (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <p className={labelCls}>Discount %</p>
-                  <input type="number" min={1} max={100} value={percent}
-                    onChange={(e) => setPercent(e.target.value)} className={inputCls} />
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <p className={labelCls}>Discount %</p>
+                    <input type="number" min={1} max={100} value={percent}
+                      onChange={(e) => setPercent(e.target.value)} className={inputCls} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className={labelCls}>Coupon lasts (days)</p>
+                    <input type="number" min={1} max={60} value={expiryDays}
+                      onChange={(e) => setExpiryDays(e.target.value)} className={inputCls} />
+                  </div>
                 </div>
                 <div className="space-y-1">
-                  <p className={labelCls}>Coupon lasts (days)</p>
-                  <input type="number" min={1} max={60} value={expiryDays}
-                    onChange={(e) => setExpiryDays(e.target.value)} className={inputCls} />
+                  <p className={labelCls}>Headline on the sign-up page (optional)</p>
+                  <input value={headline} onChange={(e) => setHeadline(e.target.value)}
+                    placeholder={`${Number(percent) || 10}% OFF YOUR ORDER`} className={inputCls} />
                 </div>
               </div>
             ) : (
