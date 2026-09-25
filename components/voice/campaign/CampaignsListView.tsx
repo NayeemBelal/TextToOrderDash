@@ -90,7 +90,7 @@ function AutopilotCard({ ap, onOpen }: { ap: AutopilotDashboard; onOpen: () => v
   const summary = !on
     ? "Off. Texts each customer a game only when they're due, with a first line written for them."
     : next
-      ? `Next: ${next.local_label} · ${next.size} customers · ${slots.reduce((n, x) => n + x.size, 0)} planned this week`
+      ? `Next: ${next.local_label} · ${next.size} customer${next.size === 1 ? "" : "s"} · ${slots.reduce((n, x) => n + x.size, 0)} planned this week`
       : "On. No one is due this week.";
   return (
     <button onClick={onOpen} className="app-card w-full text-left flex items-center gap-3.5 px-4 py-3.5 hover:bg-capy-surface transition-colors group">

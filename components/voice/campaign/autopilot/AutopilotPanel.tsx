@@ -235,7 +235,7 @@ export function AutopilotPanel({ restaurantId, onExit }: { restaurantId: string;
               <Stat
                 label="Next send"
                 value={nextSlot ? <span className="text-base">{nextSlot.local_label}</span> : "—"}
-                sub={nextSlot ? `${nextSlot.size} customers · ${nextSlot.game_name}` : "No one is due this week"}
+                sub={nextSlot ? `${nextSlot.size} customer${nextSlot.size === 1 ? "" : "s"} · ${nextSlot.game_name}` : "No one is due this week"}
               />
               <Stat label="This week" value={planned} sub={`in ${slots.length} send${slots.length === 1 ? "" : "s"} · of ${st.audience ?? "—"} on the list`} />
               <Stat

@@ -176,7 +176,7 @@ export function AutopilotBucket({
         </div>
         <div className="text-right">
           <span className="block text-lg font-bold text-capy-text tabular-nums leading-tight">{slot.size}</span>
-          <span className="block text-[11px] text-capy-muted">customers</span>
+          <span className="block text-[11px] text-capy-muted">customer{slot.size === 1 ? "" : "s"}</span>
         </div>
         <div className="text-right min-w-[6.5rem]">
           <span className="block text-sm font-semibold text-capy-text tabular-nums leading-tight">
@@ -190,7 +190,7 @@ export function AutopilotBucket({
 
       <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
         <button onClick={() => setOpen((o) => !o)} className="btn-secondary !py-1.5 !px-3 !text-xs">
-          {open ? "Hide customers" : `See all ${slot.size} messages`}
+          {open ? "Hide customers" : slot.size === 1 ? "See the message" : `See all ${slot.size} messages`}
         </button>
         {live && slot.status === "awaiting_approval" && (
           <button onClick={() => onApprove(true)} disabled={busy} className="btn-primary !py-1.5 !px-3 !text-xs">
