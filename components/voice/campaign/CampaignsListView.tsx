@@ -11,6 +11,8 @@ import { OptInPanel } from "@/components/voice/campaign/OptInPanel";
 import { ContactsPanel } from "@/components/voice/campaign/ContactsPanel";
 import { NewCampaignPicker, type NewCampaignChoice } from "@/components/voice/campaign/NewCampaignPicker";
 import { ResponsivePanel } from "@/components/ui/ResponsivePanel";
+import { AutopilotPanel } from "@/components/voice/campaign/autopilot/AutopilotPanel";
+import { fetchAutopilot, type AutopilotDashboard } from "@/lib/autopilotApi";
 
 // Terminal states — these go in the History section below the active list.
 const TERMINAL_STATUSES = new Set(["ended", "sent", "canceled", "failed"]);
@@ -20,7 +22,8 @@ type View =
   | { mode: "new-game"; everyoneWins: boolean }
   | { mode: "game-detail"; campaignId: string }
   | { mode: "new-promo" }
-  | { mode: "promo-detail"; promoId: string };
+  | { mode: "promo-detail"; promoId: string }
+  | { mode: "autopilot" };
 
 const TYPE_META: Record<CampaignListItem["type"], { label: string; emoji: string; chip: string }> = {
   classic: { label: "Game", emoji: "🎯", chip: "bg-capy-accent-light text-capy-accent" },
@@ -77,6 +80,50 @@ function CampaignRow({ c, onOpen }: { c: CampaignListItem; onOpen: () => void })
   );
 }
 
+/** Entry point to Autopilot — shown only where the backend says it's available
+ * (Belan admins everywhere while the feature flag is on; owners on the pilot list). */
+function AutopilotCard({ ap, onOpen }: { ap: AutopilotDashboard; onOpen: () => void }) {
+  const s = ap.settings;
+  const slots = ap.slots ?? [];
+  const next = slots[0];
+  const on = !!s?.enabled;
+  const summary = !on
+    ? "Off. Texts each customer a game only when they're due, with a first line written for them."
+    : next
+      ? `Next: ${next.local_label} · ${next.size} customer${next.size === 1 ? "" : "s"} · ${slots.reduce((n, x) => n + x.size, 0)} planned this week`
+      : "On. No one is due this week.";
+  return (
+    <button onClick={onOpen} className="app-card w-full text-left flex items-center gap-3.5 px-4 py-3.5 hover:bg-capy-surface transition-colors group">
+      <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-capy-accent-light text-capy-accent">
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold text-capy-text">Autopilot</span>
+          <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-capy-accent-light text-capy-accent">Beta</span>
+          {on && (
+            <span
+              className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full font-semibold ${s?.mode === "live" ? "bg-capy-green-light text-capy-green-dark" : "bg-capy-surface-2 text-capy-muted"}`}
+            >
+              {s?.mode === "live" && <span className="w-1.5 h-1.5 rounded-full bg-capy-green animate-pulse" />}
+              {s?.mode === "live" ? "Live" : "Preview"}
+            </span>
+          )}
+          {ap.admin_only && (
+            <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">Admin only</span>
+          )}
+        </span>
+        <span className="block text-xs text-capy-muted mt-0.5 truncate">{summary}</span>
+      </span>
+      <svg className="w-4 h-4 text-capy-muted group-hover:text-capy-text shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  );
+}
+
 function Section({
   title,
   count,
@@ -122,6 +169,7 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [contactsOpen, setContactsOpen] = useState(false);
   const [optInPanelOpen, setOptInPanelOpen] = useState(false);
+  const [autopilot, setAutopilot] = useState<AutopilotDashboard | null>(null);
 
   const loadCampaigns = () => {
     fetchAllCampaigns(restaurantId)
@@ -130,7 +178,13 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
   };
 
   useEffect(() => {
-    if (view.mode === "list") loadCampaigns();
+    if (view.mode === "list") {
+      loadCampaigns();
+      // Autopilot is optional: a 404/403 or network error just hides the card.
+      fetchAutopilot(restaurantId)
+        .then((a) => setAutopilot(a.available ? a : null))
+        .catch(() => setAutopilot(null));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantId, view.mode]);
 
@@ -147,6 +201,9 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
   }
   if (view.mode === "new-promo") {
     return <PromoBlastWizard restaurantId={restaurantId} onExit={backToList} />;
+  }
+  if (view.mode === "autopilot") {
+    return <AutopilotPanel restaurantId={restaurantId} onExit={backToList} />;
   }
   if (view.mode === "promo-detail") {
     return <PromoCampaignDetail restaurantId={restaurantId} promoId={view.promoId} onExit={backToList} />;
@@ -199,6 +256,8 @@ export function CampaignsListView({ restaurantId }: { restaurantId: string }) {
         </div>
 
         {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
+
+        {autopilot && <AutopilotCard ap={autopilot} onOpen={() => setView({ mode: "autopilot" })} />}
 
         {campaigns === null ? (
           <div className="app-card p-4 space-y-3">
