@@ -169,7 +169,9 @@ export function AutopilotBucket({
           </div>
           <p className="text-xs text-capy-muted mt-0.5">
             {slot.game_name}
-            {slot.prize ? ` · winner gets ${slot.prize}` : ""}
+            {slot.prize ? (slot.everyone_wins ? ` · everyone gets ${slot.prize}` : ` · winner gets ${slot.prize}`) : ""}
+            {!slot.everyone_wins && slot.consolation_percent > 0 ? `, others ${slot.consolation_percent}%` : ""}
+            {slot.coupon_expiry_hours ? ` · coupon good ${slot.coupon_expiry_hours}h` : ""}
             {" · "}
             {ai} of {slot.size} personalized by AI
           </p>
