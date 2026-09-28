@@ -21,6 +21,10 @@ export interface GameSettings {
   everyone_wins: boolean;
   coupon_expiry_hours: number;
   reply_window_hours: number;
+  // Reply texts. "" = the game's default copy (catalog.default_*_message);
+  // may use {first_name} {prize} {discount} {code} {link} {expiry}; must keep {link}.
+  winner_message: string;
+  loser_message: string;
 }
 export const GAME_KEYS: (keyof GameSettings)[] = [
   'send_time',
@@ -29,7 +33,10 @@ export const GAME_KEYS: (keyof GameSettings)[] = [
   'everyone_wins',
   'coupon_expiry_hours',
   'reply_window_hours',
+  'winner_message',
+  'loser_message',
 ];
+export const MAX_MESSAGE_CHARS = 320;
 
 export interface AutopilotSettings extends GameSettings {
   enabled: boolean;
@@ -62,6 +69,8 @@ export function gameSettingsFor(s: AutopilotSettings, gameId: string): GameSetti
     everyone_wins: pick('everyone_wins'),
     coupon_expiry_hours: pick('coupon_expiry_hours'),
     reply_window_hours: pick('reply_window_hours'),
+    winner_message: pick('winner_message') ?? '',
+    loser_message: pick('loser_message') ?? '',
   };
 }
 
@@ -145,7 +154,15 @@ export interface AutopilotDashboard {
   timezone?: string;
   send_window?: [string, string];
   max_bucket?: number;
-  catalog?: { id: string; name: string; tagline: string; deferred: boolean }[];
+  catalog?: {
+    id: string;
+    name: string;
+    tagline: string;
+    deferred: boolean;
+    /** What the game replies with when the owner hasn't written their own text. */
+    default_winner_message?: string;
+    default_loser_message?: string;
+  }[];
   groups?: { id: string; name: string; member_count: number }[];
   slots?: AutopilotSlot[];
   history?: AutopilotHistoryRow[];
