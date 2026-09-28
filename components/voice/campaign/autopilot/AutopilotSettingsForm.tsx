@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { WEEKDAYS, type AutopilotDashboard, type AutopilotSettings, type Weekday } from "@/lib/autopilotApi";
+import {
+  GAME_KEYS,
+  WEEKDAYS,
+  gameSettingsFor,
+  type AutopilotDashboard,
+  type AutopilotSettings,
+  type GameSettings,
+  type Weekday,
+} from "@/lib/autopilotApi";
 
 function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor?: string; children: React.ReactNode }) {
   return (
@@ -36,7 +44,7 @@ function Switch({ id, checked, onChange, label, hint }: { id: string; checked: b
   );
 }
 
-function NumberInput({ id, value, onChange, min, max, suffix }: { id: string; value: number; onChange: (n: number) => void; min: number; max: number; suffix?: string }) {
+function NumberInput({ id, value, onChange, min, max, suffix, disabled }: { id: string; value: number; onChange: (n: number) => void; min: number; max: number; suffix?: string; disabled?: boolean }) {
   return (
     <div className="flex items-center gap-2">
       <input
@@ -45,12 +53,28 @@ function NumberInput({ id, value, onChange, min, max, suffix }: { id: string; va
         inputMode="numeric"
         min={min}
         max={max}
+        disabled={disabled}
         value={Number.isFinite(value) ? value : ""}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="card-input !py-1.5 w-24 tabular-nums"
+        className="card-input !py-1.5 w-24 tabular-nums disabled:opacity-50"
       />
       {suffix && <span className="text-xs text-capy-muted">{suffix}</span>}
     </div>
+  );
+}
+
+function Step({ n, title, hint, children }: { n: number; title: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-capy-green text-white text-xs font-bold tabular-nums">{n}</span>
+        <div>
+          <h4 className="text-sm font-bold text-capy-text">{title}</h4>
+          {hint && <p className="text-[11px] text-capy-muted leading-snug">{hint}</p>}
+        </div>
+      </div>
+      <div className="sm:pl-9 space-y-5">{children}</div>
+    </section>
   );
 }
 
@@ -58,6 +82,65 @@ function to12h(hhmm: string): string {
   const [h, m] = hhmm.split(":").map((x) => parseInt(x, 10));
   const d = new Date(2000, 0, 1, h, m);
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+/** One game's terms. Every field shows what the game will actually run with;
+ * edits become that game's own overrides. */
+function GameCard({
+  game,
+  values,
+  onChange,
+  onCopyToAll,
+  canCopy,
+  window: [winStart, winEnd],
+  timezone,
+}: {
+  game: { id: string; name: string; tagline: string; deferred: boolean };
+  values: GameSettings;
+  onChange: <K extends keyof GameSettings>(k: K, v: GameSettings[K]) => void;
+  onCopyToAll: () => void;
+  canCopy: boolean;
+  window: [string, string];
+  timezone?: string;
+}) {
+  const p = (k: string) => `ap-${game.id}-${k}`;
+  return (
+    <div className="rounded-xl border border-capy-border bg-capy-surface/40 p-4 space-y-4">
+      <div className="flex items-start gap-2 flex-wrap">
+        <div className="flex-1 min-w-[10rem]">
+          <p className="text-sm font-bold text-capy-text">{game.name}</p>
+          <p className="text-[11px] text-capy-muted leading-snug">{game.tagline}</p>
+        </div>
+        {canCopy && (
+          <button type="button" onClick={onCopyToAll} className="text-[11px] font-semibold text-capy-green-dark hover:underline">
+            Use these for every game
+          </button>
+        )}
+      </div>
+
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3">
+        <Field label="Send time" htmlFor={p("time")} hint={`${timezone ?? "Restaurant"} time, ${to12h(winStart)}–${to12h(winEnd)}.`}>
+          <input id={p("time")} type="time" min={winStart} max={winEnd} value={values.send_time} onChange={(e) => onChange("send_time", e.target.value)} className="card-input !py-1.5 w-36" />
+        </Field>
+        <Field label="Coupon good for" htmlFor={p("exp")}>
+          <NumberInput id={p("exp")} value={values.coupon_expiry_hours} onChange={(n) => onChange("coupon_expiry_hours", n)} min={2} max={336} suffix="hours" />
+        </Field>
+        <Field label="Replies close after" htmlFor={p("win-h")} hint={game.deferred ? "This game draws its winner when its own entry window closes." : undefined}>
+          <NumberInput id={p("win-h")} value={values.reply_window_hours} onChange={(n) => onChange("reply_window_hours", n)} min={1} max={72} suffix="hours" disabled={game.deferred} />
+        </Field>
+      </div>
+
+      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 items-end">
+        <Field label={values.everyone_wins ? "Everyone gets" : "Winner prize"} htmlFor={p("win")}>
+          <NumberInput id={p("win")} value={values.winner_percent} onChange={(n) => onChange("winner_percent", n)} min={5} max={100} suffix="% off" />
+        </Field>
+        <Field label="Everyone else" htmlFor={p("cons")} hint={values.everyone_wins ? "Not used: every reply wins the full prize." : undefined}>
+          <NumberInput id={p("cons")} value={values.consolation_percent} onChange={(n) => onChange("consolation_percent", n)} min={0} max={50} suffix="% off" disabled={values.everyone_wins} />
+        </Field>
+        <Switch id={p("everyone")} checked={values.everyone_wins} onChange={(v) => onChange("everyone_wins", v)} label="Everyone wins" hint="Any reply gets the full prize, right or wrong." />
+      </div>
+    </div>
+  );
 }
 
 export function AutopilotSettingsForm({
@@ -79,14 +162,26 @@ export function AutopilotSettingsForm({
     set("send_days", draft.send_days.includes(day) ? draft.send_days.filter((d) => d !== day) : WEEKDAYS.filter((d) => d === day || draft.send_days.includes(d)));
   const toggleGame = (id: string) =>
     set("games", draft.games.includes(id) ? draft.games.filter((g) => g !== id) : [...draft.games, id]);
+  const setGame = <K extends keyof GameSettings>(id: string, k: K, v: GameSettings[K]) =>
+    setDraft((d) => ({ ...d, game_settings: { ...(d.game_settings ?? {}), [id]: { ...(d.game_settings?.[id] ?? {}), [k]: v } } }));
+  const copyToAll = (fromId: string) =>
+    setDraft((d) => {
+      const src = gameSettingsFor(d, fromId);
+      const full = Object.fromEntries(GAME_KEYS.map((k) => [k, src[k]])) as Partial<GameSettings>;
+      const next = { ...(d.game_settings ?? {}) };
+      for (const id of d.games) next[id] = { ...full };
+      return { ...d, game_settings: next };
+    });
 
   const [winStart, winEnd] = data.send_window ?? ["10:00", "19:30"];
   const dirty = JSON.stringify(draft) !== JSON.stringify(data.settings);
   const groups = data.groups ?? [];
+  const catalog = data.catalog ?? [];
+  const chosen = draft.games.map((id) => catalog.find((g) => g.id === id)).filter((g): g is NonNullable<typeof g> => !!g);
 
   return (
     <form
-      className="app-card p-4 sm:p-5 space-y-5"
+      className="app-card p-4 sm:p-5 space-y-7"
       onSubmit={(e) => {
         e.preventDefault();
         onSave(draft);
@@ -94,102 +189,109 @@ export function AutopilotSettingsForm({
     >
       <div>
         <h3 className="card-heading">Rules</h3>
-        <p className="text-xs text-capy-muted mt-0.5">Saving re-plans this week right away. Buckets are also rebuilt every night.</p>
+        <p className="text-xs text-capy-muted mt-0.5">
+          Saving re-plans this week right away and replaces every scheduled send, including ones you&apos;ve approved. Buckets are also rebuilt every night.
+        </p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Days between Belan texts" htmlFor="ap-gap" hint="A customer gets a game no sooner than this many days after their last text, game, coupon or coupon use from you. Their plain orders don't count.">
-          <NumberInput id="ap-gap" value={draft.gap_days} onChange={(n) => set("gap_days", n)} min={1} max={90} suffix="days" />
-        </Field>
-        <Field label="Customers per send" htmlFor="ap-size" hint={`Start small while testing. Up to ${data.max_bucket ?? 100}.`}>
-          <NumberInput id="ap-size" value={draft.bucket_size} onChange={(n) => set("bucket_size", n)} min={1} max={data.max_bucket ?? 100} suffix="max per send" />
-        </Field>
-      </div>
-
-      <Field label="Send days">
-        <div className="flex flex-wrap gap-1.5">
-          {WEEKDAYS.map((d) => {
-            const on = draft.send_days.includes(d);
-            return (
-              <button
-                key={d}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggleDay(d)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${on ? "bg-capy-green text-white border-capy-green" : "bg-capy-card text-capy-text border-capy-border hover:bg-capy-surface"}`}
-              >
-                {d}
-              </button>
-            );
-          })}
+      <Step n={1} title="When to send, and to whom" hint="Days and spacing are shared. Each send plays one game, rotating by day.">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Days between Belan texts" htmlFor="ap-gap" hint="A customer gets a game no sooner than this many days after their last text, game, coupon or coupon use from you. Their plain orders don't count.">
+            <NumberInput id="ap-gap" value={draft.gap_days} onChange={(n) => set("gap_days", n)} min={1} max={90} suffix="days" />
+          </Field>
+          <Field label="Customers per send" htmlFor="ap-size" hint={`Start small while testing. Up to ${data.max_bucket ?? 100}.`}>
+            <NumberInput id="ap-size" value={draft.bucket_size} onChange={(n) => set("bucket_size", n)} min={1} max={data.max_bucket ?? 100} suffix="max per send" />
+          </Field>
         </div>
-      </Field>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Send time" htmlFor="ap-time" hint={`Restaurant time (${data.timezone ?? "local"}), between ${to12h(winStart)} and ${to12h(winEnd)}.`}>
-          <input id="ap-time" type="time" min={winStart} max={winEnd} value={draft.send_time} onChange={(e) => set("send_time", e.target.value)} className="card-input !py-1.5 w-36" />
-        </Field>
-        <Field label="Who's included" htmlFor="ap-aud" hint="Pick a group to try Autopilot on a few people first.">
-          <select
-            id="ap-aud"
-            className="card-input !py-1.5"
-            value={draft.audience.type === "group" ? draft.audience.group_id : ""}
-            onChange={(e) => set("audience", e.target.value ? { type: "group", group_id: e.target.value } : { type: "all" })}
-          >
-            <option value="">Everyone on your text list</option>
-            {groups.map((g) => (
-              <option key={g.id} value={g.id}>
-                Group: {g.name} ({g.member_count})
-              </option>
-            ))}
-          </select>
-        </Field>
-      </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Send days">
+            <div className="flex flex-wrap gap-1.5">
+              {WEEKDAYS.map((d) => {
+                const on = draft.send_days.includes(d);
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleDay(d)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${on ? "bg-capy-green text-white border-capy-green" : "bg-capy-card text-capy-text border-capy-border hover:bg-capy-surface"}`}
+                  >
+                    {d}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+          <Field label="Who's included" htmlFor="ap-aud" hint="Pick a group to try Autopilot on a few people first.">
+            <select
+              id="ap-aud"
+              className="card-input !py-1.5"
+              value={draft.audience.type === "group" ? draft.audience.group_id : ""}
+              onChange={(e) => set("audience", e.target.value ? { type: "group", group_id: e.target.value } : { type: "all" })}
+            >
+              <option value="">Everyone on your text list</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  Group: {g.name} ({g.member_count})
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
 
-      <Field label="Games to rotate" hint="One game per send, rotating by day. Every player gets a coupon: winners the prize, everyone else the consolation.">
-        <div className="flex flex-wrap gap-1.5">
-          {(data.catalog ?? []).map((g) => {
-            const on = draft.games.includes(g.id);
-            return (
-              <button
+        <Field label="Games to rotate" hint="One game per send, rotating by day in this order. Every player gets a coupon: winners the prize, everyone else the consolation.">
+          <div className="flex flex-wrap gap-1.5">
+            {catalog.map((g) => {
+              const on = draft.games.includes(g.id);
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  aria-pressed={on}
+                  title={g.tagline}
+                  onClick={() => toggleGame(g.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${on ? "bg-capy-accent-light text-capy-accent border-capy-accent/40" : "bg-capy-card text-capy-text border-capy-border hover:bg-capy-surface"}`}
+                >
+                  {g.name}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+      </Step>
+
+      <Step n={2} title="Each game's terms" hint="Send time, prizes and coupon life are set per game. A game you take out of the rotation keeps its settings.">
+        {chosen.length === 0 ? (
+          <p className="text-xs text-capy-muted">Pick at least one game above.</p>
+        ) : (
+          <div className="space-y-3">
+            {chosen.map((g) => (
+              <GameCard
                 key={g.id}
-                type="button"
-                aria-pressed={on}
-                title={g.tagline}
-                onClick={() => toggleGame(g.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${on ? "bg-capy-accent-light text-capy-accent border-capy-accent/40" : "bg-capy-card text-capy-text border-capy-border hover:bg-capy-surface"}`}
-              >
-                {g.name}
-              </button>
-            );
-          })}
+                game={g}
+                values={gameSettingsFor(draft, g.id)}
+                onChange={(k, v) => setGame(g.id, k, v)}
+                onCopyToAll={() => copyToAll(g.id)}
+                canCopy={chosen.length > 1}
+                window={[winStart, winEnd]}
+                timezone={data.timezone}
+              />
+            ))}
+          </div>
+        )}
+      </Step>
+
+      <Step n={3} title="Everything else">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Switch id="ap-ai" checked={draft.personalize} onChange={(v) => set("personalize", v)} label="Personalize with AI" hint="Swaps the greeting for a line written from each customer's history. Never adds an SMS segment." />
+          <Switch id="ap-approve" checked={draft.require_approval} onChange={(v) => set("require_approval", v)} label="Approve each send" hint="In Live, a send waits for your OK. Unapproved sends are skipped." />
         </div>
-      </Field>
 
-      <div className="grid gap-5 grid-cols-2 sm:grid-cols-4">
-        <Field label="Winner prize" htmlFor="ap-win">
-          <NumberInput id="ap-win" value={draft.winner_percent} onChange={(n) => set("winner_percent", n)} min={5} max={100} suffix="% off" />
+        <Field label="Your phone for test texts" htmlFor="ap-phone" hint="“Text me this” sends a customer's exact message here as a playable test.">
+          <input id="ap-phone" type="tel" placeholder="(214) 555-0100" value={draft.test_phone} onChange={(e) => set("test_phone", e.target.value)} className="card-input !py-1.5 max-w-xs" />
         </Field>
-        <Field label="Everyone else" htmlFor="ap-cons">
-          <NumberInput id="ap-cons" value={draft.consolation_percent} onChange={(n) => set("consolation_percent", n)} min={0} max={50} suffix="% off" />
-        </Field>
-        <Field label="Coupon good for" htmlFor="ap-exp">
-          <NumberInput id="ap-exp" value={draft.coupon_expiry_hours} onChange={(n) => set("coupon_expiry_hours", n)} min={2} max={336} suffix="hours" />
-        </Field>
-        <Field label="Replies close after" htmlFor="ap-win-h">
-          <NumberInput id="ap-win-h" value={draft.reply_window_hours} onChange={(n) => set("reply_window_hours", n)} min={1} max={72} suffix="hours" />
-        </Field>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Switch id="ap-ai" checked={draft.personalize} onChange={(v) => set("personalize", v)} label="Personalize with AI" hint="Swaps the greeting for a line written from each customer's history. Never adds an SMS segment." />
-        <Switch id="ap-approve" checked={draft.require_approval} onChange={(v) => set("require_approval", v)} label="Approve each send" hint="In Live, a send waits for your OK. Unapproved sends are skipped." />
-        <Switch id="ap-everyone" checked={draft.everyone_wins} onChange={(v) => set("everyone_wins", v)} label="Everyone wins the full prize" />
-      </div>
-
-      <Field label="Your phone for test texts" htmlFor="ap-phone" hint="“Text me this” sends a customer's exact message here as a playable test.">
-        <input id="ap-phone" type="tel" placeholder="(214) 555-0100" value={draft.test_phone} onChange={(e) => set("test_phone", e.target.value)} className="card-input !py-1.5 max-w-xs" />
-      </Field>
+      </Step>
 
       {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
 
