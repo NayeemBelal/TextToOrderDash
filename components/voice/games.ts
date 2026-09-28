@@ -181,7 +181,7 @@ export const FALLBACK_WINNER_MESSAGE =
   "🏆 {first_name}, you won {prize}! Tap to redeem in store ({expiry}): {link}";
 
 export const FALLBACK_LOSER_MESSAGE =
-  "Not this time, but you still get {discount}% off your next order! Tap to claim ({expiry}): {link}";
+  "{first_name}, not this time, but you still get {discount}% off your next order! Tap to claim ({expiry}): {link}";
 
 // Deferred games acknowledge the entry and announce the winner later; this is
 // the copy for that first text. Mirrors DEFAULT_ENTRY_MESSAGE in

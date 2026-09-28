@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   GAME_KEYS,
+  MAX_MESSAGE_CHARS,
   WEEKDAYS,
   gameSettingsFor,
   type AutopilotDashboard,
@@ -10,6 +11,61 @@ import {
   type GameSettings,
   type Weekday,
 } from "@/lib/autopilotApi";
+
+/** A winner/loser reply the owner is editing: the placeholders it may use and
+ * the one it must keep. Mirrors validate_submission on the backend. */
+function MessageInput({
+  id,
+  label,
+  value,
+  fallback,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  fallback: string;
+  onChange: (v: string) => void;
+}) {
+  const shown = value || fallback;
+  const missingLink = !!value && !value.includes("{link}");
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <label htmlFor={id} className="section-label block">
+          {label}
+        </label>
+        <span className="text-[11px] text-capy-muted tabular-nums">
+          {value ? `${value.length}/${MAX_MESSAGE_CHARS}` : "Default"}
+          {value && (
+            <>
+              {" · "}
+              <button type="button" onClick={() => onChange("")} className="font-semibold text-capy-green-dark hover:underline">
+                Use default
+              </button>
+            </>
+          )}
+        </span>
+      </div>
+      <textarea
+        id={id}
+        rows={2}
+        maxLength={MAX_MESSAGE_CHARS}
+        value={shown}
+        onFocus={(e) => {
+          if (!value) e.currentTarget.select();
+        }}
+        onChange={(e) => onChange(e.target.value === fallback ? "" : e.target.value)}
+        className={`card-input !py-1.5 w-full text-[13px] leading-snug ${value ? "" : "text-capy-muted"}`}
+      />
+      <p className={`text-[11px] leading-snug ${missingLink ? "text-red-600 dark:text-red-300" : "text-capy-muted"}`}>
+        {missingLink
+          ? "Keep {link} — that's the customer's coupon."
+          : "Placeholders: {first_name} {prize} {discount} {expiry} {link}. Keep {link}."}
+      </p>
+    </div>
+  );
+}
 
 function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor?: string; children: React.ReactNode }) {
   return (
@@ -95,7 +151,7 @@ function GameCard({
   window: [winStart, winEnd],
   timezone,
 }: {
-  game: { id: string; name: string; tagline: string; deferred: boolean };
+  game: { id: string; name: string; tagline: string; deferred: boolean; default_winner_message?: string; default_loser_message?: string };
   values: GameSettings;
   onChange: <K extends keyof GameSettings>(k: K, v: GameSettings[K]) => void;
   onCopyToAll: () => void;
@@ -138,6 +194,25 @@ function GameCard({
           <NumberInput id={p("cons")} value={values.consolation_percent} onChange={(n) => onChange("consolation_percent", n)} min={0} max={50} suffix="% off" disabled={values.everyone_wins} />
         </Field>
         <Switch id={p("everyone")} checked={values.everyone_wins} onChange={(v) => onChange("everyone_wins", v)} label="Everyone wins" hint="Any reply gets the full prize, right or wrong." />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <MessageInput
+          id={p("winner-msg")}
+          label={values.everyone_wins ? "Reply to every player" : "Reply to winners"}
+          value={values.winner_message}
+          fallback={game.default_winner_message ?? ""}
+          onChange={(v) => onChange("winner_message", v)}
+        />
+        {!values.everyone_wins && (
+          <MessageInput
+            id={p("loser-msg")}
+            label="Reply to everyone else"
+            value={values.loser_message}
+            fallback={game.default_loser_message ?? ""}
+            onChange={(v) => onChange("loser_message", v)}
+          />
+        )}
       </div>
     </div>
   );
