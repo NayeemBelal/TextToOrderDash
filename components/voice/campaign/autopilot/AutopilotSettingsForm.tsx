@@ -269,7 +269,7 @@ export function AutopilotSettingsForm({
         </p>
       </div>
 
-      <Step n={1} title="When to send, and to whom" hint="Days and spacing are shared. Each send plays one game, rotating by day.">
+      <Step n={1} title="When to send, and to whom" hint="Days and spacing are shared. Each send plays one game; everyone gets the first game before the list moves on to the next.">
         <div className="grid gap-5 sm:grid-cols-2">
           <Field label="Days between Belan texts" htmlFor="ap-gap" hint="A customer gets a game no sooner than this many days after their last text, game, coupon or coupon use from you. Their plain orders don't count.">
             <NumberInput id="ap-gap" value={draft.gap_days} onChange={(n) => set("gap_days", n)} min={1} max={90} suffix="days" />
@@ -315,7 +315,7 @@ export function AutopilotSettingsForm({
           </Field>
         </div>
 
-        <Field label="Games to rotate" hint="One game per send, rotating by day in this order. Every player gets a coupon: winners the prize, everyone else the consolation.">
+        <Field label="Games to rotate" hint="Played in this order: every customer gets the first game, then the second, and so on — each send day plays whichever game its customers are up to. Every player gets a coupon: winners the prize, everyone else the consolation.">
           <div className="flex flex-wrap gap-1.5">
             {catalog.map((g) => {
               const on = draft.games.includes(g.id);
