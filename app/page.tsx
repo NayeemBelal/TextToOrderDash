@@ -193,11 +193,11 @@ export default function MarketingHomePage() {
                 className="flex items-center justify-center border-b-2 border-black py-3"
                 style={{ background: ACCENT, borderTopLeftRadius: 26, borderTopRightRadius: 26 }}
               >
-                <span className="font-black text-sm text-black">Sauce Bros Pizza</span>
+                <span className="font-black text-sm text-black">Stack &amp; Smash Burgers</span>
               </div>
               <div className="p-4 flex flex-col gap-3">
                 <div className="self-start max-w-[88%] border-2 border-black bg-white px-3.5 py-2.5 text-[13px] leading-relaxed rounded-2xl rounded-bl-sm">
-                  🍕 Trivia Tuesday! What&apos;s the most ordered pizza in America? A) Pepperoni B) Cheese C) Supreme.
+                  🍔 Trivia Tuesday! What&apos;s the most ordered burger topping in America? A) Cheese B) Bacon C) Onions.
                   Reply with your answer to win 20% off tonight!
                 </div>
                 <div className="self-end max-w-[60%] border-2 border-black px-3.5 py-2.5 text-[13px] rounded-2xl rounded-br-sm" style={{ background: "#a4e5f8" }}>
@@ -207,9 +207,9 @@ export default function MarketingHomePage() {
                   🏆 Correct! Tap to claim 20% off (valid tonight): belan.tech/prize/WIN-7K2P
                   <div className="mt-2 border-2 border-black overflow-hidden rounded-lg">
                     <div className="h-14 flex items-center gap-2 px-2" style={{ background: "#3a1a0f" }}>
-                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-base">🍕</div>
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-base">🍔</div>
                       <div className="leading-tight">
-                        <p className="text-[11px] font-black text-white">Sauce Bros Pizza</p>
+                        <p className="text-[11px] font-black text-white">Stack &amp; Smash Burgers</p>
                         <p className="text-[10px] font-bold" style={{ color: "#f4c6d6" }}>You won 20% off 🎉</p>
                       </div>
                     </div>
