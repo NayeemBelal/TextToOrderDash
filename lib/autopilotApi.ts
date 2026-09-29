@@ -136,6 +136,10 @@ export interface AutopilotState {
   planned?: number;
   slots?: number;
   waiting?: { total: number; not_due: number; full: number; histogram: { date: string; count: number }[] };
+  /** Day by day from today: how many we contact vs how many become due.
+   * `projected` days are beyond the plan horizon — a dry run of the same
+   * placement over the waiting customers, not scheduled sends yet. */
+  projection?: { date: string; sends: number; due: number; projected: boolean }[];
   no_phone?: number;
   personalization?: { ai: number; name: number; template: number; pending: number; failed: Record<string, number> };
   llm?: { model: string; prompt_tokens: number; completion_tokens: number; cost_usd: number };

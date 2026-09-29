@@ -44,30 +44,67 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
   );
 }
 
-/** Next 3 weeks: how many waiting customers come due each day. */
-function ComingDue({ histogram, timezone }: { histogram: { date: string; count: number }[]; timezone?: string }) {
-  if (!histogram.length) return null;
-  const max = Math.max(...histogram.map((h) => h.count), 1);
+type ProjectionDay = { date: string; sends: number; due: number; projected: boolean };
+
+/** Four weeks from today: how many people we contact each day (real buckets
+ * this week, the same placement dry-run beyond it) against how many become
+ * due that day — so a spike of 51 due on Monday shows up as 17/17/17 over
+ * the next send days rather than as a scary bar. */
+function ContactVsDue({ days, timezone }: { days: ProjectionDay[]; timezone?: string }) {
+  const shown = days.filter((d, i) => d.sends || d.due || days.slice(i).some((x) => x.sends || x.due));
+  const last = shown.map((d, i) => (d.sends || d.due ? i : -1)).reduce((a, b) => Math.max(a, b), -1);
+  const trimmed = shown.slice(0, last + 1);
+  if (!trimmed.length) return null;
+  const max = Math.max(...trimmed.map((d) => Math.max(d.sends, d.due)), 1);
+  const totalSends = trimmed.reduce((n, d) => n + d.sends, 0);
+  const totalDue = trimmed.reduce((n, d) => n + d.due, 0);
+  const bar = (n: number) => `${n ? Math.max(4, (n / max) * 64) : 0}px`;
   return (
     <div className="app-card p-4">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <h3 className="card-heading">Coming due</h3>
-        <p className="text-[11px] text-capy-muted">Customers who reach the gap after this week, by day{timezone ? ` (${timezone})` : ""}</p>
+        <h3 className="card-heading">Contacting vs. becoming due</h3>
+        <p className="text-[11px] text-capy-muted">Next {trimmed.length} days{timezone ? ` (${timezone})` : ""}</p>
       </div>
-      <div className="mt-4 flex items-end gap-1.5 h-24 overflow-x-auto" role="img" aria-label="Customers coming due by day">
-        {histogram.map((h) => {
-          const d = new Date(`${h.date}T12:00:00`);
+      <div className="mt-2 flex items-center gap-4 text-[11px] text-capy-muted flex-wrap">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-capy-green" /> Contacting · {totalSends}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-capy-green/40 border border-dashed border-capy-green" /> Projected send
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-capy-accent/60" /> Become due · {totalDue}
+        </span>
+      </div>
+      <div className="mt-3 flex items-end gap-1 h-28 overflow-x-auto" role="img" aria-label="Customers contacted and becoming due, by day">
+        {trimmed.map((d) => {
+          const day = new Date(`${d.date}T12:00:00`);
+          const weekend = day.getDay() === 0 || day.getDay() === 6;
           return (
-            <div key={h.date} className="flex flex-col items-center justify-end gap-1 h-full min-w-[1.75rem] flex-1">
-              <span className="text-[10px] font-semibold text-capy-text tabular-nums">{h.count}</span>
-              <div className="w-full rounded-t bg-capy-accent/70" style={{ height: `${Math.max(6, (h.count / max) * 64)}px` }} />
-              <span className="text-[10px] text-capy-muted tabular-nums">
-                {d.toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}
+            <div key={d.date} className="flex flex-col items-center justify-end gap-1 h-full min-w-[2.25rem] flex-1" title={`${d.date}: contacting ${d.sends}${d.projected ? " (projected)" : ""}, ${d.due} become due`}>
+              <div className="flex items-end gap-0.5 w-full h-16">
+                <div className="flex-1 flex flex-col items-center justify-end h-full">
+                  {d.sends > 0 && <span className="text-[10px] font-semibold text-capy-text tabular-nums leading-none mb-0.5">{d.sends}</span>}
+                  <div
+                    className={`w-full rounded-t ${d.projected ? "bg-capy-green/40 border border-b-0 border-dashed border-capy-green" : "bg-capy-green"}`}
+                    style={{ height: bar(d.sends) }}
+                  />
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-end h-full">
+                  {d.due > 0 && <span className="text-[10px] font-semibold text-capy-muted tabular-nums leading-none mb-0.5">{d.due}</span>}
+                  <div className="w-full rounded-t bg-capy-accent/60" style={{ height: bar(d.due) }} />
+                </div>
+              </div>
+              <span className={`text-[10px] tabular-nums ${weekend ? "text-capy-muted/60" : "text-capy-muted"}`}>
+                {day.toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}
               </span>
             </div>
           );
         })}
       </div>
+      <p className="mt-2 text-[11px] text-capy-muted leading-snug">
+        Solid bars are this week&apos;s planned sends. Dashed bars are where waiting customers will land on your send days once they&apos;re in view — the nightly plan schedules them then.
+      </p>
     </div>
   );
 }
@@ -287,7 +324,7 @@ export function AutopilotPanel({ restaurantId, onExit }: { restaurantId: string;
           </div>
         )}
 
-        {s.enabled && <ComingDue histogram={st.waiting?.histogram ?? []} timezone={data.timezone} />}
+        {s.enabled && <ContactVsDue days={st.projection ?? []} timezone={data.timezone} />}
 
         <AutopilotSettingsForm data={data} saving={busy === "save"} error={error?.where === "save" ? error.msg : null} onSave={(next) => save(next)} />
 
