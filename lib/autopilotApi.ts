@@ -136,10 +136,20 @@ export interface AutopilotState {
   planned?: number;
   slots?: number;
   waiting?: { total: number; not_due: number; full: number; histogram: { date: string; count: number }[] };
-  /** Day by day from today: how many we contact vs how many become due.
-   * `projected` days are beyond the plan horizon — a dry run of the same
-   * placement over the waiting customers, not scheduled sends yet. */
-  projection?: { date: string; sends: number; due: number; projected: boolean }[];
+  /** Day by day from today: how many we contact and which game that day
+   * plays. `projected` days are beyond the plan horizon — a dry run of the
+   * same rules over the waiting customers, not scheduled sends yet. */
+  projection?: { date: string; sends: number; due: number; projected: boolean; game_id: string | null; game_name: string | null }[];
+  /** The restaurant's current round and the rounds this plan walks through. */
+  round?: {
+    game_id: string;
+    game_name: string;
+    started_at: string;
+    had: number; // customers who have had this round's game
+    audience: number;
+    rotation: string[]; // game ids in play order
+    planned: string[]; // game ids in the order this plan (incl. projection) plays them
+  };
   no_phone?: number;
   personalization?: { ai: number; name: number; template: number; pending: number; failed: Record<string, number> };
   llm?: { model: string; prompt_tokens: number; completion_tokens: number; cost_usd: number };

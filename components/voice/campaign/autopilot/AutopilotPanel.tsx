@@ -9,6 +9,7 @@ import {
   sendSample,
   type AutopilotDashboard,
   type AutopilotSettings,
+  type AutopilotState,
 } from "@/lib/autopilotApi";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { AutopilotBucket } from "./AutopilotBucket";
@@ -44,66 +45,67 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
   );
 }
 
-type ProjectionDay = { date: string; sends: number; due: number; projected: boolean };
+type ProjectionDay = { date: string; sends: number; due: number; projected: boolean; game_id: string | null; game_name: string | null };
+type RoundInfo = NonNullable<AutopilotState["round"]>;
 
-/** Four weeks from today: how many people we contact each day (real buckets
- * this week, the same placement dry-run beyond it) against how many become
- * due that day — so a spike of 51 due on Monday shows up as 17/17/17 over
- * the next send days rather than as a scary bar. */
-function ContactVsDue({ days, timezone }: { days: ProjectionDay[]; timezone?: string }) {
-  const shown = days.filter((d, i) => d.sends || d.due || days.slice(i).some((x) => x.sends || x.due));
-  const last = shown.map((d, i) => (d.sends || d.due ? i : -1)).reduce((a, b) => Math.max(a, b), -1);
-  const trimmed = shown.slice(0, last + 1);
-  if (!trimmed.length) return null;
-  const max = Math.max(...trimmed.map((d) => Math.max(d.sends, d.due)), 1);
-  const totalSends = trimmed.reduce((n, d) => n + d.sends, 0);
-  const totalDue = trimmed.reduce((n, d) => n + d.due, 0);
-  const bar = (n: number) => `${n ? Math.max(4, (n / max) * 64) : 0}px`;
+const GAME_COLORS = ["bg-capy-accent/70", "bg-capy-green/70", "bg-amber-400/70", "bg-sky-400/70", "bg-rose-400/70", "bg-violet-400/70"];
+
+/** Send days only: how many people get a text each day and which game it
+ * is. Solid = this week's real buckets; dashed = where waiting customers
+ * land on later send days by the same rules (scheduled by the nightly plan
+ * when those days come into view). */
+function SendsByDay({ days, round, catalog, timezone }: { days: ProjectionDay[]; round?: RoundInfo; catalog: { id: string; name: string }[]; timezone?: string }) {
+  const sends = days.filter((d) => d.sends > 0);
+  if (!sends.length) return null;
+  const order = round?.rotation ?? [];
+  const colorOf = (gid: string | null) => GAME_COLORS[Math.max(0, order.indexOf(gid ?? "")) % GAME_COLORS.length];
+  const nameOf = (gid: string) => catalog.find((g) => g.id === gid)?.name ?? gid;
+  const max = Math.max(...sends.map((d) => d.sends), 1);
+  const total = sends.reduce((n, d) => n + d.sends, 0);
+  const planned = round?.planned ?? [];
   return (
     <div className="app-card p-4">
       <div className="flex items-baseline justify-between gap-2 flex-wrap">
-        <h3 className="card-heading">Contacting vs. becoming due</h3>
-        <p className="text-[11px] text-capy-muted">Next {trimmed.length} days{timezone ? ` (${timezone})` : ""}</p>
+        <h3 className="card-heading">Sends by day</h3>
+        <p className="text-[11px] text-capy-muted">
+          {total} customer{total === 1 ? "" : "s"} over {sends.length} send{sends.length === 1 ? "" : "s"}{timezone ? ` (${timezone})` : ""}
+        </p>
       </div>
-      <div className="mt-2 flex items-center gap-4 text-[11px] text-capy-muted flex-wrap">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-capy-green" /> Contacting · {totalSends}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-capy-green/40 border border-dashed border-capy-green" /> Projected send
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-capy-accent/60" /> Become due · {totalDue}
-        </span>
-      </div>
-      <div className="mt-3 flex items-end gap-1 h-28 overflow-x-auto" role="img" aria-label="Customers contacted and becoming due, by day">
-        {trimmed.map((d) => {
-          const day = new Date(`${d.date}T12:00:00`);
-          const weekend = day.getDay() === 0 || day.getDay() === 6;
-          return (
-            <div key={d.date} className="flex flex-col items-center justify-end gap-1 h-full min-w-[2.25rem] flex-1" title={`${d.date}: contacting ${d.sends}${d.projected ? " (projected)" : ""}, ${d.due} become due`}>
-              <div className="flex items-end gap-0.5 w-full h-16">
-                <div className="flex-1 flex flex-col items-center justify-end h-full">
-                  {d.sends > 0 && <span className="text-[10px] font-semibold text-capy-text tabular-nums leading-none mb-0.5">{d.sends}</span>}
-                  <div
-                    className={`w-full rounded-t ${d.projected ? "bg-capy-green/40 border border-b-0 border-dashed border-capy-green" : "bg-capy-green"}`}
-                    style={{ height: bar(d.sends) }}
-                  />
-                </div>
-                <div className="flex-1 flex flex-col items-center justify-end h-full">
-                  {d.due > 0 && <span className="text-[10px] font-semibold text-capy-muted tabular-nums leading-none mb-0.5">{d.due}</span>}
-                  <div className="w-full rounded-t bg-capy-accent/60" style={{ height: bar(d.due) }} />
-                </div>
-              </div>
-              <span className={`text-[10px] tabular-nums ${weekend ? "text-capy-muted/60" : "text-capy-muted"}`}>
-                {day.toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}
+      {planned.length > 0 && (
+        <div className="mt-2 flex items-center gap-1.5 flex-wrap text-[11px]">
+          <span className="text-capy-muted">Rounds in this plan:</span>
+          {planned.map((gid, i) => (
+            <span key={`${gid}-${i}`} className="inline-flex items-center gap-1.5">
+              {i > 0 && <span className="text-capy-muted">→</span>}
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-capy-surface-2 text-capy-text font-semibold">
+                <span className={`inline-block h-2 w-2 rounded-sm ${colorOf(gid)}`} />
+                {nameOf(gid)}
               </span>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="mt-3 flex items-end gap-1.5 h-24 overflow-x-auto" role="img" aria-label="Customers texted per send day">
+        {sends.map((d) => {
+          const day = new Date(`${d.date}T12:00:00`);
+          return (
+            <div
+              key={d.date}
+              className="flex flex-col items-center justify-end gap-1 h-full min-w-[2.5rem] flex-1"
+              title={`${day.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}: ${d.sends} · ${d.game_name ?? ""}${d.projected ? " (projected)" : ""}`}
+            >
+              <span className="text-[10px] font-semibold text-capy-text tabular-nums">{d.sends}</span>
+              <div
+                className={`w-full rounded-t ${colorOf(d.game_id)} ${d.projected ? "border border-b-0 border-dashed border-capy-text/40 opacity-60" : ""}`}
+                style={{ height: `${Math.max(6, (d.sends / max) * 64)}px` }}
+              />
+              <span className="text-[10px] text-capy-muted tabular-nums">{day.toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}</span>
             </div>
           );
         })}
       </div>
       <p className="mt-2 text-[11px] text-capy-muted leading-snug">
-        Solid bars are this week&apos;s planned sends. Dashed bars are where waiting customers will land on your send days once they&apos;re in view — the nightly plan schedules them then.
+        Solid bars are scheduled. Dashed bars are where the people still waiting will land on later send days; the nightly plan schedules them as those days come into view.
       </p>
     </div>
   );
@@ -267,6 +269,24 @@ export function AutopilotPanel({ restaurantId, onExit }: { restaurantId: string;
             </div>
           )}
 
+          {s.enabled && st.round && (
+            <div className="rounded-xl px-3 py-2 text-xs leading-snug bg-capy-surface flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-capy-text">Now playing: {st.round.game_name}</span>
+              <span className="text-capy-muted">
+                · {st.round.had} of {st.round.audience} have had it
+                {st.round.rotation.length > 1 && (() => {
+                  const i = st.round!.rotation.indexOf(st.round!.game_id);
+                  const next = st.round!.rotation[(i + 1) % st.round!.rotation.length];
+                  const name = (data.catalog ?? []).find((g) => g.id === next)?.name ?? next;
+                  return ` · next: ${name}`;
+                })()}
+              </span>
+              <span className="text-[11px] text-capy-muted basis-full">
+                Every send plays this game until nobody due is left without it; then the next send moves on. New sign-ups just join the round that&apos;s on.
+              </span>
+            </div>
+          )}
+
           {s.enabled && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1">
               <Stat
@@ -324,7 +344,7 @@ export function AutopilotPanel({ restaurantId, onExit }: { restaurantId: string;
           </div>
         )}
 
-        {s.enabled && <ContactVsDue days={st.projection ?? []} timezone={data.timezone} />}
+        {s.enabled && <SendsByDay days={st.projection ?? []} round={st.round} catalog={data.catalog ?? []} timezone={data.timezone} />}
 
         <AutopilotSettingsForm data={data} saving={busy === "save"} error={error?.where === "save" ? error.msg : null} onSave={(next) => save(next)} />
 
