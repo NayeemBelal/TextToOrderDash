@@ -282,7 +282,7 @@ export function AutopilotPanel({ restaurantId, onExit }: { restaurantId: string;
                 })()}
               </span>
               <span className="text-[11px] text-capy-muted basis-full">
-                Every send plays this game until nobody due is left without it; then the next send moves on. New sign-ups just join the round that&apos;s on.
+                Every send plays this game until nobody due is left without it; then the next send moves on. People who sign up during a round join the next one.
               </span>
             </div>
           )}

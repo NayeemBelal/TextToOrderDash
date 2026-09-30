@@ -315,7 +315,7 @@ export function AutopilotSettingsForm({
           </Field>
         </div>
 
-        <Field label="Games to rotate" hint="Played as rounds, in this order: the whole list gets one game, then the next. Anyone who joins mid-round just gets that round's game. Every player gets a coupon: winners the prize, everyone else the consolation.">
+        <Field label="Games to rotate" hint="Played as rounds, in this order: the whole list gets one game, then the next. Anyone who joins mid-round starts with the next round. Every player gets a coupon: winners the prize, everyone else the consolation.">
           <div className="flex flex-wrap gap-1.5">
             {catalog.map((g) => {
               const on = draft.games.includes(g.id);
