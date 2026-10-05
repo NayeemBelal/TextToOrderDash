@@ -20,6 +20,19 @@ export const COUPON_TYPE_LABEL: Record<CouponType, string> = {
   promo: 'Promo',
 };
 
+/**
+ * Visit attribution on an order: did Belan create this visit?
+ * 'brought_back' — game/promo coupons always, and opt-in coupons used well
+ * after sign-up. 'signup_visit' — opt-in coupon used within ~1h of joining
+ * (customer was already at the restaurant). null — unknown.
+ */
+export type Attribution = 'signup_visit' | 'brought_back';
+
+export const ATTRIBUTION_LABEL: Record<Attribution, string> = {
+  signup_visit: 'sign-up visit',
+  brought_back: 'brought back',
+};
+
 export interface SummaryPoint {
   day: string; // YYYY-MM-DD (restaurant-local)
   revenue_cents: number;
@@ -30,7 +43,13 @@ export interface SummaryPoint {
 export interface AnalyticsSummary {
   range: RangeKey;
   types: CouponType[];
-  totals: { revenue_cents: number; discount_cents: number; order_count: number };
+  totals: {
+    revenue_cents: number;
+    discount_cents: number;
+    order_count: number;
+    brought_back_cents: number;
+    brought_back_count: number;
+  };
   series: SummaryPoint[];
 }
 
@@ -48,6 +67,7 @@ export interface OrderListItem {
   coupon_type: CouponType;
   prize_code: string | null;
   paid_at: string | null;
+  attribution: Attribution | null;
   customer: OrderCustomer | null;
 }
 
@@ -67,6 +87,8 @@ export interface OrderDetail extends OrderListItem {
   ordered_at: string | null;
   order_snapshot: CloverOrderSnapshot | null;
   customers: OrderCustomer | null;
+  /** When this customer opted in (for the sign-up → order gap line). */
+  opted_in_at: string | null;
 }
 
 /** Trimmed shape of the Clover order snapshot we render in the detail drawer. */
@@ -154,9 +176,11 @@ export function fetchOrders(
   types: CouponType[],
   cursor = 0,
   limit = 50,
+  attribution: Attribution | null = null,
 ): Promise<OrdersPage> {
+  const attr = attribution ? `&attribution=${attribution}` : '';
   return marketingApiFetch<OrdersPage>(
-    `/api/marketing/analytics/orders?restaurant_id=${restaurantId}&cursor=${cursor}&limit=${limit}${typesParam(types)}`,
+    `/api/marketing/analytics/orders?restaurant_id=${restaurantId}&cursor=${cursor}&limit=${limit}${typesParam(types)}${attr}`,
   );
 }
 

@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ATTRIBUTION_LABEL,
   COUPON_TYPE_LABEL,
   customerLabel,
   fetchOrders,
   formatUSD,
+  type Attribution,
   type CouponType,
   type OrderListItem,
 } from "@/lib/marketingAnalyticsApi";
@@ -33,23 +35,27 @@ function relativeTime(iso: string | null): string {
 interface Props {
   restaurantId: string;
   types: CouponType[];
+  /** Non-null narrows the list to that attribution ("Brought back" toggle). */
+  attribution: Attribution | null;
   onSelect: (cloverOrderId: string) => void;
 }
 
 /** Scrollable, newest-first list of paid orders-from-marketing. Polls for new ones. */
-export function OrdersList({ restaurantId, types, onSelect }: Props) {
+export function OrdersList({ restaurantId, types, attribution, onSelect }: Props) {
   const [items, setItems] = useState<OrderListItem[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  // Keep the latest types for the interval poll without re-subscribing each render.
+  // Keep the latest filters for the interval poll without re-subscribing each render.
   const typesRef = useRef(types);
   typesRef.current = types;
+  const attributionRef = useRef(attribution);
+  attributionRef.current = attribution;
 
   const loadFirst = useCallback(async () => {
     setLoading(true);
     try {
-      const page = await fetchOrders(restaurantId, typesRef.current, 0);
+      const page = await fetchOrders(restaurantId, typesRef.current, 0, 50, attributionRef.current);
       setItems(page.items);
       setNextCursor(page.next_cursor);
     } finally {
@@ -57,16 +63,16 @@ export function OrdersList({ restaurantId, types, onSelect }: Props) {
     }
   }, [restaurantId]);
 
-  // Reload whenever the filter changes.
+  // Reload whenever a filter changes.
   useEffect(() => {
     void loadFirst();
-  }, [loadFirst, types]);
+  }, [loadFirst, types, attribution]);
 
   // Poll the first page and merge in anything new (dedupe by order id).
   useEffect(() => {
     const id = setInterval(async () => {
       try {
-        const page = await fetchOrders(restaurantId, typesRef.current, 0);
+        const page = await fetchOrders(restaurantId, typesRef.current, 0, 50, attributionRef.current);
         setItems((prev) => {
           const seen = new Set(prev.map((o) => o.clover_order_id));
           const fresh = page.items.filter((o) => !seen.has(o.clover_order_id));
@@ -83,7 +89,7 @@ export function OrdersList({ restaurantId, types, onSelect }: Props) {
     if (nextCursor == null) return;
     setLoadingMore(true);
     try {
-      const page = await fetchOrders(restaurantId, typesRef.current, nextCursor);
+      const page = await fetchOrders(restaurantId, typesRef.current, nextCursor, 50, attributionRef.current);
       setItems((prev) => [...prev, ...page.items]);
       setNextCursor(page.next_cursor);
     } finally {
@@ -121,6 +127,14 @@ export function OrdersList({ restaurantId, types, onSelect }: Props) {
         <div className="divide-y divide-capy-border max-h-[520px] overflow-y-auto">
           {items.map((o) => {
             const { name, phone } = customerLabel(o.customer);
+            // Opt-in chips split by visit attribution: "brought back" (a return
+            // visit Belan drove) goes green; "sign-up visit" stays neutral.
+            const broughtBack = o.coupon_type === "optin" && o.attribution === "brought_back";
+            const chipClass = broughtBack ? CHIP.winner : CHIP[o.coupon_type];
+            const chipLabel =
+              o.coupon_type === "optin" && o.attribution
+                ? `${COUPON_TYPE_LABEL.optin} · ${ATTRIBUTION_LABEL[o.attribution]}`
+                : COUPON_TYPE_LABEL[o.coupon_type];
             return (
               <button
                 key={o.clover_order_id}
@@ -130,8 +144,8 @@ export function OrdersList({ restaurantId, types, onSelect }: Props) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-capy-text truncate">{phone}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${CHIP[o.coupon_type]}`}>
-                      {COUPON_TYPE_LABEL[o.coupon_type]}
+                    <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium ${chipClass}`}>
+                      {chipLabel}
                     </span>
                     <span className="text-xs text-capy-muted truncate">
                       {name ? `${name} · ` : ""}

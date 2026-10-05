@@ -7,6 +7,8 @@ interface Props {
   revenueCents: number;
   discountCents: number;
   orderCount: number;
+  /** Revenue from visits Belan created (game/promo coupons + late opt-in redemptions). */
+  broughtBackCents: number;
   loading?: boolean;
   /** New opt-ins over the opt-ins chart's selected range (follows that chart's picker). */
   optinCount: number;
@@ -60,14 +62,28 @@ export function StatTiles({
   revenueCents,
   discountCents,
   orderCount,
+  broughtBackCents,
   loading,
   optinCount,
   optinRange,
   optinLoading,
 }: Props) {
+  const broughtBackPct = revenueCents > 0 ? Math.round((broughtBackCents / revenueCents) * 100) : 0;
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
       <Tile label="Revenue" value={formatUSD(revenueCents)} loading={loading} />
+      <Tile
+        label="Brought back by Belan"
+        value={formatUSD(broughtBackCents)}
+        loading={loading}
+        action={
+          revenueCents > 0 ? (
+            <span className="text-[11px] text-capy-green-dark font-semibold whitespace-nowrap">
+              {broughtBackPct}% of revenue
+            </span>
+          ) : undefined
+        }
+      />
       <Tile label="Discounts given" value={formatUSD(discountCents)} loading={loading} />
       <Tile label="Orders from marketing" value={orderCount.toLocaleString()} loading={loading} />
       <Tile
