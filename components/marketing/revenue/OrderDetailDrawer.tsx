@@ -36,6 +36,36 @@ function readLineItems(detail: OrderDetail): LineItem[] {
   });
 }
 
+/** "6 days 22 h", "47 min" — the sign-up → order gap for the visit line. */
+function gapLabel(fromIso: string, toIso: string): string | null {
+  const ms = new Date(toIso).getTime() - new Date(fromIso).getTime();
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  const mins = Math.round(ms / 60000);
+  if (mins < 60) return `${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 48) return `${hours} h ${mins % 60} min`;
+  const days = Math.floor(hours / 24);
+  return `${days} days ${hours % 24} h`;
+}
+
+function visitLine(detail: OrderDetail): string | null {
+  if (!detail.attribution) return null;
+  const orderedAt = detail.ordered_at ?? detail.paid_at;
+  const gap =
+    detail.opted_in_at && orderedAt ? gapLabel(detail.opted_in_at, orderedAt) : null;
+  if (detail.attribution === "signup_visit") {
+    return gap
+      ? `Sign-up visit — coupon used ${gap} after joining the list`
+      : "Sign-up visit — coupon used right after joining the list";
+  }
+  if (detail.coupon_type === "optin") {
+    return gap
+      ? `Brought back by Belan — signed up ${new Date(detail.opted_in_at!).toLocaleDateString("en-US", { month: "short", day: "numeric" })}, used the coupon ${gap} later`
+      : "Brought back by Belan — returned to use their coupon";
+  }
+  return "Brought back by Belan — a game text drove this visit";
+}
+
 function paymentMethod(detail: OrderDetail): string | null {
   const p = detail.order_snapshot?.payments?.elements?.[0];
   return p ? "Card / POS" : null;
@@ -129,6 +159,17 @@ export function OrderDetailDrawer({ restaurantId, cloverOrderId, onClose }: Prop
                 {detail.paid_at && (
                   <p className="text-xs text-capy-muted mt-2">
                     Paid {new Date(detail.paid_at).toLocaleString("en-US")}
+                  </p>
+                )}
+                {visitLine(detail) && (
+                  <p
+                    className={`mt-2 text-xs px-2 py-1 rounded-lg border ${
+                      detail.attribution === "brought_back"
+                        ? "bg-capy-green-light text-capy-green-dark border-capy-green-light"
+                        : "bg-capy-surface-2 text-capy-muted border-capy-border"
+                    }`}
+                  >
+                    {visitLine(detail)}
                   </p>
                 )}
                 {detail.flagged && (

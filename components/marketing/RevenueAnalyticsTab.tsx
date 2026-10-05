@@ -31,6 +31,7 @@ export function RevenueAnalyticsTab() {
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [broughtBackOnly, setBroughtBackOnly] = useState(false);
   const [optinRange, setOptinRange] = useState<RangeKey>("30d");
   const [optins, setOptins] = useState<OptinSummary | null>(null);
   const [optinsLoading, setOptinsLoading] = useState(true);
@@ -80,13 +81,19 @@ export function RevenueAnalyticsTab() {
             <h2 className="text-lg font-bold text-capy-text">Analytics</h2>
             <p className="text-xs text-capy-muted">Revenue from orders where a marketing coupon was used, and new opt-ins</p>
           </div>
-          <CouponTypeFilter selected={types} onChange={setTypes} />
+          <CouponTypeFilter
+            selected={types}
+            onChange={setTypes}
+            broughtBackOnly={broughtBackOnly}
+            onBroughtBackOnly={setBroughtBackOnly}
+          />
         </div>
 
         <StatTiles
           revenueCents={totals?.revenue_cents ?? 0}
           discountCents={totals?.discount_cents ?? 0}
           orderCount={totals?.order_count ?? 0}
+          broughtBackCents={totals?.brought_back_cents ?? 0}
           loading={loading}
           optinCount={optins?.totals.optin_count ?? 0}
           optinRange={optinRange}
@@ -116,7 +123,12 @@ export function RevenueAnalyticsTab() {
           </div>
 
           <div className="lg:col-span-2">
-            <OrdersList restaurantId={restaurantId} types={types} onSelect={setSelectedOrderId} />
+            <OrdersList
+              restaurantId={restaurantId}
+              types={types}
+              attribution={broughtBackOnly ? "brought_back" : null}
+              onSelect={setSelectedOrderId}
+            />
           </div>
         </div>
       </div>
