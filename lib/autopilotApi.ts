@@ -19,6 +19,8 @@ export interface GameSettings {
   winner_percent: number;
   consolation_percent: number;
   everyone_wins: boolean;
+  /** Losers get nothing: no coupon minted, loser text must NOT contain {link}. */
+  no_consolation: boolean;
   coupon_expiry_hours: number;
   reply_window_hours: number;
   // Reply texts. "" = the game's default copy (catalog.default_*_message);
@@ -31,6 +33,7 @@ export const GAME_KEYS: (keyof GameSettings)[] = [
   'winner_percent',
   'consolation_percent',
   'everyone_wins',
+  'no_consolation',
   'coupon_expiry_hours',
   'reply_window_hours',
   'winner_message',
@@ -67,6 +70,7 @@ export function gameSettingsFor(s: AutopilotSettings, gameId: string): GameSetti
     winner_percent: pick('winner_percent'),
     consolation_percent: pick('consolation_percent'),
     everyone_wins: pick('everyone_wins'),
+    no_consolation: pick('no_consolation') ?? false,
     coupon_expiry_hours: pick('coupon_expiry_hours'),
     reply_window_hours: pick('reply_window_hours'),
     winner_message: pick('winner_message') ?? '',
