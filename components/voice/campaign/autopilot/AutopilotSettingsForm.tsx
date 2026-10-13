@@ -20,15 +20,19 @@ function MessageInput({
   value,
   fallback,
   onChange,
+  linkRequired = true,
 }: {
   id: string;
   label: string;
   value: string;
   fallback: string;
   onChange: (v: string) => void;
+  /** false = losers get no coupon, so {link} is forbidden instead of required. */
+  linkRequired?: boolean;
 }) {
   const shown = value || fallback;
-  const missingLink = !!value && !value.includes("{link}");
+  const missingLink = linkRequired && !!value && !value.includes("{link}");
+  const strayLink = !linkRequired && !!value && value.includes("{link}");
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-2">
@@ -58,10 +62,14 @@ function MessageInput({
         onChange={(e) => onChange(e.target.value === fallback ? "" : e.target.value)}
         className={`card-input !py-1.5 w-full text-[13px] leading-snug ${value ? "" : "text-capy-muted"}`}
       />
-      <p className={`text-[11px] leading-snug ${missingLink ? "text-red-600 dark:text-red-300" : "text-capy-muted"}`}>
+      <p className={`text-[11px] leading-snug ${missingLink || strayLink ? "text-red-600 dark:text-red-300" : "text-capy-muted"}`}>
         {missingLink
           ? "Keep {link} — that's the customer's coupon."
-          : "Placeholders: {first_name} {prize} {discount} {expiry} {link}. Keep {link}."}
+          : strayLink
+            ? "Remove {link} — losers don't get a coupon while 'No consolation prize' is on."
+            : linkRequired
+              ? "Placeholders: {first_name} {prize} {discount} {expiry} {link}. Keep {link}."
+              : "Placeholders: {first_name} {prize}. No coupon goes out with this reply."}
       </p>
     </div>
   );
@@ -79,16 +87,17 @@ function Field({ label, hint, htmlFor, children }: { label: string; hint?: strin
   );
 }
 
-function Switch({ id, checked, onChange, label, hint }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
+function Switch({ id, checked, onChange, label, hint, disabled = false }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string; disabled?: boolean }) {
   return (
-    <div className="flex items-start gap-3">
+    <div className={`flex items-start gap-3 ${disabled ? "opacity-50" : ""}`}>
       <button
         id={id}
         type="button"
         role="switch"
         aria-checked={checked}
+        disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? "bg-capy-green" : "bg-capy-border"}`}
+        className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? "bg-capy-green" : "bg-capy-border"} ${disabled ? "cursor-not-allowed" : ""}`}
       >
         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-4" : "translate-x-0.5"}`} />
       </button>
@@ -190,10 +199,28 @@ function GameCard({
         <Field label={values.everyone_wins ? "Everyone gets" : "Winner prize"} htmlFor={p("win")}>
           <NumberInput id={p("win")} value={values.winner_percent} onChange={(n) => onChange("winner_percent", n)} min={5} max={100} suffix="% off" />
         </Field>
-        <Field label="Everyone else" htmlFor={p("cons")} hint={values.everyone_wins ? "Not used: every reply wins the full prize." : undefined}>
-          <NumberInput id={p("cons")} value={values.consolation_percent} onChange={(n) => onChange("consolation_percent", n)} min={0} max={50} suffix="% off" disabled={values.everyone_wins} />
+        <Field
+          label="Everyone else"
+          htmlFor={p("cons")}
+          hint={
+            values.everyone_wins
+              ? "Not used: every reply wins the full prize."
+              : values.no_consolation
+                ? "Not used: losers get no coupon."
+                : undefined
+          }
+        >
+          <NumberInput id={p("cons")} value={values.consolation_percent} onChange={(n) => onChange("consolation_percent", n)} min={0} max={50} suffix="% off" disabled={values.everyone_wins || values.no_consolation} />
         </Field>
-        <Switch id={p("everyone")} checked={values.everyone_wins} onChange={(v) => onChange("everyone_wins", v)} label="Everyone wins" hint="Any reply gets the full prize, right or wrong." />
+        <Switch id={p("everyone")} checked={values.everyone_wins} onChange={(v) => onChange("everyone_wins", v)} label="Everyone wins" hint="Any reply gets the full prize, right or wrong." disabled={values.no_consolation} />
+        <Switch
+          id={p("nocons")}
+          checked={values.no_consolation}
+          onChange={(v) => onChange("no_consolation", v)}
+          label="No consolation prize"
+          hint="Losers just get the reply text — no coupon, so {link} isn't needed there."
+          disabled={values.everyone_wins}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -209,8 +236,9 @@ function GameCard({
             id={p("loser-msg")}
             label="Reply to everyone else"
             value={values.loser_message}
-            fallback={game.default_loser_message ?? ""}
+            fallback={values.no_consolation ? "{first_name}, not this time! Thanks for playing — keep an eye out for the next game." : (game.default_loser_message ?? "")}
             onChange={(v) => onChange("loser_message", v)}
+            linkRequired={!values.no_consolation}
           />
         )}
       </div>
