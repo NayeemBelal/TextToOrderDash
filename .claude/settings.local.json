@@ -37,7 +37,14 @@
       "Bash(python scripts/fetch_page.py https://belan.tech/)",
       "Bash(python3 *)",
       "mcp__notion__notion-search",
-      "mcp__notion__notion-fetch"
+      "mcp__notion__notion-fetch",
+      "mcp__plugin_resend_resend__list-logs",
+      "mcp__plugin_resend_resend__send-email",
+      "Read(//Users/nayeembelal/workspace/BelanCode/TextToOrderCoffee/**)",
+      "Bash(wc -l src/api/marketing.py)",
+      "Bash(wc -l src/services/campaign_scheduler.py)",
+      "Bash(wc -l src/services/sms_outbound_queue.py)",
+      "Bash(wc -l src/services/clover_customers.py)"
     ]
   }
 }
