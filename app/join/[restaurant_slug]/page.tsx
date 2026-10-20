@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
 import { track } from "@/lib/metrics";
+import { OnlinePromoSteps } from "@/components/prize/OnlinePromoSteps";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -66,7 +67,14 @@ interface JoinResult {
   expires_at?: string;
   // "pos_coupon": cashier searches the discount name in the POS list (Clover).
   // "show_staff": staff applies the restaurant's standing tier discount (Toast).
-  redemption_mode?: "pos_coupon" | "show_staff";
+  // "online_promo": order on the restaurant's site, enter the shared promo
+  // code at checkout (see online_promo).
+  redemption_mode?: "pos_coupon" | "show_staff" | "online_promo";
+  online_promo?: {
+    promo_code: string | null;
+    order_url: string | null;
+    howto_video_url: string | null;
+  } | null;
   // False = the POS mint failed; fall back to the old "check your texts" copy
   // (the SMS link still works and retries the mint on its redeem button).
   pos_ready?: boolean;
@@ -564,25 +572,39 @@ export default function JoinPage() {
                   your next visit
                 </p>
               )}
-              <p className="text-xl font-extrabold uppercase tracking-tight text-gray-700">
-                Show to your cashier
-              </p>
-              <div
-                className="border-2 border-dashed rounded-xl p-4 font-bold text-lg break-all"
-                style={{
-                  borderColor: `${brand}55`,
-                  backgroundColor: `${brand}0f`,
-                  color: darken(brand, 0.15),
-                }}
-              >
-                {result.discount_name || `${pct}% OFF`}
-              </div>
-              <p className="text-xs text-gray-400">
-                <strong className="text-gray-600">Cashier:</strong>{" "}
-                {result.redemption_mode === "show_staff"
-                  ? `apply the "${result.discount_percent ?? pct}%" Belan SMS discount to this order.`
-                  : "search for this name in the discount list and apply it."}
-              </p>
+              {result.redemption_mode === "online_promo" ? (
+                <div className="text-left">
+                  <OnlinePromoSteps
+                    brand={brand}
+                    onBrand={textOn(brand)}
+                    orderUrl={result.online_promo?.order_url ?? null}
+                    promoCode={result.online_promo?.promo_code ?? null}
+                    videoUrl={result.online_promo?.howto_video_url}
+                  />
+                </div>
+              ) : (
+                <>
+                  <p className="text-xl font-extrabold uppercase tracking-tight text-gray-700">
+                    Show to your cashier
+                  </p>
+                  <div
+                    className="border-2 border-dashed rounded-xl p-4 font-bold text-lg break-all"
+                    style={{
+                      borderColor: `${brand}55`,
+                      backgroundColor: `${brand}0f`,
+                      color: darken(brand, 0.15),
+                    }}
+                  >
+                    {result.discount_name || `${pct}% OFF`}
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    <strong className="text-gray-600">Cashier:</strong>{" "}
+                    {result.redemption_mode === "show_staff"
+                      ? `apply the "${result.discount_percent ?? pct}%" Belan SMS discount to this order.`
+                      : "search for this name in the discount list and apply it."}
+                  </p>
+                </>
+              )}
               {countdown && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                   <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">

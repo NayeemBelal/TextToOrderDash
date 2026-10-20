@@ -6,6 +6,7 @@ import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/api";
 import { track } from "@/lib/metrics";
 import ReferralModal from "./ReferralModal";
+import { OnlinePromoSteps } from "@/components/prize/OnlinePromoSteps";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
 
@@ -29,6 +30,16 @@ interface PrizeData {
   redemption_expires_at: string | null;
   restaurant_name: string;
   discount_name: string;
+  // "pos_coupon": cashier picks the minted discount by name (Clover).
+  // "show_staff": staff applies a standing tier discount (Toast in-store).
+  // "online_promo": customer orders on the restaurant's site and enters a
+  // shared promo code at checkout (Owner.com etc.) — see online_promo.
+  redemption_mode?: "pos_coupon" | "show_staff" | "online_promo";
+  online_promo?: {
+    promo_code: string | null;
+    order_url: string | null;
+    howto_video_url: string | null;
+  } | null;
   logo_url: string | null;
   brand_color: string | null;
   background_image_url: string | null;
@@ -192,6 +203,29 @@ export default function PrizePage() {
     }
   }
 
+  // online_promo: tapping "Order online" records the activation (same redeem
+  // POST) but never blocks the navigation — the shared code works regardless.
+  function recordOnlineRedeem() {
+    track("prize_redeem_tapped", { prizeCode: prize_code });
+    if (pageState !== "pending") return;
+    fetch(`${MARKETING_API_BASE_URL}/api/prize/${prize_code}/redeem`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json?.expires_at) {
+          const exp = new Date(json.expires_at);
+          setExpiresAt(exp);
+          setCountdown(formatRemaining(exp.getTime() - Date.now()));
+        }
+        setPageState("active");
+      })
+      .catch(() => { /* best-effort */ });
+  }
+
+  const isOnline = data?.redemption_mode === "online_promo";
+
   const prizeLabel = () => {
     if (!data) return "";
     // Fixed-amount join-promo coupon (e.g. BOGO): the offer's own headline is
@@ -213,8 +247,8 @@ export default function PrizePage() {
         : "";
       return `${data.prize_config.fine_print || ""}${dollars}`.trim() || "show this at the register";
     }
-    if (data.is_winner) return data.prize_config?.type === "free-item" ? "on us — 100% off that item" : "your whole order";
-    return "your next order";
+    if (data.is_winner) return data.prize_config?.type === "free-item" ? "on us — 100% off that item" : isOnline ? "your whole online order" : "your whole order";
+    return isOnline ? "your next online order" : "your next order";
   };
 
   // ── Branding ──
@@ -309,7 +343,28 @@ export default function PrizePage() {
                 <p className="text-sm font-medium text-slate-500 mt-1.5">{prizeSub()}</p>
               </div>
 
-              {pageState === "pending" ? (
+              {isOnline ? (
+                <>
+                  {expiresAt && (
+                    <div className="flex items-center justify-between rounded-2xl px-4 py-3" style={{ background: `${brand}0f` }}>
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Use it</p>
+                        <p className="text-sm font-bold text-slate-800">{formatUseBy(expiresAt)}</p>
+                      </div>
+                      <p className={`text-2xl font-black tabular-nums ${isUrgent ? "text-red-600" : ""}`} style={isUrgent ? undefined : { color: brand }}>{countdown}</p>
+                    </div>
+                  )}
+                  <OnlinePromoSteps
+                    brand={brand}
+                    onBrand={onBrand}
+                    orderUrl={data.online_promo?.order_url ?? null}
+                    promoCode={data.online_promo?.promo_code ?? null}
+                    videoUrl={data.online_promo?.howto_video_url}
+                    onOrderTap={recordOnlineRedeem}
+                    onCopy={() => track("prize_code_copied", { prizeCode: prize_code })}
+                  />
+                </>
+              ) : pageState === "pending" ? (
                 <>
                   {expiresAt && (
                     <div className="flex items-center justify-between rounded-2xl px-4 py-3" style={{ background: `${brand}0f` }}>
