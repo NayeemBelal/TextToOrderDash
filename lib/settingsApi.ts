@@ -121,3 +121,51 @@ export async function connectPos(restaurantId: string, body: PosConnectRequest):
 export function disconnectPos(restaurantId: string): Promise<{ success: boolean }> {
   return marketingApiFetch(`/api/marketing/pos-connection?restaurant_id=${restaurantId}`, { method: "DELETE" });
 }
+
+// ── Online ordering (online_promo redemption) ───────────────────────────────
+//
+// Restaurants whose coupons are redeemed on their ordering site with shared
+// promo codes (Owner.com etc.) rather than at the register. Backend:
+// /api/marketing/online-promo-settings → marketing_settings.pos_config.
+
+export interface OnlinePromoSettings {
+  enabled: boolean;
+  redemption_mode: "pos_coupon" | "show_staff" | "online_promo";
+  pos_provider: PosProvider | string;
+  order_url: string | null;
+  howto_video_url: string | null;
+  codes: Record<string, string>;      // percent → code, e.g. {"10": "PIZZA10"}
+  discount_names: string[];           // how the platform's promo lands on the POS order
+  discount_guids: string[];
+  pos_discounts: { guid: string; name: string }[];  // Toast discount list (may be empty)
+}
+
+export interface OnlinePromoSettingsUpdate {
+  enabled: boolean;
+  order_url: string | null;
+  howto_video_url: string | null;
+  codes: Record<string, string>;
+  discount_names: string[];
+}
+
+export function getOnlinePromoSettings(restaurantId: string): Promise<OnlinePromoSettings> {
+  return marketingApiFetch(`/api/marketing/online-promo-settings?restaurant_id=${restaurantId}`);
+}
+
+export async function updateOnlinePromoSettings(
+  restaurantId: string,
+  body: OnlinePromoSettingsUpdate,
+): Promise<{ success: boolean } & OnlinePromoSettings> {
+  // Read the backend's own validation message (missing URL, bad code, …).
+  const { supabase } = await import("@/lib/supabase");
+  const { MARKETING_API_BASE_URL } = await import("@/lib/config");
+  const { data: { session } } = await supabase.auth.getSession();
+  const res = await fetch(`${MARKETING_API_BASE_URL}/api/marketing/online-promo-settings?restaurant_id=${restaurantId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(typeof json?.detail === "string" ? json.detail : `Couldn't save (${res.status}).`);
+  return json;
+}

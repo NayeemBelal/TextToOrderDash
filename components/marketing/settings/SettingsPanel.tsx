@@ -13,6 +13,9 @@ import {
   getPosConnection,
   connectPos,
   disconnectPos,
+  getOnlinePromoSettings,
+  updateOnlinePromoSettings,
+  type OnlinePromoSettings,
   type PosConnectionStatus,
   type PosProvider,
   type Branding,
@@ -20,13 +23,14 @@ import {
   type ReferralSettings,
 } from "@/lib/settingsApi";
 
-type Section = "branding" | "signup" | "referrals" | "pos";
+type Section = "branding" | "signup" | "referrals" | "pos" | "online";
 
 const SECTIONS: { key: Section; label: string; blurb: string }[] = [
   { key: "branding", label: "Branding", blurb: "How your coupon links and pages look to customers" },
   { key: "signup", label: "Sign-up link", blurb: "The QR / web form customers use to join your list" },
   { key: "referrals", label: "Referrals", blurb: "Let customers earn a bump for bringing a friend" },
   { key: "pos", label: "POS", blurb: "Connect your register so coupons become real discounts and orders flow in" },
+  { key: "online", label: "Online ordering", blurb: "Redeem coupons on your ordering site with promo codes instead of at the register" },
 ];
 
 const inputClass =
@@ -491,6 +495,143 @@ function PosSection({ restaurantId }: { restaurantId: string }) {
   );
 }
 
+/* ── Online ordering (promo codes) ────────────────────────────────────── */
+
+type CodeRow = { percent: string; code: string };
+
+function OnlineSection({ restaurantId }: { restaurantId: string }) {
+  const [cfg, setCfg] = useState<OnlinePromoSettings | null>(null);
+  const [enabled, setEnabled] = useState(false);
+  const [orderUrl, setOrderUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [rows, setRows] = useState<CodeRow[]>([]);
+  const [discountNames, setDiscountNames] = useState<string[]>([]);
+  const [discountText, setDiscountText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getOnlinePromoSettings(restaurantId)
+      .then((c) => {
+        setCfg(c);
+        setEnabled(c.enabled);
+        setOrderUrl(c.order_url ?? "");
+        setVideoUrl(c.howto_video_url ?? "");
+        setRows(
+          Object.entries(c.codes)
+            .sort((a, b) => Number(a[0]) - Number(b[0]))
+            .map(([percent, code]) => ({ percent, code })),
+        );
+        setDiscountNames(c.discount_names);
+        setDiscountText(c.discount_names.join(", "));
+      })
+      .catch(() => setError("Couldn't load online ordering settings."));
+  }, [restaurantId]);
+
+  const save = async () => {
+    if (!cfg) return;
+    setSaving(true); setSaved(false); setError(null);
+    const codes: Record<string, string> = {};
+    for (const r of rows) {
+      if (r.percent.trim() && r.code.trim()) codes[r.percent.trim()] = r.code.trim().toUpperCase();
+    }
+    const names = cfg.pos_discounts.length
+      ? discountNames
+      : discountText.split(",").map((n) => n.trim()).filter(Boolean);
+    try {
+      const res = await updateOnlinePromoSettings(restaurantId, {
+        enabled,
+        order_url: orderUrl.trim() || null,
+        howto_video_url: videoUrl.trim() || null,
+        codes,
+        discount_names: names,
+      });
+      setCfg({ ...cfg, ...res });
+      setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't save online ordering settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!cfg) return error ? <p className="text-sm text-red-600 dark:text-red-300">{error}</p> : <Skeleton className="h-24 w-full" />;
+
+  const toggleName = (name: string) =>
+    setDiscountNames((cur) => (cur.includes(name) ? cur.filter((n) => n !== name) : [...cur, name]));
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-capy-muted leading-relaxed">
+        Turn this on if customers use your coupons when ordering online (Owner.com, Toast online ordering…).
+        Coupon pages then show your ordering site and the promo code to type at checkout.
+      </p>
+      <label className="app-card px-4 py-3 flex items-center justify-between cursor-pointer">
+        <div>
+          <p className="text-sm font-semibold text-capy-text">Coupons are redeemed online</p>
+          <p className="text-[11px] text-capy-muted">Off = coupons are shown to the cashier at the register.</p>
+        </div>
+        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="w-5 h-5 accent-capy-green" />
+      </label>
+
+      <Field label="Ordering site URL" hint="Where the “Order online” button sends customers.">
+        <input value={orderUrl} onChange={(e) => setOrderUrl(e.target.value)} placeholder="https://order.yourrestaurant.com" className={inputClass} autoComplete="off" />
+      </Field>
+      <Field label="How-to video URL" hint="Optional — a short mp4 showing where the promo code goes at checkout.">
+        <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="https://…/apply-coupon.mp4" className={inputClass} autoComplete="off" />
+      </Field>
+
+      <Field
+        label="Promo codes"
+        hint="One shared code per discount tier, created in your ordering platform (e.g. Owner.com → Promo codes). Set them to one use per customer and require a phone number."
+      >
+        <div className="space-y-2">
+          {rows.map((r, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="relative w-24 shrink-0">
+                <input
+                  type="number" min={1} max={100} value={r.percent}
+                  onChange={(e) => setRows(rows.map((x, j) => (j === i ? { ...x, percent: e.target.value } : x)))}
+                  className={`${inputClass} pr-7`} placeholder="20"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-capy-muted">%</span>
+              </div>
+              <input
+                value={r.code}
+                onChange={(e) => setRows(rows.map((x, j) => (j === i ? { ...x, code: e.target.value.toUpperCase() } : x)))}
+                className={`${inputClass} font-mono tracking-wide`} placeholder="PIZZA20" autoComplete="off"
+              />
+              <button onClick={() => setRows(rows.filter((_, j) => j !== i))} className="text-capy-muted hover:text-red-600 text-lg leading-none px-1" aria-label="Remove">×</button>
+            </div>
+          ))}
+          <button onClick={() => setRows([...rows, { percent: "", code: "" }])} className="btn-secondary !py-1.5 text-xs">+ Add code</button>
+        </div>
+      </Field>
+
+      <Field
+        label="POS discount name(s)"
+        hint="How your ordering platform's promo shows up on the POS order — this is what lets us match orders back to coupons."
+      >
+        {cfg.pos_discounts.length ? (
+          <div className="space-y-1.5">
+            {cfg.pos_discounts.map((d) => (
+              <label key={d.guid} className="flex items-center gap-2 text-sm text-capy-text cursor-pointer">
+                <input type="checkbox" checked={discountNames.includes(d.name)} onChange={() => toggleName(d.name)} className="w-4 h-4 accent-capy-green" />
+                {d.name}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <input value={discountText} onChange={(e) => setDiscountText(e.target.value)} placeholder="e.g. sauce_discount, Online promo" className={inputClass} autoComplete="off" />
+        )}
+      </Field>
+
+      <SaveBar saving={saving} saved={saved} error={error} onSave={save} />
+    </div>
+  );
+}
+
 /**
  * Marketing settings drawer (gear icon in the header): branding for the
  * customer-facing coupon / sign-up / referral pages, the QR sign-up link, and
@@ -519,6 +660,7 @@ export function SettingsPanel({ open, onClose, restaurantId }: { open: boolean; 
         {section === "signup" && <SignupSection restaurantId={restaurantId} />}
         {section === "referrals" && <ReferralsSection restaurantId={restaurantId} />}
         {section === "pos" && <PosSection restaurantId={restaurantId} />}
+        {section === "online" && <OnlineSection restaurantId={restaurantId} />}
       </div>
     </ResponsivePanel>
   );
