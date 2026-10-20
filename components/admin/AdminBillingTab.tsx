@@ -42,10 +42,21 @@ function RowSkeleton() {
   );
 }
 
+const PROVIDER_LABEL: Record<string, string> = { telnyx: "Telnyx", twilio: "Twilio" };
+
+function ProviderBadge({ provider }: { provider: string }) {
+  return (
+    <span className="ml-2 inline-block rounded-md border border-capy-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-capy-muted align-middle">
+      {PROVIDER_LABEL[provider] ?? provider}
+    </span>
+  );
+}
+
 /**
- * Super-admin SMS billing: total Telnyx spend + per-restaurant breakdown.
- * Cost is attributed via the restaurant_id tag on every Telnyx send, pulled
- * live from Telnyx's usage_reports API (no local cost ledger).
+ * Super-admin SMS billing: total spend across Telnyx + Twilio and a
+ * per-restaurant breakdown, pulled live from each carrier (no local cost
+ * ledger). Telnyx rows come from the restaurant_id tag on every send; Twilio
+ * rows from per-message prices on the restaurant's own number.
  */
 export function AdminBillingTab() {
   const [range, setRange] = useState<BillingRangeKey>("30d");
@@ -59,7 +70,7 @@ export function AdminBillingTab() {
     setError(null);
     fetchBillingSummary(range)
       .then((s) => !cancelled && setSummary(s))
-      .catch(() => !cancelled && setError("Couldn't load billing data from Telnyx."))
+      .catch(() => !cancelled && setError("Couldn't load billing data from the carriers."))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -72,7 +83,7 @@ export function AdminBillingTab() {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <h2 className="text-lg font-bold text-capy-text">Billing</h2>
-            <p className="text-xs text-capy-muted">SMS spend via Telnyx, by restaurant</p>
+            <p className="text-xs text-capy-muted">SMS spend via Telnyx and Twilio, by restaurant</p>
           </div>
           <div className="inline-flex items-center gap-1 rounded-lg border border-capy-border p-0.5">
             {RANGES.map((r) => (
@@ -93,8 +104,16 @@ export function AdminBillingTab() {
         </div>
 
         {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
+        {summary &&
+          (Object.entries(summary.providers) as [string, { error: string | null }][])
+            .filter(([, p]) => p.error)
+            .map(([name, p]) => (
+              <p key={name} className="text-sm text-amber-700 dark:text-amber-300">
+                {PROVIDER_LABEL[name] ?? name} is unavailable right now — its spend is missing from these numbers. ({p.error})
+              </p>
+            ))}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Tile
             label="Total SMS spend"
             value={summary ? formatUSDFromDollars(summary.total_cost) : "—"}
@@ -106,8 +125,13 @@ export function AdminBillingTab() {
             loading={loading}
           />
           <Tile
-            label="Telnyx account balance"
-            value={summary?.account_balance ? formatUSDFromDollars(summary.account_balance.balance) : "—"}
+            label="Telnyx balance"
+            value={summary?.providers.telnyx?.account_balance ? formatUSDFromDollars(summary.providers.telnyx.account_balance.balance) : "—"}
+            loading={loading}
+          />
+          <Tile
+            label="Twilio balance"
+            value={summary?.providers.twilio?.account_balance ? formatUSDFromDollars(summary.providers.twilio.account_balance.balance) : "—"}
             loading={loading}
           />
         </div>
@@ -119,7 +143,7 @@ export function AdminBillingTab() {
 
           {!loading && summary && summary.by_restaurant.length === 0 && (
             <div className="p-6 text-sm text-capy-muted">
-              No tagged SMS spend in this range yet.
+              No SMS spend in this range yet.
             </div>
           )}
 
@@ -138,8 +162,11 @@ export function AdminBillingTab() {
                   {loading
                     ? Array.from({ length: 4 }).map((_, i) => <RowSkeleton key={i} />)
                     : summary!.by_restaurant.map((row) => (
-                    <tr key={row.restaurant_id} className="border-t border-capy-border">
-                      <td className="px-4 py-2.5 text-capy-text font-medium">{row.restaurant_name}</td>
+                    <tr key={`${row.provider}:${row.restaurant_id}`} className="border-t border-capy-border">
+                      <td className="px-4 py-2.5 text-capy-text font-medium">
+                        {row.restaurant_name}
+                        <ProviderBadge provider={row.provider} />
+                      </td>
                       <td className="px-4 py-2.5 text-right tabular-nums text-capy-text">
                         {row.count.toLocaleString()}
                       </td>
