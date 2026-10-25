@@ -36,6 +36,7 @@ interface JoinData {
   state: "active" | "invalid";
   restaurant_name?: string;
   // false = opt-in-only restaurant (no coupon): drop the "Get N% off" framing.
+  club_name?: string;
   incentive_enabled?: boolean;
   discount_percent?: number;
   promo?: JoinPromo | null;
@@ -277,6 +278,8 @@ export default function JoinPage() {
   const restaurantName = data?.restaurant_name || "this restaurant";
   const pct = data?.discount_percent ?? 10;
   const incentive = data?.incentive_enabled !== false;
+  // What the restaurant calls its list ("VIP" by default, "Sauce" at SauceBros).
+  const club = data?.club_name || "VIP";
   const promo = data?.promo ?? null;
 
   const headline =
@@ -638,7 +641,7 @@ export default function JoinPage() {
               <p className="font-semibold text-gray-700">You&apos;re in!</p>
               <p className="text-sm text-gray-400 leading-relaxed">
                 {result?.incentive_enabled === false || !incentive
-                  ? `Welcome to the ${restaurantName} VIP list — you'll be the first to hear about specials and offers.`
+                  ? `Welcome to the ${restaurantName} ${club} list — you'll be the first to hear about specials and offers.`
                   : `Check your texts — your ${pct}% off code from ${restaurantName} is on its way.`}
               </p>
             </div>
@@ -656,7 +659,7 @@ export default function JoinPage() {
                 ? `You've already used the ${result?.promo?.label || "promo"} deal — it's one per customer. Keep an eye on your texts for more offers from ${restaurantName}!`
                 : incentive
                   ? `You've already got an active offer from ${restaurantName} — check your texts for your code.`
-                  : `You're already on the ${restaurantName} VIP list — keep an eye on your texts for specials.`}
+                  : `You're already on the ${restaurantName} ${club} list — keep an eye on your texts for specials.`}
             </p>
           </div>
         )}
