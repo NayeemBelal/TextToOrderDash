@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
+import { isSalesMode, salesAwareMetadata } from "@/lib/sales-mode-server";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "About Belan AI — The Team Behind Restaurant Phone AI",
   description:
     "Belan AI was built to solve the number one silent killer of restaurant revenue: missed calls. Meet the team and learn why we built the AI that never misses a call.",
@@ -19,6 +20,11 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
 };
+
+export const generateMetadata = salesAwareMetadata(metadata, {
+  ogDescription:
+    "Meet the team that built the AI answering system for restaurants. Learn our story and our mission.",
+});
 
 const aboutSchema = {
   "@context": "https://schema.org",
@@ -149,16 +155,28 @@ const TESTIMONIALS = [
   },
 ];
 
-export default function AboutPage() {
+// Left out in sales mode (lib/sales-mode.ts), along with the footer PRICING link.
+const COST_QUESTION = "How much does Belan AI cost?";
+const SALES_ORG_DESCRIPTION =
+  "Belan AI answers every restaurant phone call, takes the order, upsells the customer, and fires the order straight to your POS — automatically.";
+
+export default async function AboutPage() {
+  const sales = await isSalesMode();
+  const about = sales
+    ? { ...aboutSchema, mainEntity: { ...aboutSchema.mainEntity, description: SALES_ORG_DESCRIPTION } }
+    : aboutSchema;
+  const faq = sales
+    ? { ...faqSchema, mainEntity: faqSchema.mainEntity.filter((f) => f.name !== COST_QUESTION) }
+    : faqSchema;
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(about) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }}
       />
 
       <main className="bg-white min-h-screen font-tektur">
@@ -293,7 +311,7 @@ export default function AboutPage() {
               Common Questions About Belan AI
             </h2>
             <div className="flex flex-col gap-0">
-              {faqSchema.mainEntity.map(
+              {faq.mainEntity.map(
                 ({ name: q, acceptedAnswer: { text: a } }) => (
                   <div key={q} className="border-2 border-black -mt-[2px] p-6">
                     <h3 className="font-black text-base xl:text-lg text-black mb-2">
@@ -366,12 +384,14 @@ export default function AboutPage() {
               >
                 Home
               </Link>
-              <Link
-                href="/#pricing"
-                className="hover:text-black transition-colors uppercase"
-              >
-                Pricing
-              </Link>
+              {!sales && (
+                <Link
+                  href="/#pricing"
+                  className="hover:text-black transition-colors uppercase"
+                >
+                  Pricing
+                </Link>
+              )}
               <Link href="/about" className="text-black uppercase">
                 About
               </Link>

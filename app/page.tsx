@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import SiteNav from "@/components/SiteNav";
 import MarketingDemo from "@/components/marketing/MarketingDemo";
+import { useSalesMode } from "@/lib/sales-mode-context";
 
 /* ── design tokens (shared with the onboarding wizard + /oldprods) ── */
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -123,6 +124,8 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function MarketingHomePage() {
+  // On a rep's sales link (lib/sales-mode.ts): no prices, no self-serve checkout.
+  const sales = useSalesMode();
   return (
     <div className="min-h-screen bg-white font-tektur overflow-x-hidden">
       <SiteNav />
@@ -150,13 +153,25 @@ export default function MarketingHomePage() {
               reason to come back this week — and you see exactly which orders it brought in.
             </motion.p>
             <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href={SIGNUP}
-                className="font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
-                style={{ background: ACCENT, color: "#000" }}
-              >
-                Set up my restaurant →
-              </Link>
+              {sales ? (
+                <a
+                  href={BOOK_DEMO}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
+                  style={{ background: ACCENT, color: "#000" }}
+                >
+                  Book a call →
+                </a>
+              ) : (
+                <Link
+                  href={SIGNUP}
+                  className="font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
+                  style={{ background: ACCENT, color: "#000" }}
+                >
+                  Set up my restaurant →
+                </Link>
+              )}
               <motion.a
                 href="#demo"
                 whileHover={{ y: -3, boxShadow: "4px 4px 0px #000" }}
@@ -165,19 +180,23 @@ export default function MarketingHomePage() {
               >
                 Try the live demo →
               </motion.a>
-              <motion.a
-                href={BOOK_DEMO}
-                target="_blank"
-                rel="noopener noreferrer"
-                whileHover={{ y: -3, boxShadow: "4px 4px 0px #000" }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className="bg-white text-black font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black"
-              >
-                Book a call
-              </motion.a>
+              {!sales && (
+                <motion.a
+                  href={BOOK_DEMO}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ y: -3, boxShadow: "4px 4px 0px #000" }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  className="bg-white text-black font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black"
+                >
+                  Book a call
+                </motion.a>
+              )}
             </motion.div>
             <motion.p variants={fadeUp} className="mt-4 text-xs font-bold text-black/40">
-              From $200 per location per month · phone number included · 2,500 messages included
+              {sales
+                ? "Your own marketing phone number · set up with a real person on a call"
+                : "From $200 per location per month · phone number included · 2,500 messages included"}
             </motion.p>
           </motion.div>
 
@@ -310,84 +329,86 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
-      <section id="pricing" className="border-b-2 border-black scroll-mt-20">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16">
-          <h2 className="font-black text-3xl md:text-4xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
-            Simple per-location pricing
-          </h2>
-          <p className="font-bold text-black/50 mb-10 max-w-2xl">
-            Three plans, priced per location per month. Phone number included. Sends are never blocked. Add locations or
-            commit longer and the price drops.
-          </p>
-          <div className="grid md:grid-cols-3 gap-5 mb-5">
-            {PLANS.map((plan) => (
-              <div key={plan.name} className="border-2 border-black bg-white p-7 flex flex-col">
-                <div className="inline-block self-start border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest mb-4" style={{ background: plan.color }}>
-                  {plan.name}
-                </div>
-                <div className="flex items-end gap-2 mb-1">
-                  <span className="font-black text-5xl text-black leading-none" style={{ fontFamily: "Tektur, sans-serif" }}>
-                    {plan.price}
-                  </span>
-                  <span className="font-black text-black/50 mb-1">/ location / month</span>
-                </div>
-                <p className="text-sm font-bold text-black mb-1">{plan.messages} messages a month included</p>
-                <p className="text-sm font-bold text-black/60 mb-4">{plan.fit}</p>
-                <p className="text-xs font-bold text-black/50 mt-auto">Overage {plan.overage} per message, never blocked</p>
-              </div>
-            ))}
-          </div>
-          <div className="grid lg:grid-cols-[3fr_2fr] gap-5">
-            <div className="border-2 border-black bg-white p-7 md:p-9">
-              <p className="font-black text-black text-sm uppercase tracking-widest mb-4">Every plan includes</p>
-              <ul className="space-y-2.5">
-                {PLAN_INCLUDES.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm font-bold text-black">
-                    <span className="mt-0.5 w-5 h-5 shrink-0 border-2 border-black flex items-center justify-center text-[11px]" style={{ background: "#a1dfc5" }}>
-                      ✓
+      {/* ── Pricing (left out in sales mode) ── */}
+      {!sales && (
+        <section id="pricing" className="border-b-2 border-black scroll-mt-20">
+          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16">
+            <h2 className="font-black text-3xl md:text-4xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
+              Simple per-location pricing
+            </h2>
+            <p className="font-bold text-black/50 mb-10 max-w-2xl">
+              Three plans, priced per location per month. Phone number included. Sends are never blocked. Add locations or
+              commit longer and the price drops.
+            </p>
+            <div className="grid md:grid-cols-3 gap-5 mb-5">
+              {PLANS.map((plan) => (
+                <div key={plan.name} className="border-2 border-black bg-white p-7 flex flex-col">
+                  <div className="inline-block self-start border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest mb-4" style={{ background: plan.color }}>
+                    {plan.name}
+                  </div>
+                  <div className="flex items-end gap-2 mb-1">
+                    <span className="font-black text-5xl text-black leading-none" style={{ fontFamily: "Tektur, sans-serif" }}>
+                      {plan.price}
                     </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 grid sm:grid-cols-2 gap-3 text-sm font-bold text-black">
-                <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
-                  <p className="font-black mb-1">More locations, lower price</p>
-                  <p className="text-black/60">2 locations: 10% off every location. 3 or more: 20% off every location.</p>
+                    <span className="font-black text-black/50 mb-1">/ location / month</span>
+                  </div>
+                  <p className="text-sm font-bold text-black mb-1">{plan.messages} messages a month included</p>
+                  <p className="text-sm font-bold text-black/60 mb-4">{plan.fit}</p>
+                  <p className="text-xs font-bold text-black/50 mt-auto">Overage {plan.overage} per message, never blocked</p>
                 </div>
-                <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
-                  <p className="font-black mb-1">Commit longer, pay less</p>
-                  <p className="text-black/60">3 months at list. 6 months: $100 off per location. 12 months: $200 off per location.</p>
-                </div>
-              </div>
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <Link
-                  href={SIGNUP}
-                  className="inline-block font-black uppercase tracking-widest text-sm px-8 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
-                  style={{ background: ACCENT, color: "#000" }}
-                >
-                  Set up my restaurant →
-                </Link>
-                <Link href="/marketing-terms" className="text-xs font-bold tracking-widest text-black/60 hover:text-black underline underline-offset-4">
-                  ORDER FORM &amp; SERVICE TERMS
-                </Link>
-              </div>
+              ))}
             </div>
-            <div className="border-2 border-black p-7 md:p-9" style={{ background: "#f4f1fb" }}>
-              <div className="inline-block border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-white mb-4">
-                Optional add-on
+            <div className="grid lg:grid-cols-[3fr_2fr] gap-5">
+              <div className="border-2 border-black bg-white p-7 md:p-9">
+                <p className="font-black text-black text-sm uppercase tracking-widest mb-4">Every plan includes</p>
+                <ul className="space-y-2.5">
+                  {PLAN_INCLUDES.map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm font-bold text-black">
+                      <span className="mt-0.5 w-5 h-5 shrink-0 border-2 border-black flex items-center justify-center text-[11px]" style={{ background: "#a1dfc5" }}>
+                        ✓
+                      </span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6 grid sm:grid-cols-2 gap-3 text-sm font-bold text-black">
+                  <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
+                    <p className="font-black mb-1">More locations, lower price</p>
+                    <p className="text-black/60">2 locations: 10% off every location. 3 or more: 20% off every location.</p>
+                  </div>
+                  <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
+                    <p className="font-black mb-1">Commit longer, pay less</p>
+                    <p className="text-black/60">3 months at list. 6 months: $100 off per location. 12 months: $200 off per location.</p>
+                  </div>
+                </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <Link
+                    href={SIGNUP}
+                    className="inline-block font-black uppercase tracking-widest text-sm px-8 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
+                    style={{ background: ACCENT, color: "#000" }}
+                  >
+                    Set up my restaurant →
+                  </Link>
+                  <Link href="/marketing-terms" className="text-xs font-bold tracking-widest text-black/60 hover:text-black underline underline-offset-4">
+                    ORDER FORM &amp; SERVICE TERMS
+                  </Link>
+                </div>
               </div>
-              <h3 className="font-black text-xl text-black mb-1">Branded RCS sender</h3>
-              <p className="font-black text-black/70 mb-3">$500 one-time setup + $200 / year</p>
-              <p className="text-sm font-bold text-black/60 leading-relaxed">
-                Your restaurant&apos;s name, logo and a verified badge in the message thread itself — instead of a
-                bare phone number. Higher open rates, richer replies. We handle the carrier paperwork.
-              </p>
+              <div className="border-2 border-black p-7 md:p-9" style={{ background: "#f4f1fb" }}>
+                <div className="inline-block border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-white mb-4">
+                  Optional add-on
+                </div>
+                <h3 className="font-black text-xl text-black mb-1">Branded RCS sender</h3>
+                <p className="font-black text-black/70 mb-3">$500 one-time setup + $200 / year</p>
+                <p className="text-sm font-bold text-black/60 leading-relaxed">
+                  Your restaurant&apos;s name, logo and a verified badge in the message thread itself — instead of a
+                  bare phone number. Higher open rates, richer replies. We handle the carrier paperwork.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── FAQ ── */}
       <section id="faq" className="border-b-2 border-black scroll-mt-20" style={{ background: "#faf8ff" }}>
@@ -413,13 +434,15 @@ export default function MarketingHomePage() {
             Book a 15-minute call and we&apos;ll set up your first gamified campaign together.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href={SIGNUP}
-              className="inline-block font-black uppercase tracking-widest text-sm px-10 py-5 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#000]"
-              style={{ background: ACCENT, color: "#000" }}
-            >
-              Set up my restaurant →
-            </Link>
+            {!sales && (
+              <Link
+                href={SIGNUP}
+                className="inline-block font-black uppercase tracking-widest text-sm px-10 py-5 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#000]"
+                style={{ background: ACCENT, color: "#000" }}
+              >
+                Set up my restaurant →
+              </Link>
+            )}
             <motion.a
               href={BOOK_DEMO}
               target="_blank"
@@ -454,6 +477,9 @@ export default function MarketingHomePage() {
             <Link href="/about" className="hover:text-black transition-colors">ABOUT</Link>
             <Link href="/privacy-policy" className="hover:text-black transition-colors">PRIVACY</Link>
             <Link href="/terms-of-service" className="hover:text-black transition-colors">TERMS</Link>
+            {sales && (
+              <Link href="/marketing-terms" className="hover:text-black transition-colors">SERVICE TERMS</Link>
+            )}
           </div>
           <p className="text-xs font-bold tracking-widest text-black/40">© 2026 BELAN AI</p>
         </div>

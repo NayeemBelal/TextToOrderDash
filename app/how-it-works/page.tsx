@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
+import { isSalesMode, salesAwareMetadata } from "@/lib/sales-mode-server";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "How Restaurant Voice AI Works | Belan AI",
   description:
     "Learn how AI phone ordering works for restaurants — how Belan AI answers calls, takes orders, integrates with your POS, and fires orders to your kitchen automatically.",
@@ -19,6 +20,11 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
 };
+
+export const generateMetadata = salesAwareMetadata(metadata, {
+  ogDescription:
+    "How Belan AI answers every restaurant call, takes the order, and fires it to your POS automatically.",
+});
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -52,7 +58,9 @@ const faqSchema = {
 };
 
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage() {
+  // Sales mode (lib/sales-mode.ts): no price stat, no monthly-cost comparison row.
+  const sales = await isSalesMode();
   return (
     <div className="min-h-screen" style={{ fontFamily: "Tektur, sans-serif" }}>
       {/* Grid background */}
@@ -243,7 +251,7 @@ export default function HowItWorksPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-0 border-2 border-white/20">
             {[
               { stat: "99%+", label: "Order accuracy" },
-              { stat: "$200", label: "Per month, flat" },
+              sales ? { stat: "20 min", label: "Setup time" } : { stat: "$200", label: "Per month, flat" },
               { stat: "24/7", label: "Always answering" },
               { stat: "∞", label: "Concurrent calls" },
             ].map(({ stat, label }) => (
@@ -356,7 +364,7 @@ export default function HowItWorksPage() {
                   { label: "Order accuracy", ai: "99%+", human: "Drops during rush" },
                   { label: "Upsell every call", ai: "Always", human: "Hit or miss" },
                   { label: "Setup time", ai: "20 minutes", human: "Weeks to hire + train" },
-                ].map(({ label, ai, human }) => (
+                ].filter(({ label }) => !sales || label !== "Monthly cost").map(({ label, ai, human }) => (
                   <div key={label} className="grid grid-cols-3 border-b border-black/10 last:border-0 py-2.5 gap-2">
                     <div className="text-xs font-bold text-black/40 uppercase tracking-widest self-center">{label}</div>
                     <div className="font-black text-sm text-black flex items-center gap-2">

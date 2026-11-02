@@ -10,6 +10,7 @@ import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Poppins } from "next/font/google";
 import { MARKETING_API_BASE_URL } from "@/lib/config";
+import { useSalesMode } from "@/lib/sales-mode-context";
 
 const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"] });
 
@@ -19,6 +20,7 @@ const BRAND = "#e11d48";
 const BRAND_DARK = "#9f1239";
 const RESTAURANT = "Stack & Smash Burgers";
 const DEMO_WINDOW_MS = 24 * 60 * 60 * 1000;
+const BOOK_DEMO = "https://calendar.app.google/uCwfd2qfNtjJMSca9";
 
 function formatRemaining(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -69,6 +71,8 @@ export default function DemoPrizePage() {
 function DemoPrizeContent() {
   const { code } = useParams<{ code: string }>();
   const search = useSearchParams();
+  // Sales mode (lib/sales-mode.ts): book a call instead of the priced self-serve checkout.
+  const sales = useSalesMode();
 
   const [isWinner, setIsWinner] = useState(search.get("win") === "1" || code.startsWith("WIN"));
   const [prizeLabel, setPrizeLabel] = useState(search.get("label") || "a discount");
@@ -235,12 +239,23 @@ function DemoPrizeContent() {
           <div className="px-6 py-3 text-center text-[11px] text-slate-300 border-t border-slate-100">Powered by Belan</div>
         </div>
 
-        <a
-          href="/marketing/onboarding"
-          className="mt-5 block text-center text-sm font-bold text-slate-600 hover:text-slate-900"
-        >
-          Want this for your restaurant? Set it up in 10 minutes →
-        </a>
+        {sales ? (
+          <a
+            href={BOOK_DEMO}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 block text-center text-sm font-bold text-slate-600 hover:text-slate-900"
+          >
+            Want this for your restaurant? Book a call →
+          </a>
+        ) : (
+          <a
+            href="/marketing/onboarding"
+            className="mt-5 block text-center text-sm font-bold text-slate-600 hover:text-slate-900"
+          >
+            Want this for your restaurant? Set it up in 10 minutes →
+          </a>
+        )}
       </div>
     </div>
   );

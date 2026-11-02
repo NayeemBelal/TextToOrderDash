@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import SiteNav from "@/components/SiteNav";
+import { useSalesMode } from "@/lib/sales-mode-context";
+import { stripPriceAside } from "@/lib/sales-mode";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -154,6 +156,9 @@ const howItWorksCards = [
 ];
 
 export default function CloverPage() {
+  // Sales mode (lib/sales-mode.ts): no price in the FAQ or the closing CTA.
+  const sales = useSalesMode();
+  const noPrice = (text: string) => (sales ? stripPriceAside(text) : text);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
 
@@ -182,7 +187,7 @@ export default function CloverPage() {
           zIndex: 0,
         }}
       />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: noPrice(JSON.stringify(faqSchema)) }} />
 
       <SiteNav />
 
@@ -466,7 +471,7 @@ export default function CloverPage() {
                       className="overflow-hidden"
                     >
                       <div className="px-6 pb-5 text-sm sm:text-base text-black/60 font-bold leading-relaxed">
-                        {a}
+                        {noPrice(a)}
                       </div>
                     </motion.div>
                   )}
@@ -497,7 +502,7 @@ export default function CloverPage() {
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: 0.1, ease }}
             >
-              $200/month flat. Setup in 20 minutes. No per-order fees.
+              {sales ? "Setup in 20 minutes. No per-order fees." : "$200/month flat. Setup in 20 minutes. No per-order fees."}
             </motion.p>
             <motion.div
               className="flex flex-col sm:flex-row gap-3"
