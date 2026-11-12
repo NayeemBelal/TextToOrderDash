@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import SiteNav from "@/components/SiteNav";
 import MarketingDemo from "@/components/marketing/MarketingDemo";
+import { useSalesMode } from "@/lib/sales-mode-context";
 
 /* ── design tokens (shared with the onboarding wizard + /oldprods) ── */
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -251,6 +252,8 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function MarketingHomePage() {
+  // On a rep's sales link (lib/sales-mode.ts): no prices, no self-serve checkout.
+  const sales = useSalesMode();
   // freebie image opened full-size (thumbnails live in the pricing receipt)
   const [zoom, setZoom] = useState<{ title: string; img: string } | null>(null);
   useEffect(() => {
@@ -275,6 +278,7 @@ export default function MarketingHomePage() {
             >
               ✦ Gamified SMS marketing for restaurants
             </motion.div>
+            {!sales && (
             <motion.a
               variants={fadeUp}
               href="#pricing"
@@ -283,6 +287,7 @@ export default function MarketingHomePage() {
             >
               🎁 $1,500+ setup kit free
             </motion.a>
+            )}
             <motion.h1
               variants={fadeUp}
               className="font-black text-black leading-[0.95] text-4xl md:text-5xl xl:text-6xl"
@@ -295,13 +300,25 @@ export default function MarketingHomePage() {
               reason to come back this week — and you see exactly which orders it brought in.
             </motion.p>
             <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href={SIGNUP}
-                className="font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
-                style={{ background: ACCENT, color: "#000" }}
-              >
-                Set up my restaurant →
-              </Link>
+              {sales ? (
+                <a
+                  href={BOOK_DEMO}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
+                  style={{ background: ACCENT, color: "#000" }}
+                >
+                  Book a call →
+                </a>
+              ) : (
+                <Link
+                  href={SIGNUP}
+                  className="font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
+                  style={{ background: ACCENT, color: "#000" }}
+                >
+                  Set up my restaurant →
+                </Link>
+              )}
               <motion.a
                 href="#demo"
                 whileHover={{ y: -3, boxShadow: "4px 4px 0px #000" }}
@@ -310,22 +327,30 @@ export default function MarketingHomePage() {
               >
                 Try the live demo →
               </motion.a>
-              <motion.a
-                href={BOOK_DEMO}
-                target="_blank"
-                rel="noopener noreferrer"
-                whileHover={{ y: -3, boxShadow: "4px 4px 0px #000" }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                className="bg-white text-black font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black"
-              >
-                Book a call
-              </motion.a>
+              {!sales && (
+                <motion.a
+                  href={BOOK_DEMO}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  whileHover={{ y: -3, boxShadow: "4px 4px 0px #000" }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  className="bg-white text-black font-black uppercase tracking-widest text-sm px-7 py-4 border-2 border-black"
+                >
+                  Book a call
+                </motion.a>
+              )}
             </motion.div>
             <motion.p variants={fadeUp} className="mt-4 text-xs font-bold text-black/40">
-              From $200/location/month · Phone number &amp; 2,500 texts included · Backed by our{" "}
-              <a href="#guarantee" className="underline underline-offset-2 hover:text-black transition-colors">
-                30-Day Money-Back Guarantee
-              </a>
+              {sales ? (
+                "Your own marketing phone number · set up with a real person on a call"
+              ) : (
+                <>
+                  From $200/location/month · Phone number &amp; 2,500 texts included · Backed by our{" "}
+                  <a href="#guarantee" className="underline underline-offset-2 hover:text-black transition-colors">
+                    30-Day Money-Back Guarantee
+                  </a>
+                </>
+              )}
             </motion.p>
           </motion.div>
 
@@ -477,7 +502,9 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      {/* ── Pricing — guarantee badge, plans with the free kit attached, then the kit as a receipt ── */}
+      {/* ── Pricing — guarantee badge, plans with the free kit attached, then the kit as a receipt.
+             Left out entirely in sales mode. ── */}
+      {!sales && (
       <section id="pricing" className="border-b-2 border-black scroll-mt-20">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 py-14 md:py-16">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8 md:mb-10">
@@ -678,6 +705,7 @@ export default function MarketingHomePage() {
           </div>
         </div>
       </section>
+      )}
 
       {/* ── FAQ ── */}
       <section id="faq" className="border-b-2 border-black scroll-mt-20" style={{ background: "#faf8ff" }}>
@@ -703,13 +731,15 @@ export default function MarketingHomePage() {
             Book a 15-minute call and we&apos;ll set up your first gamified campaign together.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href={SIGNUP}
-              className="inline-block font-black uppercase tracking-widest text-sm px-10 py-5 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#000]"
-              style={{ background: ACCENT, color: "#000" }}
-            >
-              Set up my restaurant →
-            </Link>
+            {!sales && (
+              <Link
+                href={SIGNUP}
+                className="inline-block font-black uppercase tracking-widest text-sm px-10 py-5 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_#000]"
+                style={{ background: ACCENT, color: "#000" }}
+              >
+                Set up my restaurant →
+              </Link>
+            )}
             <motion.a
               href={BOOK_DEMO}
               target="_blank"
@@ -786,6 +816,9 @@ export default function MarketingHomePage() {
             <Link href="/about" className="hover:text-black transition-colors">ABOUT</Link>
             <Link href="/privacy-policy" className="hover:text-black transition-colors">PRIVACY</Link>
             <Link href="/terms-of-service" className="hover:text-black transition-colors">TERMS</Link>
+            {sales && (
+              <Link href="/marketing-terms" className="hover:text-black transition-colors">SERVICE TERMS</Link>
+            )}
           </div>
           <p className="text-xs font-bold tracking-widest text-black/40">© 2026 BELAN AI</p>
         </div>

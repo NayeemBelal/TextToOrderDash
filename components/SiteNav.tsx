@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
+import { useSalesMode } from "@/lib/sales-mode-context";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 const BOOK_DEMO = "https://calendar.app.google/uCwfd2qfNtjJMSca9";
@@ -22,18 +23,21 @@ const MORE_LINKS = [
  * Public site header. The homepage is the marketing product; the legacy
  * voice/text-ordering landing lives at /oldprods and keeps its own in-page
  * anchors, so the link set depends on which of the two you're on.
+ * In sales mode (lib/sales-mode.ts) there is no PRICING link and no
+ * self-serve GET STARTED; BOOK A DEMO is the call to action.
  */
 export default function SiteNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const { user } = useAuth();
   const pathname = usePathname();
+  const sales = useSalesMode();
   const isHome = pathname === "/";
   const onOldProds = pathname === "/oldprods";
 
   // In-page anchors need the page prefix when we're anywhere else.
   const h = (anchor: string) => (isHome ? anchor : `/${anchor}`);
-  const navLinks: [string, string][] = onOldProds
+  const allLinks: [string, string][] = onOldProds
     ? [
         ["/", "MARKETING AI"],
         ["#how-it-works", "HOW IT WORKS"],
@@ -49,6 +53,7 @@ export default function SiteNav() {
         [h("#pricing"), "PRICING"],
         ["/about", "ABOUT"],
       ];
+  const navLinks = sales ? allLinks.filter(([, label]) => label !== "PRICING") : allLinks;
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b-2 border-black">
@@ -153,19 +158,21 @@ export default function SiteNav() {
               >
                 LOG IN
               </Link>
-              <motion.div
-                className="hidden md:block"
-                whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              >
-                <Link
-                  href="/marketing/onboarding"
-                  className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest"
-                  style={{ background: "#c4b5fd" }}
+              {!sales && (
+                <motion.div
+                  className="hidden md:block"
+                  whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 >
-                  GET STARTED
-                </Link>
-              </motion.div>
+                  <Link
+                    href="/marketing/onboarding"
+                    className="block text-xs xl:text-sm font-bold px-4 xl:px-5 py-2 xl:py-2.5 border-2 border-black tracking-widest"
+                    style={{ background: "#c4b5fd" }}
+                  >
+                    GET STARTED
+                  </Link>
+                </motion.div>
+              )}
             </>
           )}
           <motion.div
@@ -266,7 +273,9 @@ export default function SiteNav() {
               ) : (
                 <>
                   <Link href="/login" onClick={() => setMobileOpen(false)}>LOG IN</Link>
-                  <Link href="/marketing/onboarding" onClick={() => setMobileOpen(false)}>GET STARTED →</Link>
+                  {!sales && (
+                    <Link href="/marketing/onboarding" onClick={() => setMobileOpen(false)}>GET STARTED →</Link>
+                  )}
                 </>
               )}
               <a

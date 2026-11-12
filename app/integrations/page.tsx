@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
+import { isSalesMode, salesAwareMetadata } from "@/lib/sales-mode-server";
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   title: "Restaurant Voice AI POS Integrations | Clover, Toast & Square | Belan AI",
   description:
     "Connect Belan AI's restaurant voice AI to your POS. Native integrations with Clover, Toast, and Square — orders fire to your kitchen automatically. $200/month flat.",
@@ -19,6 +20,13 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
 };
+
+export const generateMetadata = salesAwareMetadata(metadata, {
+  description:
+    "Connect Belan AI's restaurant voice AI to your POS. Native integrations with Clover, Toast, and Square — orders fire to your kitchen automatically.",
+  ogDescription:
+    "Belan AI's restaurant voice AI connects natively to Clover, Toast, and Square. Every call answered, every order fired to your POS.",
+});
 
 const integrationListSchema = {
   "@context": "https://schema.org",
@@ -80,7 +88,8 @@ const integrations = [
 
 const comingSoon = ["Lightspeed", "Revel", "TouchBistro"];
 
-export default function IntegrationsPage() {
+export default async function IntegrationsPage() {
+  const sales = await isSalesMode(); // lib/sales-mode.ts: no price in the CTA
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "Tektur, sans-serif" }}>
       <script
@@ -172,7 +181,7 @@ export default function IntegrationsPage() {
             Ready to connect your POS?
           </h2>
           <p className="text-sm sm:text-base font-bold text-black/70 mb-6">
-            $200/month flat. Setup in 20 minutes. No per-order fees.
+            {sales ? "Setup in 20 minutes. No per-order fees." : "$200/month flat. Setup in 20 minutes. No per-order fees."}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a

@@ -4,6 +4,9 @@ import "./globals.css";
 import { ConditionalWrapper } from "@/components/ConditionalWrapper";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/lib/theme-context";
+import { SalesModeProvider } from "@/lib/sales-mode-context";
+import { isSalesMode, salesAwareMetadata } from "@/lib/sales-mode-server";
+import { SALES_SITE_DESCRIPTION, SALES_SITE_OG_DESCRIPTION } from "@/lib/sales-mode";
 
 const tektur = Tektur({
   subsets: ["latin"],
@@ -12,7 +15,7 @@ const tektur = Tektur({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+const metadata: Metadata = {
   metadataBase: new URL("https://belan.tech"),
   title: "Gamified SMS Marketing for Restaurants | Belan AI",
   description:
@@ -50,6 +53,12 @@ export const metadata: Metadata = {
     apple: { url: "/BelanLogo.png", sizes: "180x180", type: "image/png" },
   },
 };
+
+// Reading the sales cookie here renders every route on demand (no static HTML).
+export const generateMetadata = salesAwareMetadata(metadata, {
+  description: SALES_SITE_DESCRIPTION,
+  ogDescription: SALES_SITE_OG_DESCRIPTION,
+});
 
 const softwareApplicationSchema = {
   "@context": "https://schema.org",
@@ -166,11 +175,13 @@ const websiteSchema = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Sales mode leaves out the three schemas that carry the price.
+  const salesMode = await isSalesMode();
   return (
     <html lang="en" className={tektur.variable} suppressHydrationWarning>
       <body className="antialiased">
@@ -181,35 +192,43 @@ export default function RootLayout({
               "try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}",
           }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(softwareApplicationSchema),
-          }}
-        />
+        {!salesMode && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(softwareApplicationSchema),
+            }}
+          />
+        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(organizationSchema),
           }}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteSchema),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(serviceSchema),
-          }}
-        />
-        <ThemeProvider>
-          <AuthProvider>
-            <ConditionalWrapper>{children}</ConditionalWrapper>
-          </AuthProvider>
-        </ThemeProvider>
+        {!salesMode && (
+          <>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify(websiteSchema),
+              }}
+            />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify(serviceSchema),
+              }}
+            />
+          </>
+        )}
+        <SalesModeProvider value={salesMode}>
+          <ThemeProvider>
+            <AuthProvider>
+              <ConditionalWrapper>{children}</ConditionalWrapper>
+            </AuthProvider>
+          </ThemeProvider>
+        </SalesModeProvider>
       </body>
     </html>
   );

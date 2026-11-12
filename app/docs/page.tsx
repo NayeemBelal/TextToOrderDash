@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteNav from "@/components/SiteNav";
+import { isSalesMode } from "@/lib/sales-mode-server";
 
 export const metadata: Metadata = {
   title: "Docs | Belan AI",
@@ -79,7 +80,14 @@ const QUICK_LINKS = [
   { label: "Problems & who to call", href: "/docs/onboarding-playbook.html#s12" },
 ];
 
-export default function DocsPage() {
+// The playbook and the deck are static files with the full price list, so a
+// sales-mode visitor (lib/sales-mode.ts) isn't pointed at them. The order form /
+// service terms card stays: the terms must remain reachable.
+const PRICED_DOCS = new Set(["/docs/onboarding-playbook.html", "/deck"]);
+
+export default async function DocsPage() {
+  const sales = await isSalesMode();
+  const docs = sales ? DOCS.filter((d) => !PRICED_DOCS.has(d.href)) : DOCS;
   return (
     <div className="min-h-screen bg-white text-black font-tektur">
       <SiteNav />
@@ -101,7 +109,7 @@ export default function DocsPage() {
 
       <section className="max-w-[1200px] mx-auto px-6 md:px-10 pb-12">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {DOCS.map((d) => (
+          {docs.map((d) => (
             <a
               key={d.href}
               href={d.href}
@@ -124,23 +132,25 @@ export default function DocsPage() {
         </div>
       </section>
 
-      <section className="max-w-[1200px] mx-auto px-6 md:px-10 pb-20">
-        <div className="border-2 border-black p-6 md:p-8" style={{ background: "#faf8ff" }}>
-          <h2 className="text-lg font-black uppercase tracking-widest">Jump straight to a step</h2>
-          <ul className="mt-4 grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
-            {QUICK_LINKS.map((q) => (
-              <li key={q.href}>
-                <a
-                  href={q.href}
-                  className="text-sm font-bold underline decoration-2 underline-offset-4 hover:bg-black hover:text-white"
-                >
-                  {q.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+      {!sales && (
+        <section className="max-w-[1200px] mx-auto px-6 md:px-10 pb-20">
+          <div className="border-2 border-black p-6 md:p-8" style={{ background: "#faf8ff" }}>
+            <h2 className="text-lg font-black uppercase tracking-widest">Jump straight to a step</h2>
+            <ul className="mt-4 grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
+              {QUICK_LINKS.map((q) => (
+                <li key={q.href}>
+                  <a
+                    href={q.href}
+                    className="text-sm font-bold underline decoration-2 underline-offset-4 hover:bg-black hover:text-white"
+                  >
+                    {q.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       <footer className="bg-white border-t-2 border-black">
         <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-bold tracking-widest text-black/60">

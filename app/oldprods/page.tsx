@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import SiteNav from "@/components/SiteNav";
+import { useSalesMode } from "@/lib/sales-mode-context";
 
 /* ── animation ── */
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -1467,8 +1468,12 @@ function HeroBadgeCarousel() {
 }
 
 /* ── page ── */
+// Left out in sales mode (lib/sales-mode.ts), with the pricing section and hero price line.
+const COST_QUESTION = "How much does AI phone ordering for restaurants cost?";
+
 export default function OrderingProductsPage() {
   const { user } = useAuth();
+  const sales = useSalesMode();
 
   return (
     <div
@@ -1767,7 +1772,7 @@ export default function OrderingProductsPage() {
               </>
             )}
           </motion.div>
-          {!user && (
+          {!user && !sales && (
             <motion.p
               variants={fadeUp}
               className="text-[10px] sm:text-xs text-black/40 font-bold mt-1 text-center"
@@ -2077,169 +2082,171 @@ export default function OrderingProductsPage() {
         </div>
       </RevealSection>
 
-      {/* ── PRICING ── */}
-      <RevealSection
-        id="pricing"
-        className="py-16 md:py-20 xl:py-32 px-4 sm:px-8 md:px-16 xl:px-24 2xl:px-32"
-        style={{ position: "relative", zIndex: 1 }}
-      >
-        <div className="max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto">
-          <motion.div
-            variants={fadeIn}
-            className="inline-block border-2 border-black px-4 py-1.5 mb-4 sm:mb-5 text-xs sm:text-sm xl:text-base font-bold"
-            style={{ background: "#f5dda1", transform: "rotate(-1deg)" }}
-          >
-            PRICING
-          </motion.div>
-          <motion.h2
-            variants={fadeUp}
-            className="text-3xl sm:text-4xl xl:text-5xl 2xl:text-6xl font-black text-black mb-2"
-          >
-            One price. Every AI. Unlimited.
-          </motion.h2>
-          <motion.p
-            variants={fadeIn}
-            className="text-black/60 mb-8 sm:mb-10 xl:mb-14 font-medium text-sm sm:text-base xl:text-lg"
-          >
-            Voice AI, SMS ordering, Dashboard, Recommendations — all included.
-            No per-order fees.
-          </motion.p>
-
-          <div className="relative flex justify-center">
-            {/* left capybara — desktop only */}
-            <div
-              className="hidden md:block absolute bottom-0 left-0"
-              style={{ zIndex: 2, transform: "translateX(-85%)" }}
+      {/* ── PRICING (left out in sales mode) ── */}
+      {!sales && (
+        <RevealSection
+          id="pricing"
+          className="py-16 md:py-20 xl:py-32 px-4 sm:px-8 md:px-16 xl:px-24 2xl:px-32"
+          style={{ position: "relative", zIndex: 1 }}
+        >
+          <div className="max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto">
+            <motion.div
+              variants={fadeIn}
+              className="inline-block border-2 border-black px-4 py-1.5 mb-4 sm:mb-5 text-xs sm:text-sm xl:text-base font-bold"
+              style={{ background: "#f5dda1", transform: "rotate(-1deg)" }}
             >
+              PRICING
+            </motion.div>
+            <motion.h2
+              variants={fadeUp}
+              className="text-3xl sm:text-4xl xl:text-5xl 2xl:text-6xl font-black text-black mb-2"
+            >
+              One price. Every AI. Unlimited.
+            </motion.h2>
+            <motion.p
+              variants={fadeIn}
+              className="text-black/60 mb-8 sm:mb-10 xl:mb-14 font-medium text-sm sm:text-base xl:text-lg"
+            >
+              Voice AI, SMS ordering, Dashboard, Recommendations — all included.
+              No per-order fees.
+            </motion.p>
+
+            <div className="relative flex justify-center">
+              {/* left capybara — desktop only */}
+              <div
+                className="hidden md:block absolute bottom-0 left-0"
+                style={{ zIndex: 2, transform: "translateX(-85%)" }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/capybaraPics/scooterguytakingpic.svg"
+                  alt=""
+                  width={384}
+                  height={384}
+                  loading="lazy"
+                  className="h-64 xl:h-80 2xl:h-96 w-auto object-contain"
+                />
+              </div>
+
+              {/* pricing card */}
+              <motion.div
+                variants={scaleIn}
+                className="border-2 border-black p-6 sm:p-8 xl:p-10 2xl:p-12 w-full max-w-xl xl:max-w-2xl"
+                style={{ background: "rgba(255,255,255,0.85)" }}
+                whileHover={{
+                  y: -4,
+                  boxShadow: "6px 6px 0px #000",
+                  transition: { type: "spring", stiffness: 300, damping: 20 },
+                }}
+              >
+                <div className="mb-5 sm:mb-6 flex items-center flex-wrap gap-2">
+                  <span
+                    className="text-5xl sm:text-6xl xl:text-7xl 2xl:text-8xl font-black text-black"
+                    style={{ fontFamily: "Tektur, sans-serif" }}
+                  >
+                    $200
+                  </span>
+                  <span className="text-black/60 font-bold xl:text-lg">
+                    {" "}
+                    / mo
+                  </span>
+                  <motion.span
+                    className="text-xs xl:text-sm font-bold border-2 border-black px-2 py-1 inline-block"
+                    style={{ background: "#f5dda1" }}
+                    whileHover={{ scale: 1.08, rotate: -2 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                  >
+                    ONLY $6.67/DAY
+                  </motion.span>
+                </div>
+
+                <motion.div
+                  variants={staggerFast}
+                  className="flex flex-col gap-2 xl:gap-3 mb-6 sm:mb-8"
+                >
+                  {[
+                    "Voice AI Ordering — unlimited concurrent calls",
+                    "SMS Text-to-Order — unlimited messages",
+                    "Dedicated Belan AI phone number",
+                    "Direct POS Integration",
+                    "Smart Dashboard — real-time analytics",
+                    "AI Recommendation Engine",
+                    "Custom AI Voice & Greeting",
+                    "FAQ & Upsell Rule Builder",
+                    "Integrated Payment Processing",
+                    "86 Detection & Menu Availability Toggles",
+                    "SMS Marketing Campaigns",
+                    "Best support in the restaurant universe",
+                  ].map((item) => (
+                    <motion.div
+                      key={item}
+                      variants={fadeIn}
+                      className="flex items-start gap-2 text-xs sm:text-sm xl:text-base font-medium text-black"
+                    >
+                      <span
+                        className="font-black flex-shrink-0"
+                        style={{ color: "#ecb32e" }}
+                      >
+                        →
+                      </span>
+                      {item}
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                <div className="flex items-center gap-4 flex-wrap">
+                  <motion.div
+                    whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                    className="inline-block"
+                  >
+                    <Link
+                      href={user ? "/home" : "/register"}
+                      className="inline-block bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-8 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide"
+                    >
+                      {user ? "GO TO DASHBOARD →" : "GET STARTED →"}
+                    </Link>
+                  </motion.div>
+                  <span className="text-xs xl:text-sm text-black/40 font-medium">
+                    No credit card required
+                  </span>
+                </div>
+              </motion.div>
+
+              {/* right capybara — desktop only */}
+              <div
+                className="hidden md:block absolute bottom-0 right-0"
+                style={{ zIndex: 2, transform: "translateX(70%)" }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/capybaraPics/sittingoncrate.svg"
+                  alt="Restaurant owner reviewing AI ordering analytics"
+                  width={384}
+                  height={384}
+                  loading="lazy"
+                  className="h-64 xl:h-80 2xl:h-96 w-auto object-contain"
+                  style={{ transform: "scaleX(-1)" }}
+                />
+              </div>
+            </div>
+
+            {/* Mobile capybara below pricing card */}
+            <div className="md:hidden flex justify-center mt-6">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/capybaraPics/scooterguytakingpic.svg"
-                alt=""
-                width={384}
-                height={384}
+                alt="Restaurant delivery with AI-powered order management"
+                width={144}
+                height={144}
                 loading="lazy"
-                className="h-64 xl:h-80 2xl:h-96 w-auto object-contain"
-              />
-            </div>
-
-            {/* pricing card */}
-            <motion.div
-              variants={scaleIn}
-              className="border-2 border-black p-6 sm:p-8 xl:p-10 2xl:p-12 w-full max-w-xl xl:max-w-2xl"
-              style={{ background: "rgba(255,255,255,0.85)" }}
-              whileHover={{
-                y: -4,
-                boxShadow: "6px 6px 0px #000",
-                transition: { type: "spring", stiffness: 300, damping: 20 },
-              }}
-            >
-              <div className="mb-5 sm:mb-6 flex items-center flex-wrap gap-2">
-                <span
-                  className="text-5xl sm:text-6xl xl:text-7xl 2xl:text-8xl font-black text-black"
-                  style={{ fontFamily: "Tektur, sans-serif" }}
-                >
-                  $200
-                </span>
-                <span className="text-black/60 font-bold xl:text-lg">
-                  {" "}
-                  / mo
-                </span>
-                <motion.span
-                  className="text-xs xl:text-sm font-bold border-2 border-black px-2 py-1 inline-block"
-                  style={{ background: "#f5dda1" }}
-                  whileHover={{ scale: 1.08, rotate: -2 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 15 }}
-                >
-                  ONLY $6.67/DAY
-                </motion.span>
-              </div>
-
-              <motion.div
-                variants={staggerFast}
-                className="flex flex-col gap-2 xl:gap-3 mb-6 sm:mb-8"
-              >
-                {[
-                  "Voice AI Ordering — unlimited concurrent calls",
-                  "SMS Text-to-Order — unlimited messages",
-                  "Dedicated Belan AI phone number",
-                  "Direct POS Integration",
-                  "Smart Dashboard — real-time analytics",
-                  "AI Recommendation Engine",
-                  "Custom AI Voice & Greeting",
-                  "FAQ & Upsell Rule Builder",
-                  "Integrated Payment Processing",
-                  "86 Detection & Menu Availability Toggles",
-                  "SMS Marketing Campaigns",
-                  "Best support in the restaurant universe",
-                ].map((item) => (
-                  <motion.div
-                    key={item}
-                    variants={fadeIn}
-                    className="flex items-start gap-2 text-xs sm:text-sm xl:text-base font-medium text-black"
-                  >
-                    <span
-                      className="font-black flex-shrink-0"
-                      style={{ color: "#ecb32e" }}
-                    >
-                      →
-                    </span>
-                    {item}
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              <div className="flex items-center gap-4 flex-wrap">
-                <motion.div
-                  whileHover={{ y: -3, boxShadow: "3px 3px 0px #000" }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
-                  className="inline-block"
-                >
-                  <Link
-                    href={user ? "/home" : "/register"}
-                    className="inline-block bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-8 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide"
-                  >
-                    {user ? "GO TO DASHBOARD →" : "GET STARTED →"}
-                  </Link>
-                </motion.div>
-                <span className="text-xs xl:text-sm text-black/40 font-medium">
-                  No credit card required
-                </span>
-              </div>
-            </motion.div>
-
-            {/* right capybara — desktop only */}
-            <div
-              className="hidden md:block absolute bottom-0 right-0"
-              style={{ zIndex: 2, transform: "translateX(70%)" }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/capybaraPics/sittingoncrate.svg"
-                alt="Restaurant owner reviewing AI ordering analytics"
-                width={384}
-                height={384}
-                loading="lazy"
-                className="h-64 xl:h-80 2xl:h-96 w-auto object-contain"
-                style={{ transform: "scaleX(-1)" }}
+                className="h-36 w-auto object-contain"
               />
             </div>
           </div>
-
-          {/* Mobile capybara below pricing card */}
-          <div className="md:hidden flex justify-center mt-6">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/capybaraPics/scooterguytakingpic.svg"
-              alt="Restaurant delivery with AI-powered order management"
-              width={144}
-              height={144}
-              loading="lazy"
-              className="h-36 w-auto object-contain"
-            />
-          </div>
-        </div>
-      </RevealSection>
+        </RevealSection>
+      )}
 
       {/* ── FAQ ── */}
       <RevealSection
@@ -2284,7 +2291,7 @@ export default function OrderingProductsPage() {
                 q: "What happens if a customer calls during a dinner rush?",
                 a: "Belan AI handles unlimited concurrent calls 24/7. Every call is answered on the first ring regardless of how busy your restaurant is — no hold music, no missed orders.",
               },
-            ].map(({ q, a }, i) => (
+            ].filter(({ q }) => !sales || q !== COST_QUESTION).map(({ q, a }, i) => (
               <motion.div
                 key={i}
                 variants={fadeUp}
@@ -2347,7 +2354,7 @@ export default function OrderingProductsPage() {
                     text: "Belan AI handles unlimited concurrent calls 24/7. Every call is answered on the first ring regardless of how busy your restaurant is — no hold music, no missed orders.",
                   },
                 },
-              ],
+              ].filter(({ name }) => !sales || name !== COST_QUESTION),
             }),
           }}
         />
