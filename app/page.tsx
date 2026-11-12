@@ -191,6 +191,49 @@ function GuaranteeSeal() {
   );
 }
 
+/* ── "+ $1,500 setup kit FREE" strip on every plan card — bright yellow, with a shine sweep and a wiggling tag ── */
+const KIT_BAND_COLOR = "#ffd60a";
+
+function KitBand({ delay }: { delay: number }) {
+  const reduce = useReducedMotion();
+  return (
+    <a
+      href="#launch-kit"
+      className="relative overflow-hidden border-t-2 border-black px-6 md:px-7 py-4 flex items-center justify-between gap-3"
+      style={{ background: KIT_BAND_COLOR }}
+    >
+      {!reduce && (
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)" }}
+          initial={{ x: "-150%" }}
+          animate={{ x: "450%" }}
+          transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity, repeatDelay: 2.2, delay }}
+        />
+      )}
+      <span className="relative flex items-center gap-2 font-black text-black leading-tight text-lg md:text-xl">
+        <motion.span
+          aria-hidden
+          className="inline-block"
+          animate={reduce ? undefined : { y: [0, -5, 0], rotate: [0, -12, 12, 0] }}
+          transition={{ duration: 0.9, ease: "easeInOut", repeat: Infinity, repeatDelay: 2.4, delay }}
+        >
+          🎁
+        </motion.span>
+        + $1,500 setup kit
+      </span>
+      <motion.span
+        className="relative shrink-0 border-2 border-black bg-black px-2.5 py-1 font-black text-sm uppercase tracking-widest text-white shadow-[2px_2px_0px_#fff]"
+        animate={reduce ? undefined : { rotate: [-5, 5, -5], scale: [1, 1.12, 1] }}
+        transition={{ duration: 1.4, ease: "easeInOut", repeat: Infinity, delay }}
+      >
+        Free
+      </motion.span>
+    </a>
+  );
+}
+
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -456,7 +499,7 @@ export default function MarketingHomePage() {
 
           {/* plans — the free kit is attached to every price */}
           <div className="grid md:grid-cols-3 gap-5 mb-5">
-            {PLANS.map((plan) => (
+            {PLANS.map((plan, i) => (
               <div key={plan.name} className="border-2 border-black bg-white flex flex-col">
                 <div className="p-6 md:p-7 flex flex-col flex-1">
                   <div className="inline-block self-start border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest mb-4" style={{ background: plan.color }}>
@@ -472,18 +515,7 @@ export default function MarketingHomePage() {
                   <p className="text-sm font-bold text-black/60 mb-3">{plan.fit}</p>
                   <p className="text-xs font-bold text-black/50 mt-auto">Overage {plan.overage} per message, never blocked</p>
                 </div>
-                <a
-                  href="#launch-kit"
-                  className="border-t-2 border-black px-6 md:px-7 py-4 flex items-center justify-between gap-3"
-                  style={{ background: "#a1dfc5" }}
-                >
-                  <span className="font-black text-black leading-tight text-lg md:text-xl">
-                    + $1,500 setup kit
-                  </span>
-                  <span className="shrink-0 border-2 border-black bg-white px-2.5 py-1 font-black text-sm uppercase tracking-widest text-black">
-                    Free
-                  </span>
-                </a>
+                <KitBand delay={i * 0.35} />
                 <div className="border-t-2 border-black p-4">
                   <Link
                     href={SIGNUP}
