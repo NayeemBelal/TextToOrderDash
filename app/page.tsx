@@ -69,6 +69,69 @@ const PLANS = [
   { name: "Tier 3", price: "$400", messages: "7,000", overage: "5.7¢", fit: "Around 810 subscribers at two sends a week.", color: "#f5dda1" },
 ];
 
+/* ── POS trust bar — shown directly under the hero ── */
+const POS_SYSTEMS = ["Toast", "Square", "Clover", "Lightspeed", "Custom POS setups"];
+
+/* ── done-for-you launch & growth kit — free with every plan ── */
+const LAUNCH_KIT = [
+  {
+    title: "In-Store Flyers & Table Tents Setup",
+    value: "$350 value",
+    desc: "Custom-designed table tents and counter flyers with your logo so dine-in guests join your VIP text club automatically.",
+  },
+  {
+    title: "Editable Social Media Opt-In Templates",
+    value: "$300 value",
+    desc: "15 custom-branded Canva templates for Instagram Stories and posts to drive text club sign-ups.",
+  },
+  {
+    title: "10-Minute Google Maps Loom Video Audit",
+    value: "$250 value",
+    desc: "A personalized local SEO video teardown fixing missing categories, broken links, and outdated listing photos.",
+  },
+  {
+    title: "Branded Table-Ordering QR Codes",
+    value: "$200 value",
+    desc: "Custom QR codes mapped to your menu/ordering links for every table.",
+  },
+  {
+    title: "DoorDash & Uber Eats Bag-Stuffer Flyer",
+    value: "$150 value",
+    desc: "Custom print design made to convert third-party delivery customers into direct repeat diners.",
+  },
+];
+
+const GROWTH_SUITE = [
+  {
+    title: "10 Viral Niche Campaign Ideas Per Month",
+    value: "$150/mo value",
+    desc: "A monthly research vault of proven promos and social hooks trending in your exact food category.",
+  },
+  {
+    title: "Automated 1-Hour Post-Visit Review Booster",
+    value: "$100/mo value",
+    desc: "Automatic follow-up texts sent 1 hour after a visit asking guests how their food was and guiding happy diners to leave a Google review.",
+  },
+];
+
+const KIT_GROUPS = [
+  {
+    name: "Done-For-You Launch & Design Kit",
+    value: "$1,250 one-time value",
+    color: "#a4e5f8",
+    items: LAUNCH_KIT,
+  },
+  {
+    name: "Monthly Growth & Reputation Suite",
+    value: "$250/mo value",
+    color: "#f5dda1",
+    items: GROWTH_SUITE,
+  },
+];
+
+const PLAN_INCLUDES_HIGHLIGHT =
+  "Complete $1,500+ Done-For-You Launch & Growth Kit (Table tents, QR codes, review booster & audits)";
+
 const PLAN_INCLUDES = [
   "A dedicated marketing phone number",
   "Unlimited game and promotional campaigns",
@@ -91,6 +154,10 @@ const FAQ = [
   {
     q: "Which POS does it work with?",
     a: "Clover today — coupons become real discounts and orders are matched back to campaigns. Toast and Square are next. Any restaurant can run games from a spreadsheet list in the meantime.",
+  },
+  {
+    q: "What if I don't have a customer phone list or time to design flyers?",
+    a: "Most restaurants start from zero. Our team designs your custom table tents, delivery bag flyers, QR codes, and social media opt-in templates for free during onboarding—so your tables and takeout bags build your VIP text list for you automatically.",
   },
   {
     q: "Can I try a campaign before sending it to everyone?",
@@ -177,7 +244,10 @@ export default function MarketingHomePage() {
               </motion.a>
             </motion.div>
             <motion.p variants={fadeUp} className="mt-4 text-xs font-bold text-black/40">
-              From $200 per location per month · phone number included · 2,500 messages included
+              From $200/location/month · Phone number &amp; 2,500 texts included · Backed by our{" "}
+              <a href="#guarantee" className="underline underline-offset-2 hover:text-black transition-colors">
+                30-Day Money-Back Guarantee
+              </a>
             </motion.p>
           </motion.div>
 
@@ -219,6 +289,25 @@ export default function MarketingHomePage() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ── POS trust bar ── */}
+      <section aria-label="POS compatibility" className="border-b-2 border-black bg-white">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+          <p className="text-[11px] font-black uppercase tracking-widest text-black/40 shrink-0">
+            Works with your POS
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {POS_SYSTEMS.map((pos) => (
+              <li
+                key={pos}
+                className="border-2 border-black/15 px-3 py-1 text-xs font-black tracking-wide text-black/60"
+              >
+                {pos}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -310,6 +399,66 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
+      {/* ── Done-for-you kit ── */}
+      <section id="launch-kit" className="border-b-2 border-black scroll-mt-20" style={{ background: "#faf8ff" }}>
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16">
+          <div
+            className="inline-block border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-widest mb-4"
+            style={{ background: "#a1dfc5" }}
+          >
+            Included free with every plan
+          </div>
+          <h2 className="font-black text-3xl md:text-4xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
+            Everything We Set Up For You Free ($1,500+ Value)
+          </h2>
+          <p className="font-bold text-black/50 mb-10 max-w-2xl">
+            No time to set this up? You don&apos;t need any. Every plan comes with a Done-For-You Launch &amp; Growth
+            Kit — our team designs it, builds it, and hands it over ready to use.
+          </p>
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={stagger}
+            className="grid lg:grid-cols-[3fr_2fr] gap-5 items-start"
+          >
+            {KIT_GROUPS.map((group) => (
+              <motion.div key={group.name} variants={fadeUp} className="border-2 border-black bg-white">
+                <div
+                  className="border-b-2 border-black px-6 py-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2"
+                  style={{ background: group.color }}
+                >
+                  <h3 className="font-black text-lg text-black">{group.name}</h3>
+                  <p className="font-black text-sm text-black">
+                    <span className="line-through decoration-2 text-black/50">{group.value}</span>{" "}
+                    <span className="border-2 border-black bg-white px-2 py-0.5 text-xs uppercase tracking-widest">Free</span>
+                  </p>
+                </div>
+                <ul>
+                  {group.items.map((item) => (
+                    <li key={item.title} className="px-6 py-5 border-b-2 border-black/10 last:border-b-0">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-1.5">
+                        <h4 className="font-black text-base text-black">{item.title}</h4>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-black/50 shrink-0">
+                          {item.value}
+                        </span>
+                      </div>
+                      <p className="text-sm font-bold text-black/60 leading-relaxed">{item.desc}</p>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </motion.div>
+          <div className="mt-5 border-2 border-black p-6 md:p-7 text-center" style={{ background: ACCENT }}>
+            <p className="font-black text-black text-base md:text-xl leading-snug">
+              Total Bonus Value Included Free: $1,500+ in your first month alone — yours free when you activate any
+              plan.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── Pricing ── */}
       <section id="pricing" className="border-b-2 border-black scroll-mt-20">
         <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16">
@@ -338,10 +487,40 @@ export default function MarketingHomePage() {
               </div>
             ))}
           </div>
+          <div
+            id="guarantee"
+            className="border-2 border-black p-7 md:p-9 mb-5 scroll-mt-24 shadow-[6px_6px_0px_#000] flex flex-col md:flex-row gap-5 md:gap-8 md:items-center"
+            style={{ background: "#a1dfc5" }}
+          >
+            <div className="shrink-0 w-20 h-20 border-2 border-black bg-white flex flex-col items-center justify-center leading-none">
+              <span className="font-black text-3xl text-black" style={{ fontFamily: "Tektur, sans-serif" }}>30</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-black mt-1">Days</span>
+            </div>
+            <div>
+              <h3 className="font-black text-xl md:text-2xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
+                30-Day &ldquo;Fill Your Tables&rdquo; Risk-Free Guarantee
+              </h3>
+              <p className="text-sm md:text-base font-bold text-black/70 leading-relaxed max-w-3xl">
+                We don&apos;t do free trials because our team builds your custom QR codes, table tents, bag flyers,
+                and Google Maps audit upfront. Instead, start today risk-free: put out your table tents, run at
+                least two text games in your first 30 days, and if you don&apos;t see repeat customers coming back,
+                email us for a 100% refund—and keep all your custom designs.
+              </p>
+            </div>
+          </div>
           <div className="grid lg:grid-cols-[3fr_2fr] gap-5">
             <div className="border-2 border-black bg-white p-7 md:p-9">
               <p className="font-black text-black text-sm uppercase tracking-widest mb-4">Every plan includes</p>
               <ul className="space-y-2.5">
+                <li
+                  className="flex items-start gap-2.5 text-sm font-black text-black border-2 border-black p-3 mb-1"
+                  style={{ background: "#f5dda1" }}
+                >
+                  <span className="mt-0.5 w-5 h-5 shrink-0 border-2 border-black flex items-center justify-center text-[11px] bg-white">
+                    ✓
+                  </span>
+                  {PLAN_INCLUDES_HIGHLIGHT}
+                </li>
                 {PLAN_INCLUDES.map((item) => (
                   <li key={item} className="flex items-start gap-2.5 text-sm font-bold text-black">
                     <span className="mt-0.5 w-5 h-5 shrink-0 border-2 border-black flex items-center justify-center text-[11px]" style={{ background: "#a1dfc5" }}>
