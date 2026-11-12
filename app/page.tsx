@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import SiteNav from "@/components/SiteNav";
 import MarketingDemo from "@/components/marketing/MarketingDemo";
 
@@ -141,6 +141,55 @@ const FAQ = [
     a: "About ten minutes for the account. We provision your number and, if you're on Clover, connect it — then your first campaign is a five-step wizard.",
   },
 ];
+
+/* ── guarantee seal — a spinning starburst in a colour used nowhere else on the page ── */
+const SEAL_COLOR = "#ff5c39";
+const SEAL_POINTS = Array.from({ length: 48 }, (_, i) => {
+  const r = i % 2 === 0 ? 104 : 92;
+  const a = (Math.PI * 2 * i) / 48;
+  return `${(110 + r * Math.cos(a)).toFixed(2)},${(110 + r * Math.sin(a)).toFixed(2)}`;
+}).join(" ");
+
+function GuaranteeSeal() {
+  const reduce = useReducedMotion();
+  const spin = reduce ? undefined : { rotate: 360 };
+  const spinTransition = { duration: 40, ease: "linear" as const, repeat: Infinity };
+  return (
+    <motion.div
+      id="guarantee"
+      role="img"
+      aria-label="30-day money-back guarantee"
+      className="relative shrink-0 scroll-mt-24 w-[172px] h-[172px] md:w-[216px] md:h-[216px]"
+      initial={reduce ? false : { scale: 0, rotate: -45 }}
+      whileInView={{ scale: 1, rotate: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ type: "spring", stiffness: 240, damping: 10 }}
+      whileHover={{ scale: 1.08 }}
+    >
+      {/* hard shadow */}
+      <div className="absolute inset-0 translate-x-[6px] translate-y-[6px]">
+        <motion.svg viewBox="0 0 220 220" className="w-full h-full" animate={spin} transition={spinTransition} aria-hidden>
+          <polygon points={SEAL_POINTS} fill="#000" />
+        </motion.svg>
+      </div>
+      <motion.svg viewBox="0 0 220 220" className="absolute inset-0 w-full h-full" animate={spin} transition={spinTransition} aria-hidden>
+        <polygon points={SEAL_POINTS} fill={SEAL_COLOR} stroke="#000" strokeWidth={3} strokeLinejoin="round" />
+        <circle cx={110} cy={110} r={80} fill="none" stroke="#000" strokeWidth={2} strokeDasharray="5 6" />
+      </motion.svg>
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 flex flex-col items-center justify-center text-center text-black"
+        style={{ rotate: -8, fontFamily: "Tektur, sans-serif" }}
+        animate={reduce ? undefined : { scale: [1, 1.08, 1] }}
+        transition={{ duration: 1.8, ease: "easeInOut", repeat: Infinity }}
+      >
+        <span className="font-black leading-none text-[29px] md:text-[37px]">30-DAY</span>
+        <span className="font-black leading-tight uppercase text-[13px] md:text-[16px] mt-1">Money-back</span>
+        <span className="font-black leading-tight uppercase text-[13px] md:text-[16px]">Guarantee</span>
+      </motion.div>
+    </motion.div>
+  );
+}
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -379,7 +428,7 @@ export default function MarketingHomePage() {
       {/* ── Pricing — guarantee badge, plans with the free kit attached, then the kit as a receipt ── */}
       <section id="pricing" className="border-b-2 border-black scroll-mt-20">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 py-14 md:py-16">
-          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-8 md:mb-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8 md:mb-10">
             <div>
               <h2 className="font-black text-3xl md:text-5xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
                 Simple per-location pricing
@@ -388,22 +437,11 @@ export default function MarketingHomePage() {
                 Three plans, priced per location per month. Phone number included. Sends are never blocked.
               </p>
             </div>
-            <div
-              id="guarantee"
-              className="scroll-mt-24 self-start lg:self-auto shrink-0 border-2 border-black px-5 py-4 shadow-[5px_5px_0px_#000] flex items-center gap-4"
-              style={{ background: "#a1dfc5" }}
-            >
-              <span className="w-11 h-11 md:w-12 md:h-12 shrink-0 border-2 border-black bg-white flex items-center justify-center font-black text-xl md:text-2xl">
-                ✓
-              </span>
-              <div>
-                <p className="font-black text-black uppercase leading-tight text-lg sm:text-xl md:text-2xl" style={{ fontFamily: "Tektur, sans-serif" }}>
-                  30-Day Money-Back Guarantee
-                </p>
-                <p className="text-xs md:text-sm font-bold text-black/70 mt-0.5">
-                  Not working? Full refund, and you keep your designs.
-                </p>
-              </div>
+            <div className="flex items-center gap-5 lg:flex-row-reverse lg:-my-6">
+              <GuaranteeSeal />
+              <p className="font-black text-black text-sm md:text-base leading-snug max-w-[190px] lg:text-right">
+                Not working? Full refund, and you keep your designs.
+              </p>
             </div>
           </div>
 
