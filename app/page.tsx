@@ -79,10 +79,10 @@ const KIT_GROUPS = [
     cadence: "One-time · $1,250 value",
     color: "#a4e5f8",
     items: [
-      { title: "Table tents & counter flyers", img: "table-tents", value: "$350", desc: "Custom-designed with your logo so dine-in guests join your VIP text club." },
+      { title: "SEO & AI search audit", img: "seo-audit", value: "$250", desc: "A personalized 10-minute video showing how you appear on Google and in AI search, and exactly what to fix." },
       { title: "Done-for-you social opt-in posts", img: "social-posts", value: "$300", desc: "15 branded Instagram Stories and posts, ready to publish. Nothing to edit." },
-      { title: "Google Maps video audit", img: "maps-audit", value: "$250", desc: "A personalized 10-minute teardown of your listing: categories, links, photos." },
-      { title: "Branded table QR codes", img: "table-qr", value: "$200", desc: "Mapped to your menu and ordering links, one for every table." },
+      { title: "Table tents & counter flyers", img: "table-tents", value: "$350", desc: "Custom-designed with your logo so dine-in guests join your VIP text club." },
+      { title: "Online ordering QR codes", img: "table-qr", value: "$200", desc: "Branded and mapped to your menu and ordering links, one for every table." },
       { title: "DoorDash & Uber Eats bag flyer", img: "bag-flyer", value: "$150", desc: "Turns delivery-app customers into direct repeat diners." },
     ],
   },
@@ -126,7 +126,7 @@ const FAQ = [
   },
   {
     q: "How does the 30-day money-back guarantee work?",
-    a: "We don't do free trials because our team builds your custom QR codes, table tents, bag flyers, and Google Maps audit upfront. Instead, start today risk-free: put out your table tents, run at least two text games in your first 30 days, and if you don't see repeat customers coming back, email us for a 100% refund—and keep all your custom designs.",
+    a: "We don't do free trials because our team builds your custom QR codes, table tents, bag flyers, and SEO & AI search audit upfront. Instead, start today risk-free: put out your table tents, run at least two text games in your first 30 days, and if you don't see repeat customers coming back, email us for a 100% refund—and keep all your custom designs.",
   },
   {
     q: "Can I try a campaign before sending it to everyone?",
@@ -530,26 +530,38 @@ export default function MarketingHomePage() {
                           type="button"
                           onClick={() => setZoom({ title: item.title, img: item.img })}
                           aria-label={`See an example: ${item.title}`}
-                          className="group relative shrink-0 w-16 h-16 md:w-24 md:h-24 border-2 border-black overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#000]"
+                          className="group relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 border-2 border-black overflow-hidden shadow-[3px_3px_0px_#000] transition-all hover:-translate-y-1 hover:shadow-[5px_5px_0px_#000]"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={`/freebies/${item.img}-thumb.webp`}
                             alt=""
-                            width={96}
-                            height={96}
+                            width={144}
+                            height={144}
                             loading="lazy"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                           />
-                          <span className="absolute bottom-0 right-0 border-l-2 border-t-2 border-black bg-white w-5 h-5 flex items-center justify-center text-[11px] font-black leading-none">
-                            ⤢
+                          <span
+                            className="absolute inset-x-0 bottom-0 border-t-2 border-black py-1 text-center text-[10px] md:text-[11px] font-black uppercase tracking-widest text-black"
+                            style={{ background: ACCENT }}
+                          >
+                            🔍 Tap to view
                           </span>
                         </button>
                         <div className="min-w-0 flex-1">
                           <p className="font-black text-black text-base md:text-lg leading-snug">{item.title}</p>
                           <p className="text-sm font-bold text-black/60 leading-relaxed mt-0.5">{item.desc}</p>
+                          <p className="sm:hidden mt-2 flex items-center gap-2">
+                            <span className="font-black text-black/40 line-through decoration-2 text-base">{item.value}</span>
+                            <span
+                              className="border-2 border-black px-2 py-0.5 text-[11px] font-black uppercase tracking-widest text-black"
+                              style={{ background: "#a1dfc5" }}
+                            >
+                              Free
+                            </span>
+                          </p>
                         </div>
-                        <div className="shrink-0 text-right">
+                        <div className="hidden sm:block shrink-0 text-right">
                           <p className="font-black text-black/40 line-through decoration-2 text-base md:text-lg leading-snug">
                             {item.value}
                           </p>
