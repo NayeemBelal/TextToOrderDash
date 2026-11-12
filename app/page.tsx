@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import SiteNav from "@/components/SiteNav";
 import MarketingDemo from "@/components/marketing/MarketingDemo";
 import { useSalesMode } from "@/lib/sales-mode-context";
@@ -70,6 +70,34 @@ const PLANS = [
   { name: "Tier 3", price: "$400", messages: "7,000", overage: "5.7¢", fit: "Around 810 subscribers at two sends a week.", color: "#f5dda1" },
 ];
 
+/* ── POS trust bar — shown directly under the hero ── */
+const POS_SYSTEMS = ["Toast", "Square", "Clover", "Lightspeed", "Custom POS setups"];
+
+/* ── done-for-you launch & growth kit — free with every plan, shown as a receipt in pricing ── */
+const KIT_GROUPS = [
+  {
+    name: "Launch & Design Kit",
+    cadence: "One-time · $1,250 value",
+    color: "#a4e5f8",
+    items: [
+      { title: "SEO & AI search audit", img: "seo-audit", value: "$250", desc: "A personalized 10-minute video showing how you appear on Google and in AI search, and exactly what to fix." },
+      { title: "Done-for-you social opt-in posts", img: "social-posts", value: "$300", desc: "15 branded Instagram Stories and posts, ready to publish. Nothing to edit." },
+      { title: "Table tents & counter flyers", img: "table-tents", value: "$350", desc: "Custom-designed with your logo so dine-in guests join your VIP text club." },
+      { title: "Online ordering QR codes", img: "table-qr", value: "$200", desc: "Branded and mapped to your menu and ordering links, one for every table." },
+      { title: "DoorDash & Uber Eats bag flyer", img: "bag-flyer", value: "$150", desc: "Turns delivery-app customers into direct repeat diners." },
+    ],
+  },
+  {
+    name: "Growth & Reputation Suite",
+    cadence: "Every month · $250/mo value",
+    color: "#f5dda1",
+    items: [
+      { title: "10 viral campaign ideas a month", img: "campaign-ideas", value: "$150/mo", desc: "Proven promos and social hooks trending in your exact food category." },
+      { title: "1-hour post-visit review booster", img: "review-booster", value: "$100/mo", desc: "An automatic follow-up text that guides happy diners to a Google review." },
+    ],
+  },
+];
+
 const PLAN_INCLUDES = [
   "A dedicated marketing phone number",
   "Unlimited game and promotional campaigns",
@@ -94,6 +122,14 @@ const FAQ = [
     a: "Clover today — coupons become real discounts and orders are matched back to campaigns. Toast and Square are next. Any restaurant can run games from a spreadsheet list in the meantime.",
   },
   {
+    q: "What if I don't have a customer phone list or time to design flyers?",
+    a: "Most restaurants start from zero. Our team designs your custom table tents, delivery bag flyers, QR codes, and social media opt-in posts for free during onboarding—so your tables and takeout bags build your VIP text list for you automatically.",
+  },
+  {
+    q: "How does the 30-day money-back guarantee work?",
+    a: "We don't do free trials because our team builds your custom QR codes, table tents, bag flyers, and SEO & AI search audit upfront. Instead, start today risk-free: put out your table tents, run at least two text games in your first 30 days, and if you don't see repeat customers coming back, email us for a 100% refund—and keep all your custom designs.",
+  },
+  {
     q: "Can I try a campaign before sending it to everyone?",
     a: "Yes. Every step has a “send to my phone” button: you receive the real text, play the real game, and open the real coupon page before anyone else does.",
   },
@@ -106,6 +142,98 @@ const FAQ = [
     a: "About ten minutes for the account. We provision your number and, if you're on Clover, connect it — then your first campaign is a five-step wizard.",
   },
 ];
+
+/* ── guarantee seal — a spinning starburst in a colour used nowhere else on the page ── */
+const SEAL_COLOR = "#ff5c39";
+const SEAL_POINTS = Array.from({ length: 48 }, (_, i) => {
+  const r = i % 2 === 0 ? 104 : 92;
+  const a = (Math.PI * 2 * i) / 48;
+  return `${(110 + r * Math.cos(a)).toFixed(2)},${(110 + r * Math.sin(a)).toFixed(2)}`;
+}).join(" ");
+
+function GuaranteeSeal() {
+  const reduce = useReducedMotion();
+  const spin = reduce ? undefined : { rotate: 360 };
+  const spinTransition = { duration: 40, ease: "linear" as const, repeat: Infinity };
+  return (
+    <motion.div
+      id="guarantee"
+      role="img"
+      aria-label="30-day money-back guarantee"
+      className="relative shrink-0 scroll-mt-24 w-[172px] h-[172px] md:w-[216px] md:h-[216px]"
+      initial={reduce ? false : { scale: 0, rotate: -45 }}
+      whileInView={{ scale: 1, rotate: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ type: "spring", stiffness: 240, damping: 10 }}
+      whileHover={{ scale: 1.08 }}
+    >
+      {/* hard shadow */}
+      <div className="absolute inset-0 translate-x-[6px] translate-y-[6px]">
+        <motion.svg viewBox="0 0 220 220" className="w-full h-full" animate={spin} transition={spinTransition} aria-hidden>
+          <polygon points={SEAL_POINTS} fill="#000" />
+        </motion.svg>
+      </div>
+      <motion.svg viewBox="0 0 220 220" className="absolute inset-0 w-full h-full" animate={spin} transition={spinTransition} aria-hidden>
+        <polygon points={SEAL_POINTS} fill={SEAL_COLOR} stroke="#000" strokeWidth={3} strokeLinejoin="round" />
+        <circle cx={110} cy={110} r={80} fill="none" stroke="#000" strokeWidth={2} strokeDasharray="5 6" />
+      </motion.svg>
+      <motion.div
+        aria-hidden
+        className="absolute inset-0 flex flex-col items-center justify-center text-center text-black"
+        style={{ rotate: -8, fontFamily: "Tektur, sans-serif" }}
+        animate={reduce ? undefined : { scale: [1, 1.08, 1] }}
+        transition={{ duration: 1.8, ease: "easeInOut", repeat: Infinity }}
+      >
+        <span className="font-black leading-none text-[29px] md:text-[37px]">30-DAY</span>
+        <span className="font-black leading-tight uppercase text-[13px] md:text-[16px] mt-1">Money-back</span>
+        <span className="font-black leading-tight uppercase text-[13px] md:text-[16px]">Guarantee</span>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ── "+ $1,500 setup kit FREE" strip on every plan card — bright yellow, with a shine sweep and a wiggling tag ── */
+const KIT_BAND_COLOR = "#ffd60a";
+
+function KitBand({ delay }: { delay: number }) {
+  const reduce = useReducedMotion();
+  return (
+    <a
+      href="#launch-kit"
+      className="relative overflow-hidden border-t-2 border-black px-6 md:px-7 py-4 flex items-center justify-between gap-3"
+      style={{ background: KIT_BAND_COLOR }}
+    >
+      {!reduce && (
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12"
+          style={{ background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.85), transparent)" }}
+          initial={{ x: "-150%" }}
+          animate={{ x: "450%" }}
+          transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity, repeatDelay: 2.2, delay }}
+        />
+      )}
+      <span className="relative flex items-center gap-2 font-black text-black leading-tight text-lg md:text-xl">
+        <motion.span
+          aria-hidden
+          className="inline-block"
+          animate={reduce ? undefined : { y: [0, -5, 0], rotate: [0, -12, 12, 0] }}
+          transition={{ duration: 0.9, ease: "easeInOut", repeat: Infinity, repeatDelay: 2.4, delay }}
+        >
+          🎁
+        </motion.span>
+        + $1,500 setup kit
+      </span>
+      <motion.span
+        className="relative shrink-0 border-2 border-black bg-black px-2.5 py-1 font-black text-sm uppercase tracking-widest text-white shadow-[2px_2px_0px_#fff]"
+        animate={reduce ? undefined : { rotate: [-5, 5, -5], scale: [1, 1.12, 1] }}
+        transition={{ duration: 1.4, ease: "easeInOut", repeat: Infinity, delay }}
+      >
+        Free
+      </motion.span>
+    </a>
+  );
+}
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
@@ -126,6 +254,15 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export default function MarketingHomePage() {
   // On a rep's sales link (lib/sales-mode.ts): no prices, no self-serve checkout.
   const sales = useSalesMode();
+  // freebie image opened full-size (thumbnails live in the pricing receipt)
+  const [zoom, setZoom] = useState<{ title: string; img: string } | null>(null);
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setZoom(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoom]);
+
   return (
     <div className="min-h-screen bg-white font-tektur overflow-x-hidden">
       <SiteNav />
@@ -141,6 +278,16 @@ export default function MarketingHomePage() {
             >
               ✦ Gamified SMS marketing for restaurants
             </motion.div>
+            {!sales && (
+            <motion.a
+              variants={fadeUp}
+              href="#pricing"
+              className="inline-block border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-widest mb-5 sm:ml-2 text-black"
+              style={{ background: "#a1dfc5" }}
+            >
+              🎁 $1,500+ setup kit free
+            </motion.a>
+            )}
             <motion.h1
               variants={fadeUp}
               className="font-black text-black leading-[0.95] text-4xl md:text-5xl xl:text-6xl"
@@ -194,9 +341,16 @@ export default function MarketingHomePage() {
               )}
             </motion.div>
             <motion.p variants={fadeUp} className="mt-4 text-xs font-bold text-black/40">
-              {sales
-                ? "Your own marketing phone number · set up with a real person on a call"
-                : "From $200 per location per month · phone number included · 2,500 messages included"}
+              {sales ? (
+                "Your own marketing phone number · set up with a real person on a call"
+              ) : (
+                <>
+                  From $200/location/month · Phone number &amp; 2,500 texts included · Backed by our{" "}
+                  <a href="#guarantee" className="underline underline-offset-2 hover:text-black transition-colors">
+                    30-Day Money-Back Guarantee
+                  </a>
+                </>
+              )}
             </motion.p>
           </motion.div>
 
@@ -238,6 +392,25 @@ export default function MarketingHomePage() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ── POS trust bar ── */}
+      <section aria-label="POS compatibility" className="border-b-2 border-black bg-white">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-5 flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
+          <p className="text-[11px] font-black uppercase tracking-widest text-black/40 shrink-0">
+            Works with your POS
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {POS_SYSTEMS.map((pos) => (
+              <li
+                key={pos}
+                className="border-2 border-black/15 px-3 py-1 text-xs font-black tracking-wide text-black/60"
+              >
+                {pos}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -329,85 +502,209 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      {/* ── Pricing (left out in sales mode) ── */}
+      {/* ── Pricing — guarantee badge, plans with the free kit attached, then the kit as a receipt.
+             Left out entirely in sales mode. ── */}
       {!sales && (
-        <section id="pricing" className="border-b-2 border-black scroll-mt-20">
-          <div className="max-w-[1200px] mx-auto px-6 md:px-10 py-16">
-            <h2 className="font-black text-3xl md:text-4xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
-              Simple per-location pricing
-            </h2>
-            <p className="font-bold text-black/50 mb-10 max-w-2xl">
-              Three plans, priced per location per month. Phone number included. Sends are never blocked. Add locations or
-              commit longer and the price drops.
-            </p>
-            <div className="grid md:grid-cols-3 gap-5 mb-5">
-              {PLANS.map((plan) => (
-                <div key={plan.name} className="border-2 border-black bg-white p-7 flex flex-col">
+      <section id="pricing" className="border-b-2 border-black scroll-mt-20">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 py-14 md:py-16">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8 md:mb-10">
+            <div>
+              <h2 className="font-black text-3xl md:text-5xl text-black mb-2" style={{ fontFamily: "Tektur, sans-serif" }}>
+                Simple per-location pricing
+              </h2>
+              <p className="font-bold text-black/50 max-w-2xl">
+                Three plans, priced per location per month. Phone number included. Sends are never blocked.
+              </p>
+            </div>
+            <div className="flex items-center gap-5 lg:flex-row-reverse lg:-my-6">
+              <GuaranteeSeal />
+              <p className="font-black text-black text-sm md:text-base leading-snug max-w-[190px] lg:text-right">
+                Not working? Full refund, and you keep your designs.
+              </p>
+            </div>
+          </div>
+
+          {/* plans — the free kit is attached to every price */}
+          <div className="grid md:grid-cols-3 gap-5 mb-5">
+            {PLANS.map((plan, i) => (
+              <div key={plan.name} className="border-2 border-black bg-white flex flex-col">
+                <div className="p-6 md:p-7 flex flex-col flex-1">
                   <div className="inline-block self-start border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest mb-4" style={{ background: plan.color }}>
                     {plan.name}
                   </div>
-                  <div className="flex items-end gap-2 mb-1">
-                    <span className="font-black text-5xl text-black leading-none" style={{ fontFamily: "Tektur, sans-serif" }}>
+                  <div className="flex flex-wrap items-end gap-x-2 mb-2">
+                    <span className="font-black text-6xl text-black leading-none" style={{ fontFamily: "Tektur, sans-serif" }}>
                       {plan.price}
                     </span>
                     <span className="font-black text-black/50 mb-1">/ location / month</span>
                   </div>
-                  <p className="text-sm font-bold text-black mb-1">{plan.messages} messages a month included</p>
-                  <p className="text-sm font-bold text-black/60 mb-4">{plan.fit}</p>
+                  <p className="text-base font-black text-black mb-1">{plan.messages} messages a month included</p>
+                  <p className="text-sm font-bold text-black/60 mb-3">{plan.fit}</p>
                   <p className="text-xs font-bold text-black/50 mt-auto">Overage {plan.overage} per message, never blocked</p>
+                </div>
+                <KitBand delay={i * 0.35} />
+                <div className="border-t-2 border-black p-4">
+                  <Link
+                    href={SIGNUP}
+                    className="block text-center font-black uppercase tracking-widest text-sm px-6 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
+                    style={{ background: ACCENT, color: "#000" }}
+                  >
+                    Start with {plan.name} →
+                  </Link>
+                  <p className="mt-2.5 text-center text-[11px] font-black uppercase tracking-widest text-black/50">
+                    30-day money-back guarantee
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* the kit, itemised like a receipt */}
+          <div id="launch-kit" className="border-2 border-black bg-white scroll-mt-24 mb-5">
+            <div className="border-b-2 border-black px-5 md:px-8 py-5 md:py-6" style={{ background: "#faf8ff" }}>
+              <h3 className="font-black text-black leading-tight text-2xl md:text-4xl" style={{ fontFamily: "Tektur, sans-serif" }}>
+                Everything we set up for you, free
+              </h3>
+              <p className="font-bold text-black/60 mt-1.5 text-sm md:text-base">
+                No time to set this up? You don&apos;t need any. Our team designs and builds all of it for you on every plan.
+              </p>
+            </div>
+            <div className="grid lg:grid-cols-2">
+              {KIT_GROUPS.map((group, gi) => (
+                <div key={group.name} className={gi === 0 ? "border-b-2 lg:border-b-0 lg:border-r-2 border-black" : "flex flex-col"}>
+                  <div
+                    className="border-b-2 border-black px-5 md:px-8 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1"
+                    style={{ background: group.color }}
+                  >
+                    <p className="font-black text-black text-sm md:text-base uppercase tracking-widest">{group.name}</p>
+                    <p className="font-black text-black/60 text-[11px] uppercase tracking-widest">{group.cadence}</p>
+                  </div>
+                  <ul>
+                    {group.items.map((item) => (
+                      <li
+                        key={item.title}
+                        className="px-5 md:px-8 py-4 border-b-2 border-black/10 last:border-b-0 flex items-start gap-3 md:gap-4"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setZoom({ title: item.title, img: item.img })}
+                          aria-label={`See an example: ${item.title}`}
+                          className="group relative shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 border-2 border-black overflow-hidden shadow-[3px_3px_0px_#000] transition-all hover:-translate-y-1 hover:shadow-[5px_5px_0px_#000]"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`/freebies/${item.img}-thumb.webp`}
+                            alt=""
+                            width={144}
+                            height={144}
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                          <span
+                            className="absolute inset-x-0 bottom-0 border-t-2 border-black py-1 text-center text-[10px] md:text-[11px] font-black uppercase tracking-widest text-black"
+                            style={{ background: ACCENT }}
+                          >
+                            🔍 Tap to view
+                          </span>
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-black text-black text-base md:text-lg leading-snug">{item.title}</p>
+                          <p className="text-sm font-bold text-black/60 leading-relaxed mt-0.5">{item.desc}</p>
+                          <p className="sm:hidden mt-2 flex items-center gap-2">
+                            <span className="font-black text-black/40 line-through decoration-2 text-base">{item.value}</span>
+                            <span
+                              className="border-2 border-black px-2 py-0.5 text-[11px] font-black uppercase tracking-widest text-black"
+                              style={{ background: "#a1dfc5" }}
+                            >
+                              Free
+                            </span>
+                          </p>
+                        </div>
+                        <div className="hidden sm:block shrink-0 text-right">
+                          <p className="font-black text-black/40 line-through decoration-2 text-base md:text-lg leading-snug">
+                            {item.value}
+                          </p>
+                          <p
+                            className="inline-block border-2 border-black px-2 py-0.5 text-[11px] font-black uppercase tracking-widest text-black mt-1"
+                            style={{ background: "#a1dfc5" }}
+                          >
+                            Free
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  {gi === 1 && (
+                    <div
+                      className="flex-1 border-t-2 border-black px-5 md:px-8 py-7 flex flex-col justify-center gap-4"
+                      style={{ background: ACCENT }}
+                    >
+                      <div className="flex items-end gap-6 sm:gap-10">
+                        <div>
+                          <p className="text-[11px] font-black uppercase tracking-widest text-black/60 mb-1">Total value</p>
+                          <p className="font-black text-black/50 line-through decoration-[3px] leading-none text-4xl md:text-5xl" style={{ fontFamily: "Tektur, sans-serif" }}>
+                            $1,500+
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black uppercase tracking-widest text-black/60 mb-1">You pay</p>
+                          <p className="font-black text-black leading-none text-6xl md:text-7xl" style={{ fontFamily: "Tektur, sans-serif" }}>
+                            $0
+                          </p>
+                        </div>
+                      </div>
+                      <p className="font-black text-black text-sm md:text-base leading-snug">
+                        Total Bonus Value Included Free: $1,500+ in your first month alone — yours free when you activate any plan.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
-            <div className="grid lg:grid-cols-[3fr_2fr] gap-5">
-              <div className="border-2 border-black bg-white p-7 md:p-9">
-                <p className="font-black text-black text-sm uppercase tracking-widest mb-4">Every plan includes</p>
-                <ul className="space-y-2.5">
-                  {PLAN_INCLUDES.map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-sm font-bold text-black">
-                      <span className="mt-0.5 w-5 h-5 shrink-0 border-2 border-black flex items-center justify-center text-[11px]" style={{ background: "#a1dfc5" }}>
-                        ✓
-                      </span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-6 grid sm:grid-cols-2 gap-3 text-sm font-bold text-black">
-                  <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
-                    <p className="font-black mb-1">More locations, lower price</p>
-                    <p className="text-black/60">2 locations: 10% off every location. 3 or more: 20% off every location.</p>
-                  </div>
-                  <div className="border-2 border-black p-4" style={{ background: "#faf8ff" }}>
-                    <p className="font-black mb-1">Commit longer, pay less</p>
-                    <p className="text-black/60">3 months at list. 6 months: $100 off per location. 12 months: $200 off per location.</p>
-                  </div>
-                </div>
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <Link
-                    href={SIGNUP}
-                    className="inline-block font-black uppercase tracking-widest text-sm px-8 py-4 border-2 border-black transition-all hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_#000]"
-                    style={{ background: ACCENT, color: "#000" }}
-                  >
-                    Set up my restaurant →
-                  </Link>
-                  <Link href="/marketing-terms" className="text-xs font-bold tracking-widest text-black/60 hover:text-black underline underline-offset-4">
-                    ORDER FORM &amp; SERVICE TERMS
-                  </Link>
-                </div>
+          </div>
+
+          {/* the software + discounts + add-on */}
+          <div className="border-2 border-black bg-white p-5 md:p-8 mb-5">
+            <p className="font-black text-black text-lg md:text-xl mb-4">Plus the full platform on every plan</p>
+            <ul className="grid sm:grid-cols-2 xl:grid-cols-4 gap-x-6 gap-y-3">
+              {PLAN_INCLUDES.map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-sm md:text-base font-bold text-black">
+                  <span className="mt-0.5 w-5 h-5 shrink-0 border-2 border-black flex items-center justify-center text-[11px]" style={{ background: "#a1dfc5" }}>
+                    ✓
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="border-2 border-black p-5 md:p-6" style={{ background: "#faf8ff" }}>
+              <p className="font-black text-black text-lg mb-1">More locations, lower price</p>
+              <p className="text-sm font-bold text-black/60">2 locations: 10% off every location. 3 or more: 20% off every location.</p>
+            </div>
+            <div className="border-2 border-black p-5 md:p-6" style={{ background: "#faf8ff" }}>
+              <p className="font-black text-black text-lg mb-1">Commit longer, pay less</p>
+              <p className="text-sm font-bold text-black/60">3 months at list. 6 months: $100 off per location. 12 months: $200 off per location.</p>
+            </div>
+            <div className="border-2 border-black p-5 md:p-6 md:col-span-2 xl:col-span-1" style={{ background: "#f4f1fb" }}>
+              <div className="inline-block border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-white mb-3">
+                Optional add-on
               </div>
-              <div className="border-2 border-black p-7 md:p-9" style={{ background: "#f4f1fb" }}>
-                <div className="inline-block border-2 border-black px-2.5 py-1 text-[10px] font-black uppercase tracking-widest bg-white mb-4">
-                  Optional add-on
-                </div>
-                <h3 className="font-black text-xl text-black mb-1">Branded RCS sender</h3>
-                <p className="font-black text-black/70 mb-3">$500 one-time setup + $200 / year</p>
-                <p className="text-sm font-bold text-black/60 leading-relaxed">
-                  Your restaurant&apos;s name, logo and a verified badge in the message thread itself — instead of a
-                  bare phone number. Higher open rates, richer replies. We handle the carrier paperwork.
-                </p>
-              </div>
+              <h3 className="font-black text-lg text-black">Branded RCS sender</h3>
+              <p className="font-black text-black/70 text-sm mb-2">$500 one-time setup + $200 / year</p>
+              <p className="text-sm font-bold text-black/60 leading-relaxed">
+                Your restaurant&apos;s name, logo and a verified badge in the message thread itself — instead of a
+                bare phone number. We handle the carrier paperwork.
+              </p>
             </div>
           </div>
-        </section>
+          <div className="mt-6">
+            <Link href="/marketing-terms" className="text-xs font-bold tracking-widest text-black/60 hover:text-black underline underline-offset-4">
+              ORDER FORM &amp; SERVICE TERMS
+            </Link>
+          </div>
+        </div>
+      </section>
       )}
 
       {/* ── FAQ ── */}
@@ -456,6 +753,48 @@ export default function MarketingHomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Freebie image viewer ── */}
+      {zoom && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoom.title}
+          onClick={() => setZoom(null)}
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2, ease }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-[560px] border-2 border-black bg-white shadow-[6px_6px_0px_#000]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/freebies/${zoom.img}.webp`}
+              alt={`Example: ${zoom.title} made for our demo restaurant`}
+              width={1000}
+              height={1000}
+              className="block w-full h-auto max-h-[70vh] object-cover border-b-2 border-black"
+            />
+            <div className="p-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-black text-black text-base md:text-lg leading-snug">{zoom.title}</p>
+                <p className="text-xs font-bold text-black/50 mt-0.5">Example made for our demo restaurant.</p>
+              </div>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setZoom(null)}
+                className="shrink-0 border-2 border-black px-3 py-1.5 text-xs font-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* ── Footer ── */}
       <footer className="bg-white">
