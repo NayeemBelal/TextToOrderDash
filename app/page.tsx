@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import SiteNav from "@/components/SiteNav";
@@ -79,11 +79,11 @@ const KIT_GROUPS = [
     cadence: "One-time · $1,250 value",
     color: "#a4e5f8",
     items: [
-      { title: "Table tents & counter flyers", value: "$350", desc: "Custom-designed with your logo so dine-in guests join your VIP text club." },
-      { title: "Done-for-you social opt-in posts", value: "$300", desc: "15 branded Instagram Stories and posts, ready to publish. Nothing to edit." },
-      { title: "Google Maps video audit", value: "$250", desc: "A personalized 10-minute teardown of your listing: categories, links, photos." },
-      { title: "Branded table QR codes", value: "$200", desc: "Mapped to your menu and ordering links, one for every table." },
-      { title: "DoorDash & Uber Eats bag flyer", value: "$150", desc: "Turns delivery-app customers into direct repeat diners." },
+      { title: "Table tents & counter flyers", img: "table-tents", value: "$350", desc: "Custom-designed with your logo so dine-in guests join your VIP text club." },
+      { title: "Done-for-you social opt-in posts", img: "social-posts", value: "$300", desc: "15 branded Instagram Stories and posts, ready to publish. Nothing to edit." },
+      { title: "Google Maps video audit", img: "maps-audit", value: "$250", desc: "A personalized 10-minute teardown of your listing: categories, links, photos." },
+      { title: "Branded table QR codes", img: "table-qr", value: "$200", desc: "Mapped to your menu and ordering links, one for every table." },
+      { title: "DoorDash & Uber Eats bag flyer", img: "bag-flyer", value: "$150", desc: "Turns delivery-app customers into direct repeat diners." },
     ],
   },
   {
@@ -91,8 +91,8 @@ const KIT_GROUPS = [
     cadence: "Every month · $250/mo value",
     color: "#f5dda1",
     items: [
-      { title: "10 viral campaign ideas a month", value: "$150/mo", desc: "Proven promos and social hooks trending in your exact food category." },
-      { title: "1-hour post-visit review booster", value: "$100/mo", desc: "An automatic follow-up text that guides happy diners to a Google review." },
+      { title: "10 viral campaign ideas a month", img: "campaign-ideas", value: "$150/mo", desc: "Proven promos and social hooks trending in your exact food category." },
+      { title: "1-hour post-visit review booster", img: "review-booster", value: "$100/mo", desc: "An automatic follow-up text that guides happy diners to a Google review." },
     ],
   },
 ];
@@ -208,6 +208,15 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 }
 
 export default function MarketingHomePage() {
+  // freebie image opened full-size (thumbnails live in the pricing receipt)
+  const [zoom, setZoom] = useState<{ title: string; img: string } | null>(null);
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setZoom(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoom]);
+
   return (
     <div className="min-h-screen bg-white font-tektur overflow-x-hidden">
       <SiteNav />
@@ -515,9 +524,28 @@ export default function MarketingHomePage() {
                     {group.items.map((item) => (
                       <li
                         key={item.title}
-                        className="px-5 md:px-8 py-4 border-b-2 border-black/10 last:border-b-0 flex items-start justify-between gap-4"
+                        className="px-5 md:px-8 py-4 border-b-2 border-black/10 last:border-b-0 flex items-start gap-3 md:gap-4"
                       >
-                        <div className="min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setZoom({ title: item.title, img: item.img })}
+                          aria-label={`See an example: ${item.title}`}
+                          className="group relative shrink-0 w-16 h-16 md:w-24 md:h-24 border-2 border-black overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_#000]"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`/freebies/${item.img}-thumb.webp`}
+                            alt=""
+                            width={96}
+                            height={96}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                          <span className="absolute bottom-0 right-0 border-l-2 border-t-2 border-black bg-white w-5 h-5 flex items-center justify-center text-[11px] font-black leading-none">
+                            ⤢
+                          </span>
+                        </button>
+                        <div className="min-w-0 flex-1">
                           <p className="font-black text-black text-base md:text-lg leading-snug">{item.title}</p>
                           <p className="text-sm font-bold text-black/60 leading-relaxed mt-0.5">{item.desc}</p>
                         </div>
@@ -651,6 +679,48 @@ export default function MarketingHomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Freebie image viewer ── */}
+      {zoom && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={zoom.title}
+          onClick={() => setZoom(null)}
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2, ease }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-[560px] border-2 border-black bg-white shadow-[6px_6px_0px_#000]"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/freebies/${zoom.img}.webp`}
+              alt={`Example: ${zoom.title} made for our demo restaurant`}
+              width={1000}
+              height={1000}
+              className="block w-full h-auto max-h-[70vh] object-cover border-b-2 border-black"
+            />
+            <div className="p-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-black text-black text-base md:text-lg leading-snug">{zoom.title}</p>
+                <p className="text-xs font-bold text-black/50 mt-0.5">Example made for our demo restaurant.</p>
+              </div>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setZoom(null)}
+                className="shrink-0 border-2 border-black px-3 py-1.5 text-xs font-black uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* ── Footer ── */}
       <footer className="bg-white">
