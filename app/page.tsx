@@ -80,9 +80,9 @@ const LAUNCH_KIT = [
     desc: "Custom-designed table tents and counter flyers with your logo so dine-in guests join your VIP text club automatically.",
   },
   {
-    title: "Editable Social Media Opt-In Templates",
+    title: "Done-For-You Social Media Opt-In Posts",
     value: "$300 value",
-    desc: "15 custom-branded Canva templates for Instagram Stories and posts to drive text club sign-ups.",
+    desc: "15 custom-branded Instagram Stories and posts, fully designed for you and ready to publish — nothing to edit — to drive text club sign-ups.",
   },
   {
     title: "10-Minute Google Maps Loom Video Audit",
@@ -157,7 +157,7 @@ const FAQ = [
   },
   {
     q: "What if I don't have a customer phone list or time to design flyers?",
-    a: "Most restaurants start from zero. Our team designs your custom table tents, delivery bag flyers, QR codes, and social media opt-in templates for free during onboarding—so your tables and takeout bags build your VIP text list for you automatically.",
+    a: "Most restaurants start from zero. Our team designs your custom table tents, delivery bag flyers, QR codes, and social media opt-in posts for free during onboarding—so your tables and takeout bags build your VIP text list for you automatically.",
   },
   {
     q: "Can I try a campaign before sending it to everyone?",
