@@ -65,9 +65,9 @@ const FEATURES = [
 const EXTRAS = ["Customer groups", "Scheduled sends", "Coupon expiry windows", "Delivery receipts", "Test sends", "Spreadsheet import", "Pause / resume", "Dark mode"];
 
 const PLANS = [
-  { name: "Tier 1", price: "$200", messages: "2,500", overage: "8.0¢", fit: "Around 290 subscribers at two sends a week.", color: "#a4e5f8" },
-  { name: "Tier 2", price: "$300", messages: "4,500", overage: "6.7¢", fit: "Around 520 subscribers at two sends a week.", color: ACCENT },
-  { name: "Tier 3", price: "$400", messages: "7,000", overage: "5.7¢", fit: "Around 810 subscribers at two sends a week.", color: "#f5dda1" },
+  { name: "Tier 1", price: "$200", messages: "300", overage: "15.4¢", fit: "Reach 300 customers a week!", color: "#a4e5f8" },
+  { name: "Tier 2", price: "$300", messages: "600", overage: "11.5¢", fit: "Reach 600 customers a week!", color: ACCENT },
+  { name: "Tier 3", price: "$400", messages: "1,000", overage: "9.2¢", fit: "Reach 1,000 customers a week!", color: "#f5dda1" },
 ];
 
 /* ── POS trust bar — shown directly under the hero ── */
@@ -345,7 +345,7 @@ export default function MarketingHomePage() {
                 "Your own marketing phone number · set up with a real person on a call"
               ) : (
                 <>
-                  From $200/location/month · Phone number &amp; 2,500 texts included · Backed by our{" "}
+                  From $200/location/month · Phone number &amp; 300 texts a week included · Backed by our{" "}
                   <a href="#guarantee" className="underline underline-offset-2 hover:text-black transition-colors">
                     30-Day Money-Back Guarantee
                   </a>
@@ -538,7 +538,7 @@ export default function MarketingHomePage() {
                     </span>
                     <span className="font-black text-black/50 mb-1">/ location / month</span>
                   </div>
-                  <p className="text-base font-black text-black mb-1">{plan.messages} messages a month included</p>
+                  <p className="text-base font-black text-black mb-1">{plan.messages} messages a week included</p>
                   <p className="text-sm font-bold text-black/60 mb-3">{plan.fit}</p>
                   <p className="text-xs font-bold text-black/50 mt-auto">Overage {plan.overage} per message, never blocked</p>
                 </div>
