@@ -235,10 +235,10 @@ export default function MarketingTermsPage() {
               Service Start Date and each following fee on the same day of each month.
             </Clause>
             <Clause n="3.2" title="Messages and overage">
-              Each plan includes the number of messages per location per month shown in Exhibit B. A
+              Each plan includes the number of messages per location per week shown in Exhibit B. A
               &ldquo;message&rdquo; is one text of up to 306 plain characters (134 when emoji or other
               non-GSM characters are used), about 25 of which carry the required opt-out line.
-              Included messages reset each month and do not roll over; inbound messages from Contacts
+              Included messages reset each week and do not roll over; inbound messages from Contacts
               are never charged; each location may run up to two campaign sends per week. Sends are
               never blocked for exceeding the plan: messages above the plan are billed monthly in
               arrears at the plan&rsquo;s per-message overage rate in Exhibit B, and a location that
@@ -663,9 +663,9 @@ export default function MarketingTermsPage() {
                 </thead>
                 <tbody className="font-bold text-black/80">
                   {[
-                    ["Tier 1", "$200 per covered location per month · 2,500 messages included · overage 8.0¢ per message", "Monthly in advance from the Service Start Date"],
-                    ["Tier 2", "$300 per covered location per month · 4,500 messages included · overage 6.7¢ per message", "Monthly in advance"],
-                    ["Tier 3", "$400 per covered location per month · 7,000 messages included · overage 5.7¢ per message (5.7¢ above Tier 3; 12,000+ quoted separately)", "Monthly in advance"],
+                    ["Tier 1", "$200 per covered location per month · 300 messages a week included · overage 15.4¢ per message", "Monthly in advance from the Service Start Date"],
+                    ["Tier 2", "$300 per covered location per month · 600 messages a week included · overage 11.5¢ per message", "Monthly in advance"],
+                    ["Tier 3", "$400 per covered location per month · 1,000 messages a week included · overage 9.2¢ per message (9.2¢ above Tier 3; 12,000+ a month quoted separately)", "Monthly in advance"],
                     ["Multi-location discount (Section 3.8)", "10% off every location with 2 locations; 20% off every location with 3 or more", "Applied to each Monthly Fee"],
                     ["Term discount (Section 3.9)", "6-month: $100 per location · 12-month: $200 per location", "Credit on the final invoice of the Initial Term"],
                     [
@@ -692,7 +692,7 @@ export default function MarketingTermsPage() {
             <P>
               A &ldquo;message&rdquo; is one text of up to 306 plain characters (134 when emoji or
               other non-GSM characters are used), about 25 of which carry the required opt-out line.
-              Included messages reset monthly and do not roll over. Belan displays the estimated
+              Included messages reset weekly and do not roll over. Belan displays the estimated
               message count before every send. Multi-location pricing per location: Tier 1 $200 /
               $180 / $160, Tier 2 $300 / $270 / $240, Tier 3 $400 / $360 / $320 for one, two, and
               three or more locations.
