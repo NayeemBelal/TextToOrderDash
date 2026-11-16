@@ -10,7 +10,7 @@ import { useSalesMode } from "@/lib/sales-mode-context";
 /* ── design tokens (shared with the onboarding wizard + /oldprods) ── */
 const ease = [0.22, 1, 0.36, 1] as const;
 const ACCENT = "#c4b5fd"; // Marketing AI purple
-const BOOK_DEMO = "https://calendar.app.google/uCwfd2qfNtjJMSca9";
+const BOOK_DEMO = "https://cal.com/nayeem-belal-dvgany/15min";
 const SIGNUP = "/marketing/onboarding";
 
 const fadeUp = {

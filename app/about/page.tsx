@@ -350,7 +350,7 @@ export default async function AboutPage() {
                 GET STARTED →
               </Link>
               <Link
-                href="https://calendar.app.google/pSRSqBMoWzxTeMoD6"
+                href="https://cal.com/nayeem-belal-dvgany/15min"
                 className="bg-white text-black font-bold text-sm px-7 py-3 border-2 border-black tracking-widest whitespace-nowrap hover:bg-black hover:text-white transition-colors"
                 target="_blank"
                 rel="noopener noreferrer"

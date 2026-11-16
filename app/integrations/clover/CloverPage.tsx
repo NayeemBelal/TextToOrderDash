@@ -512,7 +512,7 @@ export default function CloverPage() {
               transition={{ duration: 0.5, delay: 0.18, ease }}
             >
               <motion.a
-                href="https://calendar.app.google/uCwfd2qfNtjJMSca9"
+                href="https://cal.com/nayeem-belal-dvgany/15min"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-black text-white font-bold text-xs px-8 py-3 border-2 border-black tracking-wide text-center"

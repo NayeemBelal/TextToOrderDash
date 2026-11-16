@@ -1761,7 +1761,7 @@ export default function OrderingProductsPage() {
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 >
                   <Link
-                    href="https://calendar.app.google/uCwfd2qfNtjJMSca9"
+                    href="https://cal.com/nayeem-belal-dvgany/15min"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-white/80 text-black font-bold text-xs sm:text-sm xl:text-base px-6 sm:px-7 xl:px-10 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block text-center whitespace-nowrap"
@@ -2388,7 +2388,7 @@ export default function OrderingProductsPage() {
             transition={{ type: "spring", stiffness: 400, damping: 20 }}
           >
             <a
-              href="https://calendar.app.google/uCwfd2qfNtjJMSca9"
+              href="https://cal.com/nayeem-belal-dvgany/15min"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-black text-white font-bold text-xs sm:text-sm xl:text-base px-8 sm:px-10 xl:px-14 py-2.5 sm:py-3 xl:py-4 border-2 border-black tracking-wide block whitespace-nowrap"
