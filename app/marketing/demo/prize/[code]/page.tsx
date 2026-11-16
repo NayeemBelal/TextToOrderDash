@@ -20,7 +20,7 @@ const BRAND = "#e11d48";
 const BRAND_DARK = "#9f1239";
 const RESTAURANT = "Stack & Smash Burgers";
 const DEMO_WINDOW_MS = 24 * 60 * 60 * 1000;
-const BOOK_DEMO = "https://calendar.app.google/uCwfd2qfNtjJMSca9";
+const BOOK_DEMO = "https://cal.com/nayeem-belal-dvgany/15min";
 
 function formatRemaining(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));

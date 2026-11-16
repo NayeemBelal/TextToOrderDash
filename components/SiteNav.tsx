@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useSalesMode } from "@/lib/sales-mode-context";
 
 const ease = [0.22, 1, 0.36, 1] as const;
-const BOOK_DEMO = "https://calendar.app.google/uCwfd2qfNtjJMSca9";
+const BOOK_DEMO = "https://cal.com/nayeem-belal-dvgany/15min";
 
 const MORE_LINKS = [
   { href: "/oldprods", label: "Voice & text ordering" },

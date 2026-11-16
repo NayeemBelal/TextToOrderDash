@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 const ACCENT = "#c4b5fd";
-const BOOK_CALL = "https://calendar.app.google/uCwfd2qfNtjJMSca9";
+const BOOK_CALL = "https://cal.com/nayeem-belal-dvgany/15min";
 
 const DOCS = [
   {
